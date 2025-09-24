@@ -1,0 +1,320 @@
+Tsp_Pcode,admin1,admin2,admin3,current_month_end,current_event_2m,current_fatalities_2m,local_med_event,local_mad_event,glob_med_event,glob_mad_event,local_med_fatal,local_mad_fatal,glob_med_fatal,glob_mad_fatal,flag_local_event,flag_global_event,flag_local_fatal,flag_global_fatal,flag_description,map_category
+MMR015013,Shan-North,Kyaukme,Nawnghkio,31/08/2025,98,6,77,47.07255,12,9.636899999999999,17,12.231449999999999,8,10.3782,0,1,0,0,Abnormal increase in armed-conflict events compared to long-term history.,Event surge
+MMR001009,Kachin,Mohnyin,Hpakant,31/08/2025,92,103,47,41.883449999999996,50,23.7216,28.5,25.9455,28,23.7216,0,0,1,1,Abnormal increase in fatalities compared to past months and long-term history.,Fatality surge
+MMR003006,Kayin,Kawkareik,Kawkareik,31/08/2025,86,85,82,22.238999999999997,32,16.3086,85.5,67.08765,42,44.477999999999994,0,1,0,0,Abnormal increase in armed-conflict events compared to long-term history.,Event surge
+MMR015012,Shan-North,Kyaukme,Kyaukme,31/08/2025,74,45,5,1.4826,7,11.119499999999999,3,4.4478,2,2.2239,1,1,1,1,Abnormal increase in fatalities compared to past months and long-term history. Abnormal increase in armed-conflict events compared to past months and long-term history.,Both surges
+MMR012011,Rakhine,Kyaukpyu,Kyaukpyu,31/08/2025,67,136,66,31.505249999999997,4,4.4478,43,39.2889,0,0,0,1,0,1,Abnormal increase in fatalities compared to long-term history. Abnormal increase in armed-conflict events compared to long-term history.,Both surges
+MMR005016,Sagaing,Yinmarbin,Yinmarbin,31/08/2025,62,0,73.5,32.24655,116,25.9455,4.5,3.7064999999999997,29,32.6172,0,0,0,0,normal,normal
+MMR009021,Magway,Pakokku,Pauk,31/08/2025,61,14,19.5,6.30105,28,19.273799999999998,14.5,7.78365,31,28.1694,1,0,0,0,Abnormal increase in armed-conflict events compared to past months.,Event surge
+MMR006004,Tanintharyi,Dawei,Yebyu,31/08/2025,48,156,16.5,4.4478,19,13.343399999999999,23,7.04235,15,13.343399999999999,1,0,1,1,Abnormal increase in fatalities compared to past months and long-term history. Abnormal increase in armed-conflict events compared to past months.,Both surges
+MMR007011,Bago-East,Taungoo,Kyaukkyi,31/08/2025,47,38,35.5,17.7912,29,17.7912,41,24.09225,18,16.3086,0,0,0,0,normal,normal
+MMR010022,Mandalay,Nyaung-U,Nyaung-U,31/08/2025,42,94,24,16.67925,4,2.9652,45.5,17.7912,3,2.9652,0,1,1,1,Abnormal increase in fatalities compared to past months and long-term history. Abnormal increase in armed-conflict events compared to long-term history.,Both surges
+MMR005012,Sagaing,Monywa,Monywa,31/08/2025,38,64,18.5,24.83355,67,37.8063,51,27.428099999999997,57,28.1694,0,0,0,0,normal,normal
+MMR005007,Sagaing,Kanbalu,Kanbalu,31/08/2025,37,47,28,9.26625,31,14.825999999999999,36,15.937949999999999,34,20.7564,0,0,0,0,normal,normal
+MMR006008,Tanintharyi,Myeik,Tanintharyi,31/08/2025,37,23,46.5,6.30105,29,19.273799999999998,36,6.6716999999999995,23,14.825999999999999,0,0,0,0,normal,normal
+MMR003005,Kayin,Myawaddy,Myawaddy,31/08/2025,36,10,23.5,9.636899999999999,20,22.238999999999997,17.5,19.64445,23,43.7367,0,0,0,0,normal,normal
+MMR005006,Sagaing,Shwebo,Wetlet,31/08/2025,35,29,12.5,4.07715,23,25.2042,16.5,5.559749999999999,25,26.686799999999998,1,0,0,0,Abnormal increase in armed-conflict events compared to past months.,Event surge
+MMR010012,Mandalay,Pyinoolwin,Thabeikkyin,31/08/2025,34,52,18.5,8.524949999999999,10,5.9304,10,5.1891,8,8.8956,0,1,1,1,Abnormal increase in fatalities compared to past months and long-term history. Abnormal increase in armed-conflict events compared to long-term history.,Both surges
+MMR005001,Sagaing,Sagaing,Sagaing,31/08/2025,34,74,36.5,13.343399999999999,29,8.8956,52.5,20.385749999999998,36,22.9803,0,0,0,0,normal,normal
+MMR002002,Kayah,Loikaw,Demoso,31/08/2025,33,47,8.5,5.1891,14,23.7216,0,0,24,53.373599999999996,1,0,1,0,Abnormal increase in fatalities compared to past months. Abnormal increase in armed-conflict events compared to past months.,Both surges
+MMR005019,Sagaing,Yinmarbin,Pale,31/08/2025,32,6,5.5,2.9652,27,16.3086,3,5.1891,40,51.149699999999996,1,0,0,0,Abnormal increase in armed-conflict events compared to past months.,Event surge
+MMR005027,Sagaing,Kale,Kale,31/08/2025,31,9,27.5,24.83355,64,52.632299999999994,48.5,58.192049999999995,48,45.9606,0,0,0,0,normal,normal
+MMR010017,Mandalay,Myingyan,Myingyan,31/08/2025,29,89,26,8.1543,27,11.8608,68,4.07715,56,25.2042,0,0,1,0,Abnormal increase in fatalities compared to past months.,Fatality surge
+MMR006007,Tanintharyi,Myeik,Palaw,31/08/2025,28,42,16,4.8184499999999995,19,16.3086,17.5,13.343399999999999,16,20.0151,0,0,0,0,normal,normal
+MMR009018,Magway,Pakokku,Pakokku,31/08/2025,26,37,35.5,19.273799999999998,39,11.8608,25.5,22.238999999999997,43,25.2042,0,0,0,0,normal,normal
+MMR017010,Ayeyarwady,Hinthada,Lemyethna,31/08/2025,24,3,35.5,24.83355,0,0,6.5,5.559749999999999,0,0,0,1,0,0,Abnormal increase in armed-conflict events compared to long-term history.,Event surge
+MMR010011,Mandalay,Pyinoolwin,Mogoke,31/08/2025,24,56,10.5,5.9304,10,13.343399999999999,8.5,4.07715,7,9.636899999999999,0,0,1,1,Abnormal increase in fatalities compared to past months and long-term history.,Fatality surge
+MMR010009,Mandalay,Pyinoolwin,Madaya,31/08/2025,24,11,31.5,17.42055,33,22.238999999999997,12,12.6021,38,24.462899999999998,0,0,0,0,normal,normal
+MMR009009,Magway,Minbu,Ngape,31/08/2025,23,47,36,19.273799999999998,2,1.4826,26,103.782,1,1.4826,0,1,0,1,Abnormal increase in fatalities compared to long-term history. Abnormal increase in armed-conflict events compared to long-term history.,Both surges
+MMR001010,Kachin,Bhamo,Bhamo,31/08/2025,23,115,30,18.90315,9,5.9304,13,11.8608,2,1.4826,0,0,1,1,Abnormal increase in fatalities compared to past months and long-term history.,Fatality surge
+MMR007006,Bago-East,Bago,Kyauktaga,31/08/2025,23,2,16,8.8956,8,7.412999999999999,11,11.49015,2,2.9652,0,0,0,0,normal,normal
+MMR001011,Kachin,Bhamo,Shwegu,31/08/2025,22,51,0.5,0.7413,7,7.412999999999999,0,0,3,11.8608,1,0,1,1,Abnormal increase in fatalities compared to past months and long-term history. Abnormal increase in armed-conflict events compared to past months.,Both surges
+MMR008009,Bago-West,Thayarwady,Minhla,31/08/2025,22,103,50,22.9803,4,4.4478,61,39.659549999999996,3,4.4478,0,1,0,1,Abnormal increase in fatalities compared to long-term history. Abnormal increase in armed-conflict events compared to long-term history.,Both surges
+MMR014004,Shan-South,Pa-O Self-Administered Zone,Hsihseng,31/08/2025,22,120,7,4.8184499999999995,2,1.4826,0,5.1891,0,0,1,1,1,1,Abnormal increase in fatalities compared to past months and long-term history. Abnormal increase in armed-conflict events compared to past months and long-term history.,Both surges
+MMR001007,Kachin,Mohnyin,Mohnyin,31/08/2025,22,5,14,6.30105,9,6.6716999999999995,7,5.1891,9,10.3782,0,0,0,0,normal,normal
+MMR009020,Magway,Pakokku,Myaing,31/08/2025,22,4,33.5,9.636899999999999,68,40.0302,32,20.7564,46,28.9107,0,0,0,0,normal,normal
+MMR012001,Rakhine,Sittwe,Sittwe,31/08/2025,21,1,24,32.98785,7,5.9304,5,10.74885,1,1.4826,0,0,0,0,normal,normal
+MMR005013,Sagaing,Monywa,Budalin,31/08/2025,20,18,10,6.30105,18,8.1543,5,6.30105,18,16.3086,0,0,0,0,normal,normal
+MMR005015,Sagaing,Monywa,Chaung-U,31/08/2025,20,40,25,15.19665,23,10.3782,38.5,31.505249999999997,33,20.7564,0,0,0,0,normal,normal
+MMR006001,Tanintharyi,Dawei,Dawei,31/08/2025,20,36,20.5,1.4826,25,10.3782,33,9.636899999999999,36,13.343399999999999,0,0,0,0,normal,normal
+MMR008010,Bago-West,Thayarwady,Okpho,31/08/2025,19,32,15,7.04235,7,5.9304,20.5,5.559749999999999,5,5.9304,0,0,0,1,Abnormal increase in fatalities compared to long-term history.,Fatality surge
+MMR010019,Mandalay,Myingyan,Natogyi,31/08/2025,19,36,17.5,5.1891,16,7.412999999999999,34,20.0151,24,14.0847,0,0,0,0,normal,normal
+MMR011006,Mon,Mawlamyine,Ye,31/08/2025,19,25,13.5,7.78365,23,7.412999999999999,16.5,28.1694,21,19.273799999999998,0,0,0,0,normal,normal
+MMR010018,Mandalay,Myingyan,Taungtha,31/08/2025,18,16,33,9.636899999999999,10,5.9304,31.5,10.74885,9,8.8956,0,0,0,0,normal,normal
+MMR012009,Rakhine,Maungdaw,Maungdaw,31/08/2025,18,11,15,20.7564,10,7.412999999999999,7.5,7.412999999999999,5,2.9652,0,0,0,0,normal,normal
+MMR002006,Kayah,Bawlake,Hpasawng,31/08/2025,17,44,3.5,1.4826,1,1.4826,7,9.636899999999999,0,0,1,1,1,1,Abnormal increase in fatalities compared to past months and long-term history. Abnormal increase in armed-conflict events compared to past months and long-term history.,Both surges
+MMR009010,Magway,Minbu,Salin,31/08/2025,17,20,54.5,25.574849999999998,5,2.9652,74.5,31.505249999999997,14,16.3086,0,1,0,0,Abnormal increase in armed-conflict events compared to long-term history.,Event surge
+MMR009022,Magway,Pakokku,Seikphyu,31/08/2025,17,21,7,7.78365,5,4.4478,11.5,8.8956,8,8.8956,0,1,0,0,Abnormal increase in armed-conflict events compared to long-term history.,Event surge
+MMR002001,Kayah,Loikaw,Loikaw,31/08/2025,17,8,13,4.4478,18,10.3782,14,14.45535,16,11.8608,0,0,0,0,normal,normal
+MMR005018,Sagaing,Yinmarbin,Salingyi,31/08/2025,17,4,33,14.45535,81,31.1346,9,4.07715,19,19.273799999999998,0,0,0,0,normal,normal
+MMR010007,Mandalay,Mandalay,Patheingyi,31/08/2025,16,10,6,2.9652,5,4.4478,1,2.2239,3,2.9652,1,0,0,0,Abnormal increase in armed-conflict events compared to past months.,Event surge
+MMR005004,Sagaing,Shwebo,Shwebo,31/08/2025,16,15,24,8.524949999999999,46,23.7216,19.5,9.636899999999999,47,37.065,0,0,0,0,normal,normal
+MMR009019,Magway,Pakokku,Yesagyo,31/08/2025,16,19,19.5,19.64445,43,18.5325,46,40.0302,47,32.6172,0,0,0,0,normal,normal
+MMR010029,Mandalay,Meiktila,Mahlaing,31/08/2025,15,9,7,2.9652,2,2.9652,4,2.59455,1,1.4826,1,1,0,0,Abnormal increase in armed-conflict events compared to past months and long-term history.,Event surge
+MMR010021,Mandalay,Myingyan,Ngazun,31/08/2025,15,118,17,5.9304,12,5.9304,50,31.1346,16,12.6021,0,0,0,1,Abnormal increase in fatalities compared to long-term history.,Fatality surge
+MMR008002,Bago-West,Pyay,Paukkhaung,31/08/2025,14,17,17,3.3358499999999998,2,2.9652,7.5,11.119499999999999,1,1.4826,0,1,0,0,Abnormal increase in armed-conflict events compared to long-term history.,Event surge
+MMR004001,Chin,Falam,Falam,31/08/2025,14,2,11,4.07715,8,7.412999999999999,3.5,3.7064999999999997,7,15.5673,0,0,0,0,normal,normal
+MMR005017,Sagaing,Yinmarbin,Kani,31/08/2025,14,3,13.5,12.6021,27,22.238999999999997,5,6.30105,29,43.7367,0,0,0,0,normal,normal
+MMR006003,Tanintharyi,Dawei,Thayetchaung,31/08/2025,14,7,14,6.6716999999999995,17,8.8956,16,17.049899999999997,18,17.7912,0,0,0,0,normal,normal
+MMR007005,Bago-East,Bago,Nyaunglebin,31/08/2025,14,6,13,1.4826,8,6.6716999999999995,13.5,9.26625,5,4.4478,0,0,0,0,normal,normal
+MMR007012,Bago-East,Taungoo,Phyu,31/08/2025,14,4,12.5,3.3358499999999998,8,7.412999999999999,15,17.049899999999997,7,6.6716999999999995,0,0,0,0,normal,normal
+MMR017006,Ayeyarwady,Pathein,Yegyi,31/08/2025,13,7,24,4.8184499999999995,2,2.9652,4,5.1891,0,0,0,1,0,0,Abnormal increase in armed-conflict events compared to long-term history.,Event surge
+MMR005002,Sagaing,Sagaing,Myinmu,31/08/2025,13,29,6,5.9304,17,14.825999999999999,6,7.04235,31,42.9954,0,0,1,0,Abnormal increase in fatalities compared to past months.,Fatality surge
+MMR006002,Tanintharyi,Dawei,Launglon,31/08/2025,13,36,25.5,14.0847,43,17.7912,21.5,29.651999999999997,17,13.343399999999999,0,0,0,0,normal,normal
+MMR010010,Mandalay,Pyinoolwin,Singu,31/08/2025,12,22,16,9.636899999999999,8,8.8956,19,6.30105,4,5.9304,0,0,0,1,Abnormal increase in fatalities compared to long-term history.,Fatality surge
+MMR010031,Mandalay,Meiktila,Wundwin,31/08/2025,12,0,9,1.8532499999999998,3,4.4478,0,0.7413,1,1.4826,0,0,0,0,normal,normal
+MMR008005,Bago-West,Pyay,Thegon,31/08/2025,11,18,3,1.4826,2,1.4826,5,2.2239,1,1.4826,1,1,1,0,Abnormal increase in fatalities compared to past months. Abnormal increase in armed-conflict events compared to past months and long-term history.,Both surges
+MMR009003,Magway,Magway,Chauk,31/08/2025,11,13,9,5.9304,3,2.9652,6.5,15.937949999999999,1,1.4826,0,1,0,0,Abnormal increase in armed-conflict events compared to long-term history.,Event surge
+MMR007010,Bago-East,Taungoo,Yedashe,31/08/2025,11,81,7.5,5.559749999999999,9,8.8956,4,24.83355,14,20.0151,0,0,1,1,Abnormal increase in fatalities compared to past months and long-term history.,Fatality surge
+MMR014010,Shan-South,Taunggyi,Pekon,31/08/2025,11,10,40.5,9.26625,24,14.825999999999999,27,8.524949999999999,25,25.2042,0,0,0,0,normal,normal
+MMR015014,Shan-North,Kyaukme,Hsipaw,31/08/2025,11,2,8.5,1.8532499999999998,7,5.9304,2.5,0.7413,1,1.4826,0,0,0,0,normal,normal
+MMR001002,Kachin,Myitkyina,Waingmaw,31/08/2025,10,4,10.5,3.7064999999999997,12,9.636899999999999,1.5,2.9652,4,4.4478,0,0,0,0,normal,normal
+MMR004002,Chin,Hakha,Hakha,31/08/2025,10,2,7,5.1891,9,7.412999999999999,0,4.07715,9,16.3086,0,0,0,0,normal,normal
+MMR012002,Rakhine,Sittwe,Ponnagyun,31/08/2025,10,0,7,1.4826,3,4.4478,3,2.59455,0,0,0,0,0,0,normal,normal
+MMR005009,Sagaing,Shwebo,Ye-U,31/08/2025,9,1,7.5,6.6716999999999995,19,7.412999999999999,3.5,1.4826,18,17.049899999999997,0,0,0,0,normal,normal
+MMR008003,Bago-West,Pyay,Padaung,31/08/2025,9,3,12,20.0151,1,1.4826,5,7.04235,0,0,0,0,0,0,normal,normal
+MMR013007,Yangon,Yangon-North,Shwepyithar,31/08/2025,9,0,8.5,5.559749999999999,6,5.9304,0,0,0,1.4826,0,0,0,0,normal,normal
+MMR015001,Shan-North,Lashio,Lashio,31/08/2025,9,0,11,6.6716999999999995,11,8.8956,5,5.1891,5,5.1891,0,0,0,0,normal,normal
+MMR012005,Rakhine,Mrauk-U,Minbya,31/08/2025,8,0,3.5,4.07715,2,1.4826,0,0,0,0,0,1,0,0,Abnormal increase in armed-conflict events compared to long-term history.,Event surge
+MMR009006,Magway,Magway,Natmauk,31/08/2025,8,16,7,2.9652,6,4.4478,10.5,7.412999999999999,5,3.7064999999999997,0,0,0,1,Abnormal increase in fatalities compared to long-term history.,Fatality surge
+MMR005014,Sagaing,Monywa,Ayadaw,31/08/2025,8,5,6.5,1.4826,21,19.273799999999998,6,8.8956,21,21.4977,0,0,0,0,normal,normal
+MMR007009,Bago-East,Taungoo,Taungoo,31/08/2025,8,34,14,8.8956,7,4.4478,24,11.119499999999999,12,8.8956,0,0,0,0,normal,normal
+MMR008008,Bago-West,Thayarwady,Letpadan,31/08/2025,8,3,10,2.9652,3,2.2239,8.5,3.7064999999999997,1,1.4826,0,0,0,0,normal,normal
+MMR011009,Mon,Thaton,Kyaikto,31/08/2025,8,4,23,4.8184499999999995,21,5.9304,4,7.78365,18,10.3782,0,0,0,0,normal,normal
+MMR012014,Rakhine,Kyaukpyu,Ann,31/08/2025,8,0,6.5,17.42055,4,3.7064999999999997,11.5,26.686799999999998,0,0,0,0,0,0,normal,normal
+MMR017001,Ayeyarwady,Pathein,Pathein,31/08/2025,8,1,5.5,11.119499999999999,7,6.6716999999999995,0.5,0.7413,0,1.4826,0,0,0,0,normal,normal
+MMR002003,Kayah,Loikaw,Hpruso,31/08/2025,7,1,1.5,1.4826,5,8.8956,0,0,2,8.8956,1,0,0,0,Abnormal increase in armed-conflict events compared to past months.,Event surge
+MMR009002,Magway,Magway,Yenangyaung,31/08/2025,7,4,4.5,6.6716999999999995,2,1.4826,4.5,12.6021,1,1.4826,0,1,0,0,Abnormal increase in armed-conflict events compared to long-term history.,Event surge
+MMR001001,Kachin,Myitkyina,Myitkyina,31/08/2025,7,1,6,4.07715,10,7.412999999999999,0,0,2,2.9652,0,0,0,0,normal,normal
+MMR005005,Sagaing,Shwebo,Khin-U,31/08/2025,7,2,2.5,2.59455,34,31.1346,0,1.4826,29,45.9606,0,0,0,0,normal,normal
+MMR008014,Bago-West,Thayarwady,Gyobingauk,31/08/2025,7,7,11,4.07715,2,2.9652,11.5,2.59455,3,2.9652,0,0,0,0,normal,normal
+MMR011007,Mon,Thaton,Thaton,31/08/2025,7,3,11.5,2.9652,14,5.9304,3,2.9652,8,14.825999999999999,0,0,0,0,normal,normal
+MMR012016,Rakhine,Thandwe,Toungup,31/08/2025,7,0,9.5,9.26625,3,2.9652,1.5,6.6716999999999995,0,0,0,0,0,0,normal,normal
+MMR013012,Yangon,Yangon-East,North Okkalapa,31/08/2025,7,0,3.5,1.4826,8,5.9304,0,0,0,1.4826,0,0,0,0,normal,normal
+MMR015009,Shan-North,Muse,Muse,31/08/2025,7,1,7,1.4826,16,25.2042,2,0.7413,6,11.8608,0,0,0,0,normal,normal
+MMR015011,Shan-North,Muse,Kutkai,31/08/2025,7,8,5.5,2.2239,12,14.0847,5,2.59455,5,4.4478,0,0,0,0,normal,normal
+MMR009008,Magway,Minbu,Pwintbyu,31/08/2025,6,30,1,13.343399999999999,3,4.4478,6,24.83355,0,0,0,0,0,1,Abnormal increase in fatalities compared to long-term history.,Fatality surge
+MMR014007,Shan-South,Danu Self-Administered Zone,Ywangan,31/08/2025,6,13,4,2.2239,5,4.4478,2.5,2.9652,2,2.2239,0,0,1,1,Abnormal increase in fatalities compared to past months and long-term history.,Fatality surge
+MMR003001,Kayin,Hpa-An,Hpa-An,31/08/2025,6,1,13,11.49015,9,6.6716999999999995,2.5,0.7413,3,6.6716999999999995,0,0,0,0,normal,normal
+MMR004007,Chin,Matupi,Matupi,31/08/2025,6,0,1,0.37065,7,9.636899999999999,0,0,4,17.7912,0,0,0,0,normal,normal
+MMR005020,Sagaing,Katha,Katha,31/08/2025,6,1,4,2.59455,15,12.6021,1,0.7413,15,37.065,0,0,0,0,normal,normal
+MMR005024,Sagaing,Kawlin,Kawlin,31/08/2025,6,3,6,5.559749999999999,10,7.412999999999999,1.5,2.2239,12,20.7564,0,0,0,0,normal,normal
+MMR006005,Tanintharyi,Myeik,Myeik,31/08/2025,6,0,3,3.3358499999999998,6,4.4478,1.5,2.2239,2,2.9652,0,0,0,0,normal,normal
+MMR014001,Shan-South,Taunggyi,Taunggyi,31/08/2025,6,0,2.5,3.7064999999999997,4,5.9304,0,0.37065,0,1.4826,0,0,0,0,normal,normal
+MMR011004,Mon,Mawlamyine,Thanbyuzayat,31/08/2025,5,11,2.5,0.7413,5,4.4478,2.5,3.3358499999999998,5,4.4478,1,0,1,0,Abnormal increase in fatalities compared to past months. Abnormal increase in armed-conflict events compared to past months.,Both surges
+MMR012003,Rakhine,Mrauk-U,Mrauk-U,31/08/2025,5,15,3,1.11195,2,1.4826,0.5,1.11195,0,0,0,0,1,1,Abnormal increase in fatalities compared to past months and long-term history.,Fatality surge
+MMR004006,Chin,Mindat,Mindat,31/08/2025,5,0,3,5.559749999999999,15,8.8956,2.5,3.3358499999999998,8,19.273799999999998,0,0,0,0,normal,normal
+MMR005030,Sagaing,Tamu,Tamu,31/08/2025,5,11,5.5,5.559749999999999,10,8.8956,7.5,7.04235,13,18.5325,0,0,0,0,normal,normal
+MMR006009,Tanintharyi,Kawthoung,Kawthoung,31/08/2025,5,4,7,2.9652,4,2.9652,2.5,4.07715,2,1.4826,0,0,0,0,normal,normal
+MMR011010,Mon,Thaton,Bilin,31/08/2025,5,8,15,5.559749999999999,15,7.412999999999999,13,11.119499999999999,14,11.8608,0,0,0,0,normal,normal
+MMR015010,Shan-North,Muse,Namhkan,31/08/2025,5,0,3,1.4826,3,5.1891,0,0,1,1.4826,0,0,0,0,normal,normal
+MMR010008,Mandalay,Pyinoolwin,Pyinoolwin,31/08/2025,4,0,2,0.7413,3,2.9652,0,0,1,1.4826,1,0,0,0,Abnormal increase in armed-conflict events compared to past months.,Event surge
+MMR014020,Shan-South,Langkho,Mawkmai,31/08/2025,4,2,1,0.37065,0,0,0,0,0,0,0,1,0,0,Abnormal increase in armed-conflict events compared to long-term history.,Event surge
+MMR001004,Kachin,Myitkyina,Tanai,31/08/2025,4,0,1.5,1.4826,3,4.4478,0.5,0.7413,0,1.4826,0,0,0,0,normal,normal
+MMR004003,Chin,Hakha,Thantlang,31/08/2025,4,0,1,1.4826,3,5.9304,0,0,2,7.412999999999999,0,0,0,0,normal,normal
+MMR004004,Chin,Falam,Tedim,31/08/2025,4,17,7,4.4478,6,4.4478,7,7.78365,5,6.6716999999999995,0,0,0,0,normal,normal
+MMR004008,Chin,Mindat,Kanpetlet,31/08/2025,4,0,1,1.4826,4,4.4478,0,0,2,5.9304,0,0,0,0,normal,normal
+MMR005034,Sagaing,Hkamti,Homalin,31/08/2025,4,0,3.5,2.9652,5,2.9652,0,0.7413,4,5.9304,0,0,0,0,normal,normal
+MMR008007,Bago-West,Thayarwady,Thayarwady,31/08/2025,4,0,6,1.4826,3,1.4826,1,1.11195,0,0,0,0,0,0,normal,normal
+MMR009023,Magway,Gangaw,Gangaw,31/08/2025,4,0,8,5.9304,21,14.825999999999999,21,12.97275,22,20.7564,0,0,0,0,normal,normal
+MMR009024,Magway,Gangaw,Tilin,31/08/2025,4,0,5.5,4.07715,8,6.6716999999999995,3,2.59455,9,11.8608,0,0,0,0,normal,normal
+MMR009025,Magway,Gangaw,Saw,31/08/2025,4,0,5.5,4.8184499999999995,11,8.8956,2,4.07715,10,23.7216,0,0,0,0,normal,normal
+MMR012007,Rakhine,Sittwe,Pauktaw,31/08/2025,4,0,3.5,8.8956,1,1.4826,0,1.4826,0,0,0,0,0,0,normal,normal
+MMR012010,Rakhine,Maungdaw,Buthidaung,31/08/2025,4,1,0.5,2.2239,3,2.9652,0,0.37065,1,1.4826,0,0,0,0,normal,normal
+MMR015016,Shan-North,Pa Laung Self-Administered Zone,Namhsan,31/08/2025,4,0,1,2.2239,2,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR017004,Ayeyarwady,Pathein,Ngapudaw,31/08/2025,4,0,7,2.9652,2,1.4826,0.5,0.7413,0,0,0,0,0,0,normal,normal
+MMR017005,Ayeyarwady,Pathein,Kyonpyaw,31/08/2025,4,0,6.5,2.2239,2,1.4826,1,1.4826,0,0,0,0,0,0,normal,normal
+MMR017013,Ayeyarwady,Hinthada,Ingapu,31/08/2025,4,1,5,3.7064999999999997,1,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR005031,Sagaing,Mawlaik,Mawlaik,31/08/2025,3,8,0,0,0,1.4826,0,0,0,0,1,0,1,0,Abnormal increase in fatalities compared to past months. Abnormal increase in armed-conflict events compared to past months.,Both surges
+MMR005032,Sagaing,Mawlaik,Paungbyin,31/08/2025,3,1,0,1.4826,2,2.2239,0,1.11195,1,1.4826,1,0,0,0,Abnormal increase in armed-conflict events compared to past months.,Event surge
+MMR009007,Magway,Minbu,Minbu,31/08/2025,3,7,2,3.7064999999999997,1,1.4826,0,0,0,0,0,0,1,0,Abnormal increase in fatalities compared to past months.,Fatality surge
+MMR001006,Kachin,Myitkyina,Tsawlaw,31/08/2025,3,0,0.5,1.11195,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR003002,Kayin,Hpa-An,Hlaingbwe,31/08/2025,3,0,18.5,15.5673,1,1.4826,11,6.30105,0,0,0,0,0,0,normal,normal
+MMR005029,Sagaing,Kale,Mingin,31/08/2025,3,0,5,3.3358499999999998,10,13.343399999999999,7.5,11.49015,17,26.686799999999998,0,0,0,0,normal,normal
+MMR006006,Tanintharyi,Myeik,Kyunsu,31/08/2025,3,1,2.5,2.59455,2,2.9652,2.5,2.59455,0,0,0,0,0,0,normal,normal
+MMR007001,Bago-East,Bago,Bago,31/08/2025,3,3,2.5,3.3358499999999998,3,4.4478,1,1.4826,1,2.2239,0,0,0,0,normal,normal
+MMR007008,Bago-East,Bago,Shwegyin,31/08/2025,3,2,14,13.714049999999999,6,5.9304,12,11.8608,4,2.9652,0,0,0,0,normal,normal
+MMR009013,Magway,Thayet,Minhla,31/08/2025,3,0,2.5,0.7413,1,1.4826,8,12.97275,0,0,0,0,0,0,normal,normal
+MMR012008,Rakhine,Sittwe,Rathedaung,31/08/2025,3,0,2,1.4826,1,1.4826,0.5,0.7413,0,0,0,0,0,0,normal,normal
+MMR013001,Yangon,Yangon-North,Insein,31/08/2025,3,1,3,1.8532499999999998,7,7.412999999999999,0,0,1,1.4826,0,0,0,0,normal,normal
+MMR013004,Yangon,Yangon-North,Hlegu,31/08/2025,3,0,1,1.11195,1,2.2239,0,0,0,1.4826,0,0,0,0,normal,normal
+MMR013042,Yangon,Yangon-West,Mayangone,31/08/2025,3,0,2,0.7413,5,7.412999999999999,0,0,1,1.4826,0,0,0,0,normal,normal
+MMR017003,Ayeyarwady,Pathein,Thabaung,31/08/2025,3,1,13.5,16.3086,0,0,0,2.9652,0,0,0,0,0,0,normal,normal
+MMR012012,Rakhine,Kyaukpyu,Munaung,31/08/2025,2,0,0.5,0.37065,0,0,0,0,0,0,1,0,0,0,Abnormal increase in armed-conflict events compared to past months.,Event surge
+MMR006010,Tanintharyi,Kawthoung,Bokpyin,31/08/2025,2,20,6.5,4.07715,3,2.9652,4,1.4826,3,2.2239,0,0,1,1,Abnormal increase in fatalities compared to past months and long-term history.,Fatality surge
+MMR009011,Magway,Minbu,Sidoktaya,31/08/2025,2,20,4,1.4826,2,1.4826,8,9.26625,0,0,0,0,0,1,Abnormal increase in fatalities compared to long-term history.,Fatality surge
+MMR010001,Mandalay,Mandalay,Aungmyaythazan,31/08/2025,2,22,2.5,1.8532499999999998,8,8.8956,1.5,1.11195,2,2.9652,0,0,1,1,Abnormal increase in fatalities compared to past months and long-term history.,Fatality surge
+MMR016011,Shan-East,Tachileik,Mongyawng,31/08/2025,2,6,0,0,0,0,0,0,0,0,0,0,1,0,Abnormal increase in fatalities compared to past months.,Fatality surge
+MMR002005,Kayah,Bawlake,Bawlake,31/08/2025,2,1,6.5,3.7064999999999997,3,1.4826,17,10.3782,8,7.412999999999999,0,0,0,0,normal,normal
+MMR003007,Kayin,Kawkareik,Kyainseikgyi,31/08/2025,2,0,4.5,6.6716999999999995,16,8.8956,2.5,14.0847,9,11.8608,0,0,0,0,normal,normal
+MMR004009,Chin,Matupi,Paletwa,31/08/2025,2,0,2,0.37065,3,2.9652,0,0.37065,1,1.4826,0,0,0,0,normal,normal
+MMR005008,Sagaing,Kanbalu,Kyunhla,31/08/2025,2,0,1.5,1.11195,5,7.412999999999999,0,0.7413,1,1.4826,0,0,0,0,normal,normal
+MMR005010,Sagaing,Shwebo,Tabayin,31/08/2025,2,5,4.5,2.2239,14,19.273799999999998,7,13.714049999999999,16,16.3086,0,0,0,0,normal,normal
+MMR005022,Sagaing,Katha,Tigyaing,31/08/2025,2,0,4,4.4478,13,14.0847,1,0.37065,14,34.099799999999995,0,0,0,0,normal,normal
+MMR005028,Sagaing,Kale,Kalewa,31/08/2025,2,0,3,1.4826,1,1.4826,0,1.8532499999999998,0,0,0,0,0,0,normal,normal
+MMR005035,Sagaing,Naga Self-Administered Zone,Lay Shi,31/08/2025,2,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR007004,Bago-East,Bago,Waw,31/08/2025,2,2,2.5,1.8532499999999998,2,1.4826,2,1.4826,1,1.4826,0,0,0,0,normal,normal
+MMR008004,Bago-West,Pyay,Paungde,31/08/2025,2,1,5.5,0.7413,7,3.7064999999999997,5,4.8184499999999995,7,5.9304,0,0,0,0,normal,normal
+MMR008011,Bago-West,Thayarwady,Zigon,31/08/2025,2,7,1.5,2.9652,1,1.4826,3,4.4478,0,0,0,0,0,0,normal,normal
+MMR009012,Magway,Thayet,Thayet,31/08/2025,2,3,1.5,1.11195,1,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR009015,Magway,Thayet,Kamma,31/08/2025,2,1,4,1.8532499999999998,3,2.9652,0.5,0.7413,0,0,0,0,0,0,normal,normal
+MMR009017,Magway,Thayet,Sinbaungwe,31/08/2025,2,19,2,1.11195,1,0.7413,11,10.00755,1,1.4826,0,0,0,0,normal,normal
+MMR010002,Mandalay,Mandalay,Chanayethazan,31/08/2025,2,0,1,0.7413,4,5.9304,0,0,1,1.4826,0,0,0,0,normal,normal
+MMR010028,Mandalay,Meiktila,Meiktila,31/08/2025,2,3,3.5,2.59455,1,2.9652,3,1.4826,0,0.7413,0,0,0,0,normal,normal
+MMR011001,Mon,Mawlamyine,Mawlamyine,31/08/2025,2,0,1.5,2.2239,4,4.4478,0,0,0,0.7413,0,0,0,0,normal,normal
+MMR012006,Rakhine,Mrauk-U,Myebon,31/08/2025,2,2,1,1.11195,1,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR012013,Rakhine,Kyaukpyu,Ramree,31/08/2025,2,0,0,1.11195,0,0,0,0.7413,0,0,0,0,0,0,normal,normal
+MMR012015,Rakhine,Thandwe,Thandwe,31/08/2025,2,0,3,3.7064999999999997,3,2.2239,0,4.8184499999999995,0,0,0,0,0,0,normal,normal
+MMR012017,Rakhine,Thandwe,Gwa,31/08/2025,2,0,3,27.428099999999997,1,1.4826,0.5,21.4977,0,0,0,0,0,0,normal,normal
+MMR013002,Yangon,Yangon-North,Mingaladon,31/08/2025,2,0,2,1.4826,7,5.9304,0,0,1,1.4826,0,0,0,0,normal,normal
+MMR013009,Yangon,Yangon-East,Thingangyun,31/08/2025,2,0,0.5,1.4826,3,4.4478,0,0,0,1.4826,0,0,0,0,normal,normal
+MMR013011,Yangon,Yangon-East,South Okkalapa,31/08/2025,2,0,0.5,0.7413,4,5.9304,0,0,0,0,0,0,0,0,normal,normal
+MMR013016,Yangon,Yangon-East,Pazundaung,31/08/2025,2,0,0,0,0,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR013023,Yangon,Yangon-South,Thanlyin,31/08/2025,2,0,1.5,0.7413,3,5.9304,0,0,0,1.4826,0,0,0,0,normal,normal
+MMR015002,Shan-North,Lashio,Hseni,31/08/2025,2,0,4,1.11195,4,3.7064999999999997,0,1.11195,2,2.9652,0,0,0,0,normal,normal
+MMR015004,Shan-North,Lashio,Tangyan,31/08/2025,2,0,1.5,0.37065,1,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR015017,Shan-North,Mongmit,Mongmit,31/08/2025,2,0,2,1.4826,2,2.9652,0,0,0,0,0,0,0,0,normal,normal
+MMR016009,Shan-East,Tachileik,Tachileik,31/08/2025,2,1,0,0,0,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR017008,Ayeyarwady,Hinthada,Hinthada,31/08/2025,2,0,2,2.2239,2,2.2239,0,0,0,0,0,0,0,0,normal,normal
+MMR017014,Ayeyarwady,Myaungmya,Myaungmya,31/08/2025,2,0,2,1.11195,1,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR017024,Ayeyarwady,Pyapon,Bogale,31/08/2025,2,1,0.5,0.7413,1,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR018007,Nay Pyi Taw,Det Khi Na,Lewe,31/08/2025,2,0,0.5,0.7413,1,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR001008,Kachin,Mohnyin,Mogaung,31/08/2025,1,7,1,0.7413,4,5.1891,0,0,1,1.4826,0,0,1,0,Abnormal increase in fatalities compared to past months.,Fatality surge
+MMR009016,Magway,Thayet,Aunglan,31/08/2025,1,40,2,1.8532499999999998,2,1.4826,2,1.11195,1,1.4826,0,0,1,1,Abnormal increase in fatalities compared to past months and long-term history.,Fatality surge
+MMR001003,Kachin,Myitkyina,Injangyang,31/08/2025,1,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR001005,Kachin,Myitkyina,Chipwi,31/08/2025,1,0,0,0.7413,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR001013,Kachin,Bhamo,Mansi,31/08/2025,1,2,0,2.2239,2,2.9652,0,1.4826,0,0,0,0,0,0,normal,normal
+MMR001014,Kachin,Puta-O,Puta-O,31/08/2025,1,0,2,1.4826,2,4.4478,0,0,0,1.4826,0,0,0,0,normal,normal
+MMR001015,Kachin,Puta-O,Sumprabum,31/08/2025,1,0,0.5,0.37065,0,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR002004,Kayah,Loikaw,Shadaw,31/08/2025,1,0,0.5,2.2239,1,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR002007,Kayah,Bawlake,Mese,31/08/2025,1,0,0.5,0.37065,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR003003,Kayin,Hpapun,Hpapun,31/08/2025,1,0,6,6.30105,16,16.3086,0.5,6.30105,30,31.1346,0,0,0,0,normal,normal
+MMR003004,Kayin,Hpa-An,Thandaunggyi,31/08/2025,1,20,8,6.30105,6,2.9652,24.5,15.5673,11,13.343399999999999,0,0,0,0,normal,normal
+MMR005003,Sagaing,Sagaing,Myaung,31/08/2025,1,0,2,3.7064999999999997,16,20.7564,4.5,1.11195,23,28.1694,0,0,0,0,normal,normal
+MMR005021,Sagaing,Katha,Indaw,31/08/2025,1,0,7.5,5.559749999999999,10,6.6716999999999995,3.5,3.3358499999999998,8,12.6021,0,0,0,0,normal,normal
+MMR005023,Sagaing,Katha,Banmauk,31/08/2025,1,4,1,1.4826,1,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR005026,Sagaing,Kawlin,Pinlebu,31/08/2025,1,0,0,0.7413,2,3.7064999999999997,0,0.7413,0,2.9652,0,0,0,0,normal,normal
+MMR005037,Sagaing,Naga Self-Administered Zone,Nanyun,31/08/2025,1,3,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR008006,Bago-West,Pyay,Shwedaung,31/08/2025,1,0,0.5,0.7413,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR009001,Magway,Magway,Magway,31/08/2025,1,1,2,1.11195,3,4.4478,1,1.11195,1,1.4826,0,0,0,0,normal,normal
+MMR009004,Magway,Magway,Taungdwingyi,31/08/2025,1,1,2.5,1.4826,2,2.9652,3,1.8532499999999998,1,1.4826,0,0,0,0,normal,normal
+MMR009005,Magway,Magway,Myothit,31/08/2025,1,0,1.5,1.4826,1,1.4826,0,2.2239,0,0.7413,0,0,0,0,normal,normal
+MMR009014,Magway,Thayet,Mindon,31/08/2025,1,0,2.5,2.59455,3,2.9652,1,19.64445,1,2.9652,0,0,0,0,normal,normal
+MMR010003,Mandalay,Mandalay,Mahaaungmyay,31/08/2025,1,0,0.5,1.11195,8,10.3782,0,0,2,2.9652,0,0,0,0,normal,normal
+MMR010016,Mandalay,Kyaukse,Tada-U,31/08/2025,1,1,0,0.7413,2,1.4826,0,0.7413,0,1.4826,0,0,0,0,normal,normal
+MMR010020,Mandalay,Nyaung-U,Kyaukpadaung,31/08/2025,1,0,6.5,3.7064999999999997,3,2.9652,3,3.7064999999999997,1,2.2239,0,0,0,0,normal,normal
+MMR011003,Mon,Mawlamyine,Chaungzon,31/08/2025,1,0,0,0,0,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR011005,Mon,Mawlamyine,Mudon,31/08/2025,1,1,3.5,1.4826,2,2.2239,2,1.11195,0,0,0,0,0,0,normal,normal
+MMR012004,Rakhine,Mrauk-U,Kyauktaw,31/08/2025,1,0,2,0.7413,2,2.2239,2.5,2.59455,1,1.4826,0,0,0,0,normal,normal
+MMR013010,Yangon,Yangon-East,Yankin,31/08/2025,1,0,0,0.37065,1,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR013013,Yangon,Yangon-East,Thaketa,31/08/2025,1,0,1,2.2239,4,8.8956,0,0,0,1.4826,0,0,0,0,normal,normal
+MMR013015,Yangon,Yangon-East,Tamwe,31/08/2025,1,0,1,0.37065,3,6.6716999999999995,0,0,0,0.7413,0,0,0,0,normal,normal
+MMR013040,Yangon,Yangon-West,Hlaing,31/08/2025,1,0,1,0.7413,5,8.8956,0,0,1,1.4826,0,0,0,0,normal,normal
+MMR014005,Shan-South,Taunggyi,Kalaw,31/08/2025,1,0,0.5,1.4826,1,2.9652,0,0,0,0,0,0,0,0,normal,normal
+MMR014011,Shan-South,Loilen,Loilen,31/08/2025,1,0,0,0,0,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR014012,Shan-South,Loilen,Laihka,31/08/2025,1,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR014013,Shan-South,Loilen,Nansang,31/08/2025,1,0,1,0.37065,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR014014,Shan-South,Loilen,Kunhing,31/08/2025,1,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR014019,Shan-South,Langkho,Mongnai,31/08/2025,1,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR014021,Shan-South,Langkho,Mongpan,31/08/2025,1,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR015007,Shan-North,Hopang,Pangwaun,31/08/2025,1,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR015015,Shan-North,Kyaukme,Namtu,31/08/2025,1,0,1,1.4826,3,2.9652,0,0,0,0,0,0,0,0,normal,normal
+MMR015018,Shan-North,Mongmit,Mabein,31/08/2025,1,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR015019,Shan-North,Pa Laung Self-Administered Zone,Manton,31/08/2025,1,0,3.5,1.11195,2,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR015020,Shan-North,Lashio,Kunlong,31/08/2025,1,0,0.5,0.37065,0,0.7413,0,0,0,0,0,0,0,0,normal,normal
+MMR015021,Shan-North,Hopang,Hopang,31/08/2025,1,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR015022,Shan-North,Kokang Self-Administered Zone,Laukkaing,31/08/2025,1,0,0,1.4826,1,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR015023,Shan-North,Kokang Self-Administered Zone,Konkyan,31/08/2025,1,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR016005,Shan-East,Kengtung,Mongla,31/08/2025,1,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR017002,Ayeyarwady,Pathein,Kangyidaunt,31/08/2025,1,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR017019,Ayeyarwady,Maubin,Maubin,31/08/2025,1,0,2,2.9652,2,2.9652,0,0,0,0,0,0,0,0,normal,normal
+MMR017020,Ayeyarwady,Maubin,Pantanaw,31/08/2025,1,0,0,0.37065,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR017021,Ayeyarwady,Maubin,Nyaungdon,31/08/2025,1,0,2,1.4826,1,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR017026,Ayeyarwady,Pyapon,Dedaye,31/08/2025,1,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR018005,Nay Pyi Taw,Oke Ta Ra,Poke Ba Thi Ri,31/08/2025,1,0,0,0.7413,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR001012,Kachin,Bhamo,Momauk,31/08/2025,0,0,0,1.4826,7,10.3782,0,0.7413,3,5.9304,0,0,0,0,normal,normal
+MMR001016,Kachin,Puta-O,Machanbaw,31/08/2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR001017,Kachin,Puta-O,Nawngmun,31/08/2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR001018,Kachin,Puta-O,Khaunglanhpu,31/08/2025,0,0,0,0.37065,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR004005,Chin,Falam,Tonzang,31/08/2025,0,0,1,0.37065,0,0,2,0.7413,0,0,0,0,0,0,normal,normal
+MMR005011,Sagaing,Shwebo,Taze,31/08/2025,0,0,2,1.4826,23,25.9455,8,3.7064999999999997,35,44.477999999999994,0,0,0,0,normal,normal
+MMR005025,Sagaing,Kawlin,Wuntho,31/08/2025,0,0,2,4.4478,1,2.9652,0,0,2,4.4478,0,0,0,0,normal,normal
+MMR005033,Sagaing,Hkamti,Hkamti,31/08/2025,0,0,1,0.7413,1,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR005036,Sagaing,Naga Self-Administered Zone,Lahe,31/08/2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR007002,Bago-East,Bago,Thanatpin,31/08/2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR007003,Bago-East,Bago,Kawa,31/08/2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR007007,Bago-East,Bago,Daik-U,31/08/2025,0,0,0.5,0.7413,1,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR007013,Bago-East,Taungoo,Oktwin,31/08/2025,0,0,5,4.4478,1,1.4826,22.5,6.6716999999999995,0,0,0,0,0,0,normal,normal
+MMR007014,Bago-East,Taungoo,Htantabin,31/08/2025,0,0,6.5,4.4478,3,1.4826,19,18.90315,3,2.2239,0,0,0,0,normal,normal
+MMR008001,Bago-West,Pyay,Pyay,31/08/2025,0,0,5,1.8532499999999998,5,4.4478,2,2.59455,2,2.9652,0,0,0,0,normal,normal
+MMR008012,Bago-West,Thayarwady,Nattalin,31/08/2025,0,0,12.5,4.4478,6,2.9652,19.5,5.559749999999999,7,5.1891,0,0,0,0,normal,normal
+MMR008013,Bago-West,Thayarwady,Monyo,31/08/2025,0,0,0.5,4.4478,1,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR010004,Mandalay,Mandalay,Chanmyathazi,31/08/2025,0,0,1,1.4826,8,10.3782,0,0,2,2.9652,0,0,0,0,normal,normal
+MMR010005,Mandalay,Mandalay,Pyigyitagon,31/08/2025,0,0,1.5,1.11195,7,29.651999999999997,0,0.37065,2,2.9652,0,0,0,0,normal,normal
+MMR010006,Mandalay,Mandalay,Amarapura,31/08/2025,0,0,0,1.4826,4,5.9304,0,0.7413,1,1.4826,0,0,0,0,normal,normal
+MMR010013,Mandalay,Kyaukse,Kyaukse,31/08/2025,0,0,0.5,0.7413,3,4.4478,0,0.37065,1,1.4826,0,0,0,0,normal,normal
+MMR010014,Mandalay,Kyaukse,Sintgaing,31/08/2025,0,0,0,1.8532499999999998,2,2.9652,0,0,1,1.4826,0,0,0,0,normal,normal
+MMR010015,Mandalay,Kyaukse,Myittha,31/08/2025,0,0,0,0.7413,1,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR010023,Mandalay,Yamethin,Yamethin,31/08/2025,0,0,2,1.11195,0,0,1,1.11195,0,0,0,0,0,0,normal,normal
+MMR010024,Mandalay,Yamethin,Pyawbwe,31/08/2025,0,0,2,0.37065,1,1.4826,3,4.4478,0,0,0,0,0,0,normal,normal
+MMR010030,Mandalay,Meiktila,Thazi,31/08/2025,0,0,0,0,0,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR011002,Mon,Mawlamyine,Kyaikmaraw,31/08/2025,0,0,2,1.4826,3,2.9652,1,1.11195,1,1.4826,0,0,0,0,normal,normal
+MMR011008,Mon,Thaton,Paung,31/08/2025,0,0,1,0.37065,4,4.4478,0,0,1,1.4826,0,0,0,0,normal,normal
+MMR013003,Yangon,Yangon-North,Hmawbi,31/08/2025,0,0,2.5,0.7413,2,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR013005,Yangon,Yangon-North,Taikkyi,31/08/2025,0,0,0.5,0.7413,0,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR013006,Yangon,Yangon-North,Htantabin,31/08/2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR013014,Yangon,Yangon-East,Dawbon,31/08/2025,0,0,0,0.7413,1,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR013017,Yangon,Yangon-East,Botahtaung,31/08/2025,0,0,0,0,0,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR013022,Yangon,Yangon-East,Mingalartaungnyunt,31/08/2025,0,0,0,0.7413,1,2.2239,0,0,0,0,0,0,0,0,normal,normal
+MMR013024,Yangon,Yangon-South,Kyauktan,31/08/2025,0,0,0.5,0.37065,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR013025,Yangon,Yangon-South,Thongwa,31/08/2025,0,0,0,0,0,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR013026,Yangon,Yangon-South,Kayan,31/08/2025,0,0,0,0,1,1.4826,0,0,0,2.9652,0,0,0,0,normal,normal
+MMR013027,Yangon,Yangon-South,Twantay,31/08/2025,0,0,0,0,2,4.4478,0,0,1,1.4826,0,0,0,0,normal,normal
+MMR013028,Yangon,Yangon-South,Kawhmu,31/08/2025,0,0,0,0,0,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR013029,Yangon,Yangon-South,Kungyangon,31/08/2025,0,0,0.5,0.37065,0,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR013030,Yangon,Yangon-South,Dala,31/08/2025,0,0,0,0,1,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR013031,Yangon,Yangon-South,Seikgyikanaungto,31/08/2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR013033,Yangon,Yangon-West,Kyauktada,31/08/2025,0,0,0.5,0.37065,1,2.2239,0,0,0,0,0,0,0,0,normal,normal
+MMR013034,Yangon,Yangon-West,Pabedan,31/08/2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR013035,Yangon,Yangon-West,Lanmadaw,31/08/2025,0,0,1,0.37065,1,2.2239,0,0,0,0,0,0,0,0,normal,normal
+MMR013036,Yangon,Yangon-West,Latha,31/08/2025,0,0,0,0,0,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR013037,Yangon,Yangon-West,Ahlone,31/08/2025,0,0,0,0,1,2.9652,0,0,0,0,0,0,0,0,normal,normal
+MMR013038,Yangon,Yangon-West,Kyeemyindaing,31/08/2025,0,0,0.5,0.37065,2,3.7064999999999997,0,0,0,0.7413,0,0,0,0,normal,normal
+MMR013039,Yangon,Yangon-West,Sanchaung,31/08/2025,0,0,0,0,3,5.9304,0,0,0,0,0,0,0,0,normal,normal
+MMR013041,Yangon,Yangon-West,Kamaryut,31/08/2025,0,0,2,1.4826,2,5.9304,0,0,0,0,0,0,0,0,normal,normal
+MMR013043,Yangon,Yangon-West,Dagon,31/08/2025,0,0,0,0,0,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR013044,Yangon,Yangon-West,Bahan,31/08/2025,0,0,0,0,1,2.9652,0,0,0,0,0,0,0,0,normal,normal
+MMR014002,Shan-South,Taunggyi,Nyaungshwe,31/08/2025,0,0,17.5,12.6021,3,2.9652,22.5,21.86835,1,1.4826,0,0,0,0,normal,normal
+MMR014003,Shan-South,Pa-O Self-Administered Zone,Hopong,31/08/2025,0,0,0,0,1,1.4826,0,0.37065,0,0,0,0,0,0,normal,normal
+MMR014006,Shan-South,Danu Self-Administered Zone,Pindaya,31/08/2025,0,0,0,0,1,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR014008,Shan-South,Taunggyi,Lawksawk,31/08/2025,0,0,3.5,10.3782,2,1.4826,0,39.659549999999996,0,0,0,0,0,0,normal,normal
+MMR014009,Shan-South,Pa-O Self-Administered Zone,Pinlaung,31/08/2025,0,0,2,7.78365,3,2.9652,2,2.9652,3,2.9652,0,0,0,0,normal,normal
+MMR014015,Shan-South,Loilen,Kyethi,31/08/2025,0,0,0.5,0.37065,1,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR014016,Shan-South,Loilen,Mongkaing,31/08/2025,0,0,1.5,1.11195,2,2.9652,0,0.37065,0,0,0,0,0,0,normal,normal
+MMR014017,Shan-South,Loilen,Monghsu,31/08/2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR014018,Shan-South,Langkho,Langkho,31/08/2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR015003,Shan-North,Lashio,Mongyai,31/08/2025,0,0,1,1.11195,0,1.4826,0,0.7413,0,0,0,0,0,0,normal,normal
+MMR016001,Shan-East,Kengtung,Kengtung,31/08/2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR016002,Shan-East,Kengtung,Mongkhet,31/08/2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR016003,Shan-East,Kengtung,Mongyang,31/08/2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR016006,Shan-East,Monghsat,Monghsat,31/08/2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR016007,Shan-East,Kengtung,Mongping,31/08/2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR016008,Shan-East,Monghsat,Mongton,31/08/2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR016010,Shan-East,Tachileik,Monghpyak,31/08/2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR017007,Ayeyarwady,Pathein,Kyaunggon,31/08/2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR017009,Ayeyarwady,Hinthada,Zalun,31/08/2025,0,0,0,0,0,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR017011,Ayeyarwady,Hinthada,Myanaung,31/08/2025,0,0,0,1.11195,2,2.2239,0,0,0,0,0,0,0,0,normal,normal
+MMR017012,Ayeyarwady,Hinthada,Kyangin,31/08/2025,0,0,0,1.8532499999999998,4,2.9652,0,0,0,0,0,0,0,0,normal,normal
+MMR017015,Ayeyarwady,Myaungmya,Einme,31/08/2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR017016,Ayeyarwady,Labutta,Labutta,31/08/2025,0,0,0,0,0,0.7413,0,0,0,0,0,0,0,0,normal,normal
+MMR017017,Ayeyarwady,Myaungmya,Wakema,31/08/2025,0,0,0,0.7413,1,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR017018,Ayeyarwady,Labutta,Mawlamyinegyun,31/08/2025,0,0,1,0,1,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR017022,Ayeyarwady,Maubin,Danubyu,31/08/2025,0,0,1,1.4826,0,0.7413,0,0,0,0,0,0,0,0,normal,normal
+MMR017023,Ayeyarwady,Pyapon,Pyapon,31/08/2025,0,0,1,0.37065,2,2.9652,0,0,0,0,0,0,0,0,normal,normal
+MMR017025,Ayeyarwady,Pyapon,Kyaiklat,31/08/2025,0,0,0,0,1,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR018001,Nay Pyi Taw,Oke Ta Ra,Zay Yar Thi Ri,31/08/2025,0,0,0,0,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR018002,Nay Pyi Taw,Det Khi Na,Za Bu Thi Ri,31/08/2025,0,0,0,0,1,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR018003,Nay Pyi Taw,Oke Ta Ra,Tatkon,31/08/2025,0,0,1,0.37065,1,1.4826,0,0,0,0,0,0,0,0,normal,normal
+MMR018004,Nay Pyi Taw,Det Khi Na,Det Khi Na Thi Ri,31/08/2025,0,0,0,0.7413,0,0,0,0,0,0,0,0,0,0,normal,normal
+MMR018006,Nay Pyi Taw,Det Khi Na,Pyinmana,31/08/2025,0,0,1,1.4826,1,2.9652,0,0,0,1.4826,0,0,0,0,normal,normal
+MMR018008,Nay Pyi Taw,Oke Ta Ra,Oke Ta Ra Thi Ri,31/08/2025,0,0,0,0.37065,0,0,0,0,0,0,0,0,0,0,normal,normal

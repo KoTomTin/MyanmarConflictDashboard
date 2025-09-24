@@ -1,0 +1,151 @@
+/* ====== Global variables ====== */
+:root{
+  --content-max-width: 1500px;
+  --content-side-pad: 16px;
+  --panel-radius: 10px;
+  --panel-shadow: 0 2px 10px rgba(0,0,0,.06);
+  --panel-border: 1px solid #e7e7e7;
+}
+
+body{ background:#fafafa; }
+
+/* Extra padding between sidebar and main content */
+.main{ padding: 10px 12px 24px 18px; }
+
+/* Optional: sidebar styles (if used) */
+.sidebar{
+  background:#f4f5f7;
+  min-height:100vh;
+  padding:14px 12px;
+  border-right:1px solid #e6e6e6;
+}
+.sidebar a,
+.sidebar-link{ color:#2b6cb0; text-decoration:none; }
+.sidebar a:hover,
+.sidebar-link:hover{ text-decoration:underline; }
+
+/* Page container */
+.page-wrap{
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  /* Slightly larger side padding so header/subheader aren't flush with sidebar */
+  padding: 14px calc(var(--content-side-pad) + 6px) 24px;
+}
+.page-header{ margin: 10px 0 8px; }
+
+/* ====== Filters row ====== */
+.row-filters{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap:12px;
+  align-items:end;
+  margin-top:8px;
+}
+
+/* Keep the two time-range dropdowns side by side */
+.month-range-group{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+
+/* ====== KPI row (4 cards) ====== */
+.row-kpis{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap:12px;
+  margin:12px 0 8px;
+}
+.kpi-card{
+  background:#fff;
+  border:var(--panel-border);
+  border-radius:var(--panel-radius);
+  box-shadow:var(--panel-shadow);
+  padding:10px 12px;
+}
+.kpi-title{ color:#6b7280; font-size:.86rem; margin-bottom:6px; }
+.kpi-value{ font-size:1.45rem; font-weight:700; color:#1f6ad6; }
+
+/* ====== Two-column body (map left, charts right) ====== */
+.row-body{
+  display: grid !important; /* keep Bootstrap or defaults from overriding */
+  /* Default split used by most pages */
+  grid-template-columns: minmax(480px, 1fr) minmax(520px, 1.25fr);
+  gap: 12px;
+  align-items: start;
+  margin-top: 6px;
+}
+.col-left,
+.col-right{
+  min-width: 0; /* allow Plotly canvases to shrink inside columns */
+}
+.col-right{
+  display: grid;
+  gap: 12px; /* stack the two right panels */
+}
+
+/* ====== Panels ====== */
+.panel{
+  background:#fff;
+  border:var(--panel-border);
+  border-radius:var(--panel-radius);
+  box-shadow:var(--panel-shadow);
+}
+.panel-head{
+  font-weight:600;
+  padding:10px 12px 6px;
+  border-bottom:1px solid #eee;
+}
+.panel-body{ padding:8px; }
+.row-foot{ margin-top:8px; text-align:right; }
+
+/* ====== Graph sizing ====== */
+.graph-map-tall{ height:700px; }   /* left map */
+.graph-medium  { height:340px; }   /* top-right line */
+.graph-short   { height:340px; }   /* bottom-right bar */
+.dash-loading  { min-height:40px; }
+
+/* Make graphs fill the card width */
+.js-plotly-plot,
+.dash-graph{
+  width:100% !important;
+}
+
+/* ====== Responsive ====== */
+/* Medium screens: prefer 3 KPI columns but keep two-column body */
+@media (max-width: 1400px) and (min-width: 1201px){
+  .row-kpis{ grid-template-columns: repeat(3, 1fr); }
+}
+
+/* Narrow screens: stack body and reduce graph heights */
+@media (max-width: 1200px){
+  .row-body{ grid-template-columns: 1fr; }
+  .graph-map-tall,
+  .graph-medium,
+  .graph-short{ height:360px; }
+  .row-kpis{ grid-template-columns: repeat(2, 1fr); }
+  .page-wrap.actor-page .row-filters{ grid-template-columns: 1fr; }
+}
+
+/* ====== Actor Analysis page specific tweaks ====== */
+.page-wrap.actor-page .row-body{
+  /* Give more space to tile charts on the right */
+  grid-template-columns: minmax(420px, 0.9fr) minmax(600px, 1.4fr);
+}
+.page-wrap.actor-page .row-filters{
+  grid-template-columns: 320px 1fr; /* time range + explainer */
+}
+
+/* ====== Temporal Analysis page specific tweaks ====== */
+.page-wrap.temporal-page .row-body{
+  /* Long/narrow map near sidebar, wide tiles on right */
+  grid-template-columns: minmax(420px, 0.85fr) minmax(640px, 1.45fr);
+}
+.page-wrap.temporal-page .row-filters{
+  grid-template-columns: 320px 1fr; /* time range + explainer */
+}
+
+/* ====== Clustering page specific tweaks ====== */
+.page-wrap.clustering-page .row-body{
+  grid-template-columns: minmax(420px, 0.85fr) minmax(640px, 1.45fr);
+}
