@@ -39,7 +39,7 @@ def layout():
                              if "civilian_targeting" in df.columns else [])
     admin1s     = ["All"] + sorted(df["admin1"].dropna().astype(str).str.strip().unique().tolist())
 
-    header = section_header("Overview", "Filters, KPIs, township map, weekly trends, and detailed event breakdown.")
+    header = section_header("Overview", "Explore conflict patterns in Myanmar through interactive filters, maps, KPIs, and trend charts.")
 
     # Provide raw filter controls (page_shell will wrap in .row-filters)
     filters = [
