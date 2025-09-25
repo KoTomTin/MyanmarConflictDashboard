@@ -172,7 +172,7 @@ def update_overview(start_mm, end_mm, actor_type, key_event, civ_target, admin1)
                              margin=dict(l=6,r=6,t=12,b=10), height=340)
     weekly_fig.update_xaxes(title="", tickformat="%b %Y", nticks=10, showgrid=False)
     weekly_fig.update_yaxes(title="", showgrid=True, zeroline=True)
-    weekly_fig.update_traces(hovertemplate="Key event: %{legendgroup}<br>Week: %{x|%b %d, %Y}<br>Total count: %{y}<extra></extra>")
+    weekly_fig.update_traces(hovertemplate="Week: %{x|%b %d, %Y}<br>Total count: %{y}<extra></extra>")
 
     # detailed bar
     if "detailed_event" in f.columns:
