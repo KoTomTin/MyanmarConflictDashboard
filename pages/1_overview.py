@@ -39,7 +39,7 @@ def layout():
                              if "civilian_targeting" in df.columns else [])
     admin1s     = ["All"] + sorted(df["admin1"].dropna().astype(str).str.strip().unique().tolist())
 
-    header = section_header("Overview", "Filters, KPIs, township map, weekly trends, and detailed event breakdown.")
+    header = section_header("Overview", "Explore conflict patterns in Myanmar through interactive filters, maps, KPIs, and trend charts.")
 
     # Provide raw filter controls (page_shell will wrap in .row-filters)
     filters = [
@@ -72,26 +72,37 @@ def layout():
 
     left = panel(
         "Events by township",
-        dcc.Loading(dcc.Graph(id=f"{PAGE_ID}-map", className="graph-map-tall"), className="dash-loading"),
+        dcc.Loading(
+            html.Div([
+                dcc.Graph(id=f"{PAGE_ID}-map", className="graph-map-tall"),
+            ]),
+            className="dash-loading",
+            type="default"
+        ),
     )
 
     right = html.Div(
         [
             panel(
                 "Weekly events by key event",
-                dcc.Loading(dcc.Graph(id=f"{PAGE_ID}-weekly", className="graph-medium"),
-                            className="dash-loading"),
+                dcc.Loading(html.Div([
+                    dcc.Graph(id=f"{PAGE_ID}-weekly", className="graph-medium"),
+                ]), className="dash-loading", type="default"),
             ),
             panel(
                 "Top detailed event types (sorted)",
-                dcc.Loading(dcc.Graph(id=f"{PAGE_ID}-detailbar", className="graph-short"),
-                            className="dash-loading"),
+                dcc.Loading(html.Div([
+                    dcc.Graph(id=f"{PAGE_ID}-detailbar", className="graph-short"),
+                ]), className="dash-loading", type="default"),
             ),
         ]
     )
 
     last_updated = fmt_date(df["event_date"].max())
-    foot = html.Div(["Data: ACLED • Last updated ", html.Strong(last_updated)])
+    foot = html.Div([
+        "Data: ", html.A("ACLED", href="https://acleddata.com", target="_blank", rel="noopener noreferrer"),
+        " • Last updated ", html.Strong(last_updated)
+    ])
 
     return html.Div([header, page_shell(filters=filters, kpis=kpis, left_map=left, right_content=right, footnote=foot)])
 
@@ -172,7 +183,11 @@ def update_overview(start_mm, end_mm, actor_type, key_event, civ_target, admin1)
                              margin=dict(l=6,r=6,t=12,b=10), height=340)
     weekly_fig.update_xaxes(title="", tickformat="%b %Y", nticks=10, showgrid=False)
     weekly_fig.update_yaxes(title="", showgrid=True, zeroline=True)
-    weekly_fig.update_traces(hovertemplate="Key event: %{legendgroup}<br>Week: %{x|%b %d, %Y}<br>Total count: %{y}<extra></extra>")
+    # Include the key_event (series name) in hover via per-trace meta
+    weekly_fig.for_each_trace(lambda t: t.update(
+        meta=t.name,
+        hovertemplate="Key event: %{meta}<br>Week: %{x|%b %d, %Y}<br>Total count: %{y}<extra></extra>"
+    ))
 
     # detailed bar
     if "detailed_event" in f.columns:

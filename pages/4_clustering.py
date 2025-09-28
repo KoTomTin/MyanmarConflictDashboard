@@ -172,7 +172,13 @@ def layout():
     
     left = panel(
         "Township clusters", 
-        dcc.Loading(dcc.Graph(id=f"{PAGE_ID}-map", className="graph-map-tall"), className="dash-loading")
+        dcc.Loading(
+            html.Div([
+                dcc.Graph(id=f"{PAGE_ID}-map", className="graph-map-tall"),
+            ]),
+            className="dash-loading",
+            type="default"
+        )
     )
     
     right = html.Div([
@@ -197,13 +203,20 @@ def layout():
         ),
         panel(
             "Cluster structure (PCA projection)", 
-            dcc.Loading(dcc.Graph(id=f"{PAGE_ID}-pca", className="graph-medium"), className="dash-loading")
+            dcc.Loading(
+                html.Div([
+                    dcc.Graph(id=f"{PAGE_ID}-pca", className="graph-medium"),
+                ]),
+                className="dash-loading",
+                type="default"
+            )
         )
     ])
 
     last_updated = fmt_date(df["event_date"].max())
     foot = html.Div([
-        f"Data: ACLED • Last updated {last_updated} • ",
+        "Data: ", html.A("ACLED", href="https://acleddata.com", target="_blank", rel="noopener noreferrer"),
+        f" • Last updated {last_updated} • ",
         "Features: user-selected detailed event counts + fatalities sum + civilian targeting count (min-max scaled)"
     ], style={"opacity": 0.8})
 

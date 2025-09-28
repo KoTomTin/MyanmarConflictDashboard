@@ -103,7 +103,25 @@ body{ background:#fafafa; }
 .graph-map-tall{ height:700px; }   /* left map */
 .graph-medium  { height:340px; }   /* top-right line */
 .graph-short   { height:340px; }   /* bottom-right bar */
-.dash-loading  { min-height:40px; }
+.dash-loading  { min-height:40px; position: relative; }
+
+/* Loading helper: show text only while component is loading */
+.loading-text{
+  display:none;
+  position:absolute;
+  left:50%;
+  top:58%;
+  transform:translateX(-50%);
+  color:#4b5563;
+  font-size:0.92rem;
+  background:rgba(255,255,255,0.9);
+  padding:4px 8px;
+  border-radius:6px;
+  z-index:10000; /* above spinner */
+  pointer-events:none;
+}
+.dash-loading[data-dash-is-loading='true'] .loading-text{ display:block; }
+[data-dash-is-loading='true'] .loading-text{ display:block; }
 
 /* Make graphs fill the card width */
 .js-plotly-plot,

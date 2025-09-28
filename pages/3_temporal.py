@@ -7,7 +7,6 @@ import pandas as pd
 import plotly.express as px
 
 from components.layout import page_shell
-from components.filters import month_range
 from components.figures import empty_fig
 from components.loaders import load_anomaly, load_time_series, load_geojson
 from components.utils_dates import month_options, default_range_earliest_latest, month_bounds
@@ -50,8 +49,7 @@ def layout():
     df_ts = load_time_series()
     df_an = load_anomaly()
 
-    mopts = month_options(df_ts, "event_date")
-    mstart, mend = default_range_earliest_latest(df_ts, "event_date")
+    # No time-range filter on this page; we always use the full data range
 
     header = section_header("Temporal Analysis (Armed Conflicts)", "Monthly anomalies and regional tiles")
 
@@ -61,7 +59,7 @@ def layout():
                 html.Div("Tile map", style={"fontWeight": 600, "marginBottom": "4px"}),
                 html.Div(
                     "Each tile shows monthly armed conflict counts for a region (rows = years, columns = months). "
-                    "Darker shades indicate higher numbers. The last 3 months are highlighted in orange, where the values are forecasted generated using an XGBoost time-series model. "
+                    "Darker shades indicate higher numbers. The next 3 months are forecasted and highlighted in a different color, where the values are forecasted generated using an XGBoost time-series model. "
                     "The model relies on recent lags, rolling averages, and contextual conflict signals to estimate near-future events.",
                     style={"opacity": 0.85},
                 ),
@@ -78,25 +76,27 @@ def layout():
             style={"padding": "8px 10px"},
     )
 
-    filters = [
-        month_range(PAGE_ID, mopts, mstart, mend),
-    ]
+    # No filters for this page
+    filters = []
 
     left_graph = panel(
         "Anomaly groups by township",
-        dcc.Loading(dcc.Graph(id=f"{PAGE_ID}-anomaly", className="graph-map-tall"), className="dash-loading"),
+        dcc.Loading(html.Div([
+            dcc.Graph(id=f"{PAGE_ID}-anomaly", className="graph-map-tall"),
+        ]), className="dash-loading", type="default"),
     )
     # Restore a clear panel-level title (outside the subplot)
     right_graph = panel(
-        "Region month×year tiles — totals (last 3 months highlighted)",
-        dcc.Loading(dcc.Graph(id=f"{PAGE_ID}-tiles", className="graph-map-tall"), className="dash-loading"),
+        "Tiles showing armed conflcits trend (next 3 months forecasted)",
+        dcc.Loading(html.Div([
+            dcc.Graph(id=f"{PAGE_ID}-tiles", className="graph-map-tall"),
+        ]), className="dash-loading", type="default"),
     )
 
     foot = html.Div(
         [
-            "Data: ACLED • Last updated ",
-            html.Strong(fmt_date(df_ts["event_date"].max())),
-            " • Notes: Map is categorical; tiles are monthly totals (blue); last 3 months highlighted (orange).",
+            "Data: ", html.A("ACLED", href="https://acleddata.com", target="_blank", rel="noopener noreferrer"),
+            " • Notes: Map is categorical; tiles are monthly totals (blue); next 3 months are forecasted (different color).",
         ],
         style={"textAlign": "right"},
     )
@@ -104,6 +104,7 @@ def layout():
     return html.Div(
         [
             header,
+            dcc.Store(id=f"{PAGE_ID}-init", data=0),
             explainer,
             page_shell(
                 filters=filters, kpis=None, left_map=left_graph, right_content=right_graph, footnote=foot, page_class="temporal-page"
@@ -114,19 +115,16 @@ def layout():
 @dash.callback(
     Output(f"{PAGE_ID}-anomaly","figure"),
     Output(f"{PAGE_ID}-tiles","figure"),
-    Input(f"{PAGE_ID}-month-start","value"),
-    Input(f"{PAGE_ID}-month-end","value"),
+    Input(f"{PAGE_ID}-init","data"),
 )
-def render_page(start_mm, end_mm):
+def render_page(_):
     df_ts = load_time_series()
     df_an = load_anomaly()
     geo   = load_geojson()
 
-    if not start_mm or not end_mm:
-        empty = empty_fig("No data"); return empty, empty
-    if end_mm < start_mm:
-        start_mm, end_mm = end_mm, start_mm
-    d1, _ = month_bounds(start_mm); _, d2 = month_bounds(end_mm)
+    # Use the full data range
+    mstart, mend = default_range_earliest_latest(df_ts, "event_date")
+    d1, _ = month_bounds(mstart); _, d2 = month_bounds(mend)
 
     # --------------------
     # Build TS_PCODE -> township name from GeoJSON (authoritative)

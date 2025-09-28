@@ -41,25 +41,33 @@ def layout():
 
     left = panel(
         "Actor interaction network (top 10 connections)",
-        body=dcc.Loading(dcc.Graph(id=f"{PAGE_ID}-net", className="graph-map-tall"), className="dash-loading")
+        body=dcc.Loading(html.Div([
+            dcc.Graph(id=f"{PAGE_ID}-net", className="graph-map-tall"),
+        ]), className="dash-loading", type="default")
     )
 
     right = html.Div(
         [
             panel(
                 "Which tactics are most common overall? (share within each tactic)",
-                body=dcc.Loading(dcc.Graph(id=f"{PAGE_ID}-heat-col", className="graph-medium"), className="dash-loading")
+                body=dcc.Loading(html.Div([
+                    dcc.Graph(id=f"{PAGE_ID}-heat-col", className="graph-medium"),
+                ]), className="dash-loading", type="default")
             ),
             html.Div(style={"height":"10px"}),
             panel(
                 "Which tactics each actor uses most? (share within actor)",
-                body=dcc.Loading(dcc.Graph(id=f"{PAGE_ID}-heat-row", className="graph-short"), className="dash-loading")
+                body=dcc.Loading(html.Div([
+                    dcc.Graph(id=f"{PAGE_ID}-heat-row", className="graph-short"),
+                ]), className="dash-loading", type="default")
             ),
         ]
     )
 
-    foot = html.Div("Data: ACLED • Top 10 interactions; 'Unidentified' actors excluded; PDF variants collapsed.",
-                    style={"textAlign":"right","opacity":0.8})
+    foot = html.Div([
+        "Data: ", html.A("ACLED", href="https://acleddata.com", target="_blank", rel="noopener noreferrer"),
+        " • Top 10 interactions; 'Unidentified' actors excluded; PDF variants collapsed."
+    ], style={"textAlign":"right","opacity":0.8})
 
     return html.Div([header, page_shell(filters=filters, left_map=left, right_content=right, footnote=foot, page_class="actor-page")])
 
