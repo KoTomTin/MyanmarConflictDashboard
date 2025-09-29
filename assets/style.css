@@ -52,7 +52,8 @@ body{ background:#fafafa; }
 /* ====== KPI row (4 cards) ====== */
 .row-kpis{
   display:grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* Auto-fit the number of KPI cards so removing one doesn't leave an empty slot */
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
   gap:12px;
   margin:12px 0 8px;
 }
@@ -61,10 +62,10 @@ body{ background:#fafafa; }
   border:var(--panel-border);
   border-radius:var(--panel-radius);
   box-shadow:var(--panel-shadow);
-  padding:10px 12px;
+  padding:12px 14px;
 }
 .kpi-title{ color:#6b7280; font-size:.86rem; margin-bottom:6px; }
-.kpi-value{ font-size:1.45rem; font-weight:700; color:#1f6ad6; }
+.kpi-value{ font-size:1.55rem; font-weight:700; color:#1f6ad6; }
 
 /* ====== Two-column body (map left, charts right) ====== */
 .row-body{
@@ -166,4 +167,17 @@ body{ background:#fafafa; }
 /* ====== Clustering page specific tweaks ====== */
 .page-wrap.clustering-page .row-body{
   grid-template-columns: minmax(420px, 0.85fr) minmax(640px, 1.45fr);
+}
+
+/* ====== Guide page layout: single, wider column ====== */
+.page-wrap.guide-page{
+  /* allow guide to use a bit more of the screen width */
+  --content-max-width: 1700px;
+}
+.page-wrap.guide-page .row-body{
+  grid-template-columns: 1fr; /* single column */
+}
+.page-wrap.guide-page .panel-body{
+  /* slightly larger text for readability */
+  font-size: 1.02rem;
 }

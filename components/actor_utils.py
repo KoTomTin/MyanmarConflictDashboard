@@ -48,6 +48,20 @@ def collapse_pdf(name: str) -> str:
 def is_unidentified(name: str) -> bool:
     return isinstance(name, str) and ("unidentified" in name.lower())
 
+def clean_actor_name(val) -> str:
+    """Return a canonical actor string or empty.
+    - Treat NaN/None/"nan"/"none"/"null" as blank
+    - Trim whitespace
+    - Collapse PDF variants
+    """
+    if pd.isna(val):
+        return ""
+    s = str(val).strip()
+    if s.lower() in {"", "nan", "none", "null"}:
+        return ""
+    s = collapse_pdf(s)
+    return s
+
 # ---- simple min–max + power scaling for node size contrast ----
 def power_scale(values, min_size=16, max_size=90, gamma=1.6):
     arr = np.asarray(values, dtype=float)
@@ -70,14 +84,17 @@ def build_network_figure(df_window: pd.DataFrame) -> go.Figure:
       - keep a single blue color theme
     """
     tmp = df_window.copy()
-    tmp["primary_actor"] = tmp["primary_actor"].apply(collapse_pdf)
-    tmp["secondary_actor"] = tmp["secondary_actor"].apply(collapse_pdf)
+    # Strong cleaning to avoid NaN labels and unify PDFs
+    tmp["primary_actor"] = tmp["primary_actor"].apply(clean_actor_name)
+    tmp["secondary_actor"] = tmp["secondary_actor"].apply(clean_actor_name)
+    # drop blanks and 'Unidentified'
     tmp = tmp[(tmp["primary_actor"] != "") & (tmp["secondary_actor"] != "")]
     tmp = tmp[~(tmp["primary_actor"].apply(is_unidentified) | tmp["secondary_actor"].apply(is_unidentified))]
     if tmp.empty:
         fig = go.Figure(); fig.update_layout(template="plotly_white", title="Actor interaction network (no data)")
         return fig
 
+    # Actors are now strings -> safe to sort deterministically
     pairs = tmp.apply(lambda r: tuple(sorted((r["primary_actor"], r["secondary_actor"]))), axis=1)
     counts = Counter(pairs)
     top_edges = counts.most_common(10)
@@ -123,7 +140,7 @@ def build_network_figure(df_window: pd.DataFrame) -> go.Figure:
     label_top = min(10, len(G.nodes()))
     top_nodes = set([n for n, _ in sorted(G.nodes(data=True), key=lambda kv: kv[1]["involvement"], reverse=True)[:label_top]])
     node_text = [n if n in top_nodes else "" for n in G.nodes()]
-    node_hover = [f"{n}<br>Involvements: {G.nodes[n]['involvement']:,}" for n in G.nodes()]
+    node_hover = [f"{(n if n else '—')}<br>Involvements: {G.nodes[n]['involvement']:,}" for n in G.nodes()]
 
     node_trace = go.Scatter(
         x=[pos[n][0] for n in G.nodes()],
@@ -157,7 +174,7 @@ def build_network_figure(df_window: pd.DataFrame) -> go.Figure:
 # ---- build tiles (column% and row%) for tactics × top-10 primary actors ----
 def build_tactic_tiles(df_window: pd.DataFrame) -> tuple[go.Figure, go.Figure]:
     work = df_window.copy()
-    work["primary_actor"] = work["primary_actor"].apply(collapse_pdf)
+    work["primary_actor"] = work["primary_actor"].apply(clean_actor_name)
 
     # exclude unidentified from tiles as well (per spec)
     work = work[~work["primary_actor"].apply(is_unidentified)]

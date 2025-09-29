@@ -66,12 +66,11 @@ def layout():
     kpis = [
         kpi_card("Event count", f"{PAGE_ID}-kpi-events"),
         kpi_card("Townships affected", f"{PAGE_ID}-kpi-tsp"),
-        kpi_card("Population affected", f"{PAGE_ID}-kpi-pop"),
         kpi_card("Fatalities", f"{PAGE_ID}-kpi-fat"),
     ]
 
     left = panel(
-        "Events by township",
+        "Key Conflict Events by Township",
         dcc.Loading(
             html.Div([
                 dcc.Graph(id=f"{PAGE_ID}-map", className="graph-map-tall"),
@@ -84,13 +83,13 @@ def layout():
     right = html.Div(
         [
             panel(
-                "Weekly events by key event",
+                "Weekly Trends in Key Conflict Events",
                 dcc.Loading(html.Div([
                     dcc.Graph(id=f"{PAGE_ID}-weekly", className="graph-medium"),
                 ]), className="dash-loading", type="default"),
             ),
             panel(
-                "Top detailed event types (sorted)",
+                "Top Ten Detailed Conflict Events",
                 dcc.Loading(html.Div([
                     dcc.Graph(id=f"{PAGE_ID}-detailbar", className="graph-short"),
                 ]), className="dash-loading", type="default"),
@@ -109,7 +108,6 @@ def layout():
 @dash.callback(
     Output(f"{PAGE_ID}-kpi-events", "children"),
     Output(f"{PAGE_ID}-kpi-tsp", "children"),
-    Output(f"{PAGE_ID}-kpi-pop", "children"),
     Output(f"{PAGE_ID}-kpi-fat", "children"),
     Output(f"{PAGE_ID}-map", "figure"),
     Output(f"{PAGE_ID}-weekly", "figure"),
@@ -126,7 +124,7 @@ def update_overview(start_mm, end_mm, actor_type, key_event, civ_target, admin1)
     geo = load_geojson()
 
     if not start_mm or not end_mm:
-        empty = empty_fig("No data"); return "—","—","—","—", empty, empty, empty
+        empty = empty_fig("No data"); return "—","—","—", empty, empty, empty
     if end_mm < start_mm:
         start_mm, end_mm = end_mm, start_mm
     d1, _ = month_bounds(start_mm); _, d2 = month_bounds(end_mm)
@@ -142,11 +140,10 @@ def update_overview(start_mm, end_mm, actor_type, key_event, civ_target, admin1)
         f = f[f["admin1"] == admin1]
 
     if f.empty:
-        empty = empty_fig("No data in this range"); return "0","0","0","0", empty, empty, empty
+        empty = empty_fig("No data in this range"); return "0","0","0", empty, empty, empty
 
     events_n = len(f)
     tsp_affected = f["Tsp_Pcode"].nunique() if "Tsp_Pcode" in f.columns else 0
-    pop_sum = int(f.drop_duplicates("Tsp_Pcode")["population_size"].sum()) if "population_size" in f.columns else 0
     fat_sum = int(f["fatalities"].sum()) if "fatalities" in f.columns else 0
 
     # map data (no holes)
@@ -202,5 +199,5 @@ def update_overview(start_mm, end_mm, actor_type, key_event, civ_target, admin1)
     else:
         detail_fig = empty_fig("No detailed_event field")
 
-    return (_fmt_compact(events_n), _fmt_compact(tsp_affected), _fmt_compact(pop_sum), _fmt_compact(fat_sum),
-            map_fig, weekly_fig, detail_fig)
+    return (_fmt_compact(events_n), _fmt_compact(tsp_affected), _fmt_compact(fat_sum),
+        map_fig, weekly_fig, detail_fig)

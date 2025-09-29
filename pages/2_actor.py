@@ -40,7 +40,7 @@ def layout():
     ]
 
     left = panel(
-        "Actor interaction network (top 10 connections)",
+        "Actor Interaction Network (Top 10 connections)",
         body=dcc.Loading(html.Div([
             dcc.Graph(id=f"{PAGE_ID}-net", className="graph-map-tall"),
         ]), className="dash-loading", type="default")
@@ -49,14 +49,14 @@ def layout():
     right = html.Div(
         [
             panel(
-                "Which tactics are most common overall? (share within each tactic)",
+                "Most Common Tactics Across Actors (Share Within Each Tactic)",
                 body=dcc.Loading(html.Div([
                     dcc.Graph(id=f"{PAGE_ID}-heat-col", className="graph-medium"),
                 ]), className="dash-loading", type="default")
             ),
             html.Div(style={"height":"10px"}),
             panel(
-                "Which tactics each actor uses most? (share within actor)",
+                "Tactic Use by Actor (Share Within Actor)",
                 body=dcc.Loading(html.Div([
                     dcc.Graph(id=f"{PAGE_ID}-heat-row", className="graph-short"),
                 ]), className="dash-loading", type="default")

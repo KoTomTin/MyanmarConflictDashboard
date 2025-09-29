@@ -20,6 +20,31 @@ dash.register_page(__name__, path="/temporal", name="Temporal Analysis")
 PAGE_ID = "ts"
 
 
+def _wrap_text(text: str, width: int = 60) -> str:
+    """Insert <br> at word boundaries so long descriptions wrap in Plotly hovers.
+    Keeps words intact; collapses internal whitespace; returns a string with <br>.
+    """
+    if not isinstance(text, str) or not text.strip():
+        return "—"
+    words = text.strip().split()
+    lines = []
+    cur = []
+    cur_len = 0
+    for w in words:
+        lw = len(w)
+        # +1 for space if not first in line
+        gain = lw if cur_len == 0 else lw + 1
+        if cur_len + gain <= width:
+            cur.append(w)
+            cur_len += gain
+        else:
+            lines.append(" ".join(cur))
+            cur = [w]
+            cur_len = lw
+    if cur:
+        lines.append(" ".join(cur))
+    return "<br>".join(lines)
+
 def _geo_township_name_map(geojson) -> dict[str, str]:
     """
     Build {TS_PCODE -> township_name} from the GeoJSON.
@@ -80,14 +105,14 @@ def layout():
     filters = []
 
     left_graph = panel(
-        "Anomaly groups by township",
+        "Township-Level Anomalies in Conflict Events and Fatalities",
         dcc.Loading(html.Div([
             dcc.Graph(id=f"{PAGE_ID}-anomaly", className="graph-map-tall"),
         ]), className="dash-loading", type="default"),
     )
     # Restore a clear panel-level title (outside the subplot)
     right_graph = panel(
-        "Tiles showing armed conflcits trend (next 3 months forecasted)",
+        "Regional Conflict Trends with Three-Month Forecasts",
         dcc.Loading(html.Div([
             dcc.Graph(id=f"{PAGE_ID}-tiles", className="graph-map-tall"),
         ]), className="dash-loading", type="default"),
@@ -180,6 +205,8 @@ def render_page(_):
         filled["flag_description"].astype(str).str.strip().replace({"nan":"","None":""})
     )
     filled.loc[filled["flag_desc_label"].eq(""), "flag_desc_label"] = "—"
+    # Wrap long descriptions so hover box doesn't overflow horizontally
+    filled["flag_desc_wrapped"] = filled["flag_desc_label"].apply(lambda s: _wrap_text(s, width=60))
 
     # Build the map
     anomaly_fig = px.choropleth(
@@ -190,7 +217,7 @@ def render_page(_):
         color="map_category",
         category_orders={"map_category": list(ANOMALY_COLORS.keys())},
         color_discrete_map=ANOMALY_COLORS,
-        custom_data=["township_label","flag_desc_label"],  # bind per-point at creation
+        custom_data=["township_label","flag_desc_wrapped"],  # wrapped description for hover
         template="plotly_white",
     )
     anomaly_fig.update_traces(
