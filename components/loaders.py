@@ -32,7 +32,7 @@ def load_geojson(version: float | None = None) -> dict:
 REQUIRED_ACLED = {
     "event_id_cnty","event_date","key_event","detailed_event",
     "actor1","primary_actor","primary_actor_type","secondary_actor",
-    "admin1","admin2","admin3","Tsp_Pcode","fatalities","population_size",
+    "admin1","admin2","admin3","Tsp_Pcode","fatalities",
 }
 
 @lru_cache(maxsize=1)
@@ -51,7 +51,7 @@ def load_acled_main(version: float | None = None) -> pd.DataFrame:
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip()
     # Numeric safety
-    for col in ["fatalities","population_size"]:
+    for col in ["fatalities"]:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0).astype(int)
     return df
