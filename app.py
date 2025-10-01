@@ -62,4 +62,4 @@ app.layout = dbc.Container(
 
 if __name__ == "__main__":
     # Explicitly enable reloader and hot reload to ensure page edits reflect immediately
-    app.run(debug=True, port=8050, use_reloader=True, dev_tools_hot_reload=True)
+    app.run(debug=True, port=8050)
