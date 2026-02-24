@@ -1,36 +1,35 @@
 # components/colors.py
-"""
-Single source of truth for color systems used across pages.
-"""
+"""Single source of truth for color systems used across pages."""
 
-# --- Categorical palettes ---
-
-# Key events (5)
+# ── Key events (9 categories) ─────────────────────────────────
 KEY_EVENT_COLORS = {
-    "Armed conflict":      "#1f77b4",  # blue
-    "Arrests":             "#ff7f0e",  # orange
-    "Displacement":        "#2ca02c",  # green
-    "Protests":            "#9467bd",  # purple
-    "Violence against civilians": "#d62728",  # red
+    "Ground-based attack":          "#1d4ed8",  # deep blue
+    "Air attack":                   "#7c3aed",  # purple
+    "Drone attack":                 "#475569",  # slate grey
+    "Massacres":                    "#7f1d1d",  # very dark red
+    "Violence against civilians":   "#dc2626",  # red
+    "Protests":                     "#d97706",  # amber
+    "Arrests":                      "#059669",  # emerald
+    "Looting/property destruction": "#92400e",  # brown
+    "Displacement":                 "#0891b2",  # cyan
+    "Others":                       "#9ca3af",  # light grey
 }
 
-# Anomaly groups (4)
-ANOMALY_COLORS = {
-    "normal":        "#9aa0a6",
-    "event surge":   "#2f5fbd",
-    "fatality surge":"#d35e60",
-    "both surges":   "#8c6bb1",
+# Ordered list for consistent display
+KEY_EVENT_ORDER = list(KEY_EVENT_COLORS.keys())
+
+# ── Actor type colours ────────────────────────────────────────
+ACTOR_TYPE_COLORS = {
+    "Myanmar Military Regime": "#dc2626",
+    "ERO":                     "#1d4ed8",
+    "People's Defense Force":  "#059669",
+    "Pyu Saw Htee":            "#d97706",
 }
 
-# Clusters (k = 2..5). Reuse the first N for k.
-CLUSTER_COLORS = ["#1f77b4","#ff7f0e","#2ca02c","#9467bd","#d62728"]
-
-# --- Sequential scales ---
-
-# Sequential blues with explicit zero grey (for choropleths / tiles of counts)
-# Use as Plotly "colorscale" argument (list of [position, color])
+# ── Sequential scales ─────────────────────────────────────────
+# Blues with explicit zero → grey (for choropleths of counts)
 SEQUENTIAL_BLUES_ZERO_GREY = [
-    (0.00, "#d9d9d9"),  # zero = light grey (not white)
+    (0.00, "#d9d9d9"),
     (0.01, "#deebf7"),
     (0.20, "#c6dbef"),
     (0.40, "#9ecae1"),
@@ -39,12 +38,13 @@ SEQUENTIAL_BLUES_ZERO_GREY = [
     (1.00, "#08519c"),
 ]
 
-# For forecast/predicted windows (next 3 months)
-SEQUENTIAL_ORANGE = [
-    (0.00, "#fff5eb"),
-    (0.20, "#fee6ce"),
-    (0.40, "#fdd0a2"),
-    (0.60, "#fdae6b"),
-    (0.80, "#fd8d3c"),
-    (1.00, "#e6550d"),
+# Reds with explicit zero → grey (actor footprint)
+SEQUENTIAL_REDS_ZERO_GREY = [
+    (0.00, "#d9d9d9"),
+    (0.01, "#fee0d2"),
+    (0.20, "#fcbba1"),
+    (0.40, "#fc9272"),
+    (0.60, "#fb6a4a"),
+    (0.80, "#de2d26"),
+    (1.00, "#a50f15"),
 ]

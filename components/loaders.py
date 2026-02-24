@@ -10,10 +10,11 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data" / "processed"
 GEO  = ROOT / "data" / "shapes"
 
-ACLED_MAIN_CSV   = DATA / "acled_cleaned.csv"
-ANOMALY_CSV      = DATA / "anomaly_detection.csv"
-TIME_SERIES_CSV  = DATA / "time_series.csv"
-BOUNDARIES_GEOJSON = GEO / "boundaries.geojson"
+ACLED_MAIN_PARQUET   = DATA / "acled_cleaned.parquet"
+ACTOR_LEVEL_PARQUET  = DATA / "acled_actor_level.parquet"
+ALLY_PAIRS_PARQUET   = DATA / "acled_actor_ally_pairs.parquet"
+MONTHLY_TSP_PARQUET  = DATA / "monthly_township.parquet"
+BOUNDARIES_GEOJSON   = GEO / "boundaries.geojson"
 
 def _mtime(p: Path) -> float:
     try:
@@ -29,70 +30,49 @@ def load_geojson(version: float | None = None) -> dict:
         return json.load(f)
 
 # ---- ACLED main ----
-REQUIRED_ACLED = {
-    "event_id_cnty","event_date","key_event","detailed_event",
-    "actor1","primary_actor","primary_actor_type","secondary_actor",
-    "admin1","admin2","admin3","Tsp_Pcode","fatalities",
-}
-
 @lru_cache(maxsize=1)
 def load_acled_main(version: float | None = None) -> pd.DataFrame:
-    version = version or _mtime(ACLED_MAIN_CSV)
-    df = pd.read_csv(ACLED_MAIN_CSV, low_memory=False)
-    missing = REQUIRED_ACLED - set(df.columns)
-    if missing:
-        raise ValueError(f"Missing columns in ACLED CSV: {sorted(missing)}")
-    # Basic normalization
-    df["event_date"] = pd.to_datetime(df["event_date"], errors="coerce", dayfirst=True)
+    version = version or _mtime(ACLED_MAIN_PARQUET)
+    df = pd.read_parquet(ACLED_MAIN_PARQUET)
+    # Parquet preserves dtypes — event_date is already datetime
+    df["event_date"] = pd.to_datetime(df["event_date"], errors="coerce")
     df = df.dropna(subset=["event_date"]).copy()
-    # Standardize some text columns
-    for col in ["key_event","detailed_event","primary_actor","secondary_actor",
-                "admin1","admin2","admin3","Tsp_Pcode"]:
+    for col in ["key_event", "detailed_event", "primary_actor", "secondary_actor",
+                "admin1", "admin2", "admin3", "Tsp_Pcode", "civilian_targeting"]:
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip()
-    # Numeric safety
-    for col in ["fatalities"]:
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0).astype(int)
+    if "fatalities" in df.columns:
+        df["fatalities"] = pd.to_numeric(df["fatalities"], errors="coerce").fillna(0).astype(int)
+    # Recode mass civilian killings as "Massacres"
+    if "civilian_targeting" in df.columns and "fatalities" in df.columns:
+        massacre_mask = (df["civilian_targeting"] == "Yes") & (df["fatalities"] >= 5)
+        df.loc[massacre_mask, "key_event"] = "Massacres"
     return df
 
-# ---- Anomaly ----
-REQUIRED_ANOM = {"admin1","admin2","admin3","Tsp_Pcode","map_category","flag_description"}
-
+# ---- Actor level ----
 @lru_cache(maxsize=1)
-def load_anomaly(version: float | None = None) -> pd.DataFrame:
-    version = version or _mtime(ANOMALY_CSV)
-    df = pd.read_csv(ANOMALY_CSV, low_memory=False)
-    missing = REQUIRED_ANOM - set(df.columns)
-    if missing:
-        raise ValueError(f"Missing columns in anomaly CSV: {sorted(missing)}")
-    for c in REQUIRED_ANOM:
-        df[c] = df[c].astype(str).str.strip()
-    return df
+def load_actor_level(version: float | None = None) -> pd.DataFrame:
+    version = version or _mtime(ACTOR_LEVEL_PARQUET)
+    return pd.read_parquet(ACTOR_LEVEL_PARQUET)
 
-# ---- Time series ----
-REQUIRED_TS = {"region", "event_date", "actual_month"}
-
+# ---- Ally pairs ----
 @lru_cache(maxsize=1)
-def load_time_series(version: float | None = None) -> pd.DataFrame:
-    version = version or _mtime(TIME_SERIES_CSV)
-    df = pd.read_csv(TIME_SERIES_CSV, low_memory=False)
+def load_ally_pairs(version: float | None = None) -> pd.DataFrame:
+    version = version or _mtime(ALLY_PAIRS_PARQUET)
+    return pd.read_parquet(ALLY_PAIRS_PARQUET)
 
-    missing = REQUIRED_TS - set(df.columns)
-    if missing:
-        raise ValueError(f"Missing columns in time_series CSV: {sorted(missing)}")
-
-    # normalize
-    df["region"] = df["region"].astype(str).str.strip()
-    df["event_date"] = pd.to_datetime(df["event_date"], errors="coerce", dayfirst=True)
-    df = df.dropna(subset=["event_date"]).copy()
-
-    df["actual_month"] = pd.to_numeric(df["actual_month"], errors="coerce").fillna(0.0)
-
-    # convenience columns
-    df["year"] = df["event_date"].dt.year.astype(int)
-    df["month_num"] = df["event_date"].dt.month.astype(int)
-    # keep an "admin1" alias for pages that expect that name
-    df["admin1"] = df["region"]
-
-    return df
+# ---- Monthly township aggregation (rebuilt from acled_main so Massacres recoding applies) ----
+@lru_cache(maxsize=1)
+def load_monthly_township(version: float | None = None) -> pd.DataFrame:
+    """Aggregate acled_main (incl. Massacres recoding) into monthly township counts.
+    Columns: Tsp_Pcode, month, key_event, admin1, events, fatalities."""
+    version = version or _mtime(ACLED_MAIN_PARQUET)
+    acled = load_acled_main()  # lru_cached — free second call
+    df = acled.copy()
+    df["month"] = df["event_date"].dt.to_period("M").astype(str)
+    monthly = (
+        df.groupby(["Tsp_Pcode", "month", "key_event", "admin1"])
+        .agg(events=("event_date", "count"), fatalities=("fatalities", "sum"))
+        .reset_index()
+    )
+    return monthly

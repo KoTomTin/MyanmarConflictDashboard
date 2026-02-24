@@ -1,0 +1,50 @@
+# Environment & secrets
+.env
+.env.*
+
+# Python virtual environment
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# macOS
+.DS_Store
+.AppleDouble
+
+# Raw / source data
+*.xlsx
+*.xls
+data/raw/
+data/verify/
+
+# Processed CSV files (parquet versions are canonical)
+data/processed/*.csv
+
+# Jupyter notebooks (pipeline dev only)
+*.ipynb
+.ipynb_checkpoints/
+
+# Screenshots / media
+*.png
+*.jpg
+*.jpeg
+
+# Logs
+*.log
+
+# IDE & editor local settings
+.idea/
+.vscode/
+.claude/
+*.swp
+*.swo
+
+# Build artifacts
+dist/
+build/
+*.egg-info/

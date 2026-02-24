@@ -1,0 +1,104 @@
+## Our Mission
+
+The **Myanmar Conflict Dashboard (MCD)** exists to make the human cost of Myanmar's ongoing civil conflict visible, accessible, and understandable — for researchers, journalists, humanitarian workers, policymakers, and the general public alike.
+
+Since the February 2021 military coup, Myanmar has experienced one of Asia's most severe and underreported crises. Tens of thousands of people have been killed, entire townships razed, and millions displaced. This dashboard brings open-source conflict data to life through interactive maps, charts, and actor-level analysis, so that the scale and patterns of violence are never invisible.
+
+---
+
+## Key Findings
+
+Based on ACLED data from February 2021 to the present:
+
+- **Over 90,000 conflict events** have been recorded across Myanmar's 330+ townships — an average of more than 60 incidents per day
+- **Sagaing Region consistently records the highest conflict density**, reflecting the intensity of resistance operations and regime counter-offensives in central Myanmar
+- **Ground-based attacks are the dominant conflict type**, followed by violence against civilians — together accounting for the majority of all recorded events
+- **The Myanmar Military Regime is the most frequently involved conflict actor**, present in the majority of high-fatality events and civilian targeting incidents
+- **Mass atrocity events (5+ civilian fatalities, coded as Massacres in this dashboard)** appear throughout the dataset, concentrated in areas with active resistance movements
+- **Pyu Saw Htee pro-military militias** are the most common ally of the Myanmar Military Regime, with thousands of documented co-involvements
+
+---
+
+## About This Dashboard
+
+The **Myanmar Conflict Dashboard (MCD)** is an interactive data tool for exploring patterns of armed conflict, political violence, and civic unrest across Myanmar since the February 2021 military coup.
+
+---
+
+## Data Source
+
+All conflict event data is sourced from the **Armed Conflict Location & Event Data Project (ACLED)** — a globally recognised, non-partisan crisis mapping organisation that codes conflict events from open-source reports including local media, NGOs, and government statements.
+
+- Coverage: February 2021 – present
+- Geography: All 330+ townships across Myanmar's 14 States & Regions
+- Update frequency: The pipeline fetches the latest available ACLED data automatically
+
+---
+
+## How to Use
+
+### Overview Page
+Use the **Date Range** picker to zoom in on a specific period (e.g. the last 6 months). Use **Region** to focus on a particular State or Region. Use **Event Type** to isolate a specific category of violence.
+
+The **Conflict Density Map** animates quarter by quarter — press Play or drag the time slider at the bottom to explore how conflict patterns shifted over time. Grey townships had zero events in that period.
+
+The **Monthly Trend** chart shows the volume of each event type over time. By default only the top 3 event types are shown — click any label in the legend to add or remove types.
+
+### Actor Analysis Page
+Select any armed actor from the dropdown (default: Myanmar Military Regime). Use the **Date Range** to see how the actor's role changed over a specific period.
+
+The **6 metric cards** summarise that actor's overall involvement:
+- **Total Conflicts** — all events where this actor appeared (as main actor or ally)
+- **Townships** — the geographic spread of involvement
+- **Offenses** — events where this actor was on the attacking side
+- **Defenses** — events where this actor was on the defending side
+- **Civilian Targets** — events coded with civilian targeting where this actor was present
+- **Fatalities** — total deaths in events involving this actor
+
+The **Alliance Network** table shows which other actors frequently co-appeared in the same events, revealing cooperation patterns.
+
+The **Geographic Footprint** map shows where this actor was most active over the selected period.
+
+---
+
+## Key Labels & Definitions
+
+| Term | Definition |
+|------|------------|
+| Ground-based attack | Battles, artillery shelling, and armed clashes on the ground |
+| Air attack | Airstrikes by fixed-wing aircraft |
+| Drone attack | Attacks using unmanned aerial vehicles |
+| Massacres | Events where civilians were targeted AND 5 or more fatalities were recorded (recoded from ACLED data) |
+| Violence against civilians | Attacks, killings, or abductions targeting non-combatants (fewer than 5 fatalities) |
+| Arrests | Detention of individuals by armed actors |
+| Protests | Peaceful or violent demonstrations |
+| Displacement | Events explicitly mentioning forced movement of civilians |
+| Offense | The attacking or initiating side of a clash |
+| Defense | The side that is being attacked in a clash |
+| Myanmar Military Regime | Umbrella term for the SAC, Tatmadaw, Police Forces, and affiliated militias |
+| ERO | Ethnic Resistance Organisation — armed groups fighting the regime |
+| PDF | People's Defence Force — pro-democracy resistance forces |
+| Pyu Saw Htee | Pro-military civilian militia; the most common documented ally of the military regime |
+| Alliance / Ally | Another actor who appeared on the same side in the same event |
+
+---
+
+## Limitations
+
+- ACLED data reflects **reported** events only. Unreported incidents (especially in remote or information-restricted areas) are not captured.
+- Fatality figures are estimates based on media reports and may undercount actual deaths.
+- "Civilian targeting" is coded at the event level and may not capture every individual incident within a larger engagement.
+- The **Massacres** category is a dashboard-level recode, not an official ACLED classification.
+- Actor categorisation is based on ACLED's coding methodology and the recoding logic applied in this dashboard. Minor actors may appear under slightly different names.
+
+---
+
+## Disclaimer
+
+This dashboard is produced for **analytical and informational purposes only**. It does not represent the position of any government, UN agency, or NGO. The data should be interpreted carefully and always cross-referenced with ground-level reporting.
+
+---
+
+## Contact
+
+For questions or feedback, contact: **kothomasgye@gmail.com**

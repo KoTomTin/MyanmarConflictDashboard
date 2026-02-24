@@ -1,3 +1,7 @@
+# ── Dashboard runtime dependencies ──────────────────────────────────────────
+# Pipeline-only packages (geopandas, scikit-learn, scipy, networkx, etc.)
+# are intentionally excluded — they are only needed to rebuild the data files.
+
 blinker==1.9.0
 certifi==2025.8.3
 charset-normalizer==3.4.3
@@ -5,33 +9,23 @@ click==8.3.0
 dash==3.2.0
 dash-bootstrap-components==2.0.4
 Flask==3.1.2
-geopandas==1.1.1
 idna==3.10
 importlib_metadata==8.7.0
 itsdangerous==2.2.0
 Jinja2==3.1.6
-joblib==1.5.2
 MarkupSafe==3.0.2
 narwhals==2.5.0
 nest-asyncio==1.6.0
-networkx==3.5
 numpy==2.3.3
 packaging==25.0
 pandas==2.3.2
-pathlib==1.0.1
 plotly==6.3.0
-pyogrio==0.11.1
-pyproj==3.7.2
+pyarrow==23.0.1
+python-dotenv==1.1.0
 python-dateutil==2.9.0.post0
 pytz==2025.2
 requests==2.32.5
-retrying==1.4.2
-scikit-learn==1.7.2
-scipy==1.16.2
-setuptools==80.9.0
-shapely==2.1.1
 six==1.17.0
-threadpoolctl==3.6.0
 typing_extensions==4.15.0
 tzdata==2025.2
 urllib3==2.5.0

@@ -1,65 +1,119 @@
+import importlib
+import traceback
 import dash
-from dash import html, dcc
+from dash import html, dcc, Output, Input, callback
 import dash_bootstrap_components as dbc
+from flask import request as flask_request
+
+_ov = importlib.import_module("pages.1_overview")
+_ac = importlib.import_module("pages.2_actor")
+_ab = importlib.import_module("pages.3_about")
+_me = importlib.import_module("pages.4_methodology")
+
+PAGE_MAP = {
+    "/":            _ov.layout,
+    "/actor":       _ac.layout,
+    "/about":       _ab.layout,
+    "/methodology": _me.layout,
+}
+
+NAV_ITEMS = [
+    {"path": "/",            "label": "Overview"},
+    {"path": "/actor",       "label": "Actor Analysis"},
+    {"path": "/methodology", "label": "Methodology"},
+    {"path": "/about",       "label": "About"},
+]
 
 app = dash.Dash(
     __name__,
-    use_pages=True,
-    external_stylesheets=[dbc.themes.SANDSTONE],
+    external_stylesheets=[dbc.themes.FLATLY],
     suppress_callback_exceptions=True,
-    title="Conflict Dashboard",
+    title="Myanmar Conflict Dashboard",
 )
 server = app.server
 
-def sidebar():
-    # Enforce a custom, user-requested order
-    desired = ["/", "/actor-network", "/temporal", "/clustering", "/guide"]
-    all_pages = list(dash.page_registry.values())
-    # Map by path for quick lookup
-    by_path = {p.get("path", ""): p for p in all_pages}
-    ordered = [by_path[p] for p in desired if p in by_path]
-    # Append any others (if present) at the end to avoid losing pages
-    remaining = [p for p in all_pages if p not in ordered]
-    pages = ordered + remaining
-    links = [html.Div(dcc.Link(p["name"], href=p["path"], className="sidebar-link")) for p in pages]
-    return html.Div(
-        [
-            html.H2("MCD", style={"margin":"0 0 6px 0","fontWeight":"800","letterSpacing":"1px"}),
-            html.Div("Myanmar Conflict Dashboard", style={"color":"#6b7280","marginBottom":"10px","fontSize":"0.9rem"}),
-            html.Hr(),
-            html.Nav(links, style={"display":"grid","gap":"8px"}),
-            html.Hr(),
-            html.Div(
-                [
-                    html.Div("Created by: Ko Thomas"),
-                    html.Div(["Contact: ", html.A("kothomasgye@gmail.com", href="mailto:kothomasgye@gmail.com")]),
-                ],
-                style={"fontSize":"0.9rem","color":"#6b7280","marginTop":"auto"},
-            ),
-        ],
-        className="sidebar",
-    )
 
-app.layout = dbc.Container(
-    [
-        dbc.Row(
-            [
-                dbc.Col(sidebar(), width=2, className="g-0"),
-                dbc.Col(
-                    html.Div(
-                        [
-                            html.Main(dash.page_container, className="main"),
-                        ]
-                    ),
-                    width=10, className="g-0"
-                ),
-            ],
-            className="g-0",
+def sidebar():
+    links = [
+        dcc.Link(
+            html.Div(item["label"], className="nav-item"),
+            href=item["path"],
+            className="nav-link-wrap",
         )
-    ],
-    fluid=True,
+        for item in NAV_ITEMS
+    ]
+    return html.Div([
+        html.Div([
+            html.Div("MCD", className="brand-abbr"),
+            html.Div("Myanmar Conflict", className="brand-name"),
+            html.Div("Dashboard", className="brand-name"),
+            html.Div("Tracking conflict since Feb 2021", className="brand-tagline"),
+        ], className="brand-block"),
+        html.Div(className="sidebar-divider"),
+        html.Nav(links, className="sidebar-nav"),
+        html.Div(className="sidebar-divider"),
+        html.Div([
+            html.Div("Data: ACLED", className="sidebar-meta"),
+            html.Div("Myanmar · Feb 2021 – present", className="sidebar-meta"),
+            html.Div("Contact: kothomasgye@gmail.com", className="sidebar-meta"),
+        ], className="sidebar-footer"),
+    ], className="sidebar")
+
+
+def serve_layout():
+    try:
+        path = flask_request.path or "/"
+    except Exception:
+        path = "/"
+
+    fn = PAGE_MAP.get(path, _ov.layout)
+
+    try:
+        page_content = fn()
+    except Exception as e:
+        print(f"[serve_layout] ERROR rendering {path}: {e}")
+        traceback.print_exc()
+        page_content = html.Div(f"Error loading page: {e}",
+                                style={"color": "red", "padding": "20px"})
+
+    return dbc.Container([
+        dcc.Location(id="url", refresh=False),
+        dbc.Row([
+            dbc.Col(sidebar(), md=2, className="g-0 d-none d-md-flex"),
+            dbc.Col(
+                html.Main(
+                    html.Div(page_content, id="page-content"),
+                    className="main",
+                ),
+                xs=12, md=10, className="g-0",
+            ),
+        ], className="g-0"),
+    ], fluid=True)
+
+
+app.layout = serve_layout
+
+
+@callback(
+    Output("page-content", "children"),
+    Input("url", "pathname"),
+    prevent_initial_call=True,
 )
+def render_page(pathname):
+    print(f"[render_page] navigating to: {pathname!r}")
+    try:
+        fn = PAGE_MAP.get(pathname or "/")
+        if fn:
+            result = fn()
+            print(f"[render_page] {pathname!r} rendered OK")
+            return result
+        print(f"[render_page] unknown path {pathname!r}, falling back to overview")
+        return _ov.layout()
+    except Exception as e:
+        print(f"[render_page] ERROR for {pathname!r}: {e}")
+        traceback.print_exc()
+        return html.Div(f"Error: {e}", style={"color": "red", "padding": "20px"})
+
 
 if __name__ == "__main__":
-    # Explicitly enable reloader and hot reload to ensure page edits reflect immediately
-    app.run(debug=True, port=8050)
+    app.run(debug=True, dev_tools_ui=False, port=8050)
