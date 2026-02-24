@@ -37,7 +37,7 @@ _MAIN_CAT_COLS = [
 ]
 _ACTOR_CAT_COLS  = ["type1", "type2", "Tsp_Pcode"]
 _ALLY_CAT_COLS   = ["type1", "type2"]
-_MONTHLY_CAT_COLS = ["Tsp_Pcode", "admin1", "month", "key_event"]
+_MONTHLY_CAT_COLS = ["Tsp_Pcode", "admin1", "key_event"]  # month excluded — used in >= / <= range comparisons
 
 # ---- ACLED main ----
 @lru_cache(maxsize=1)

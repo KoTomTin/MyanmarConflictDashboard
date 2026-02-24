@@ -30,12 +30,18 @@ from components.map_utils import apply_tight_geos, filter_geo_by_property
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
+# (date, hover title, short pill, line color, description)
 MILESTONES = [
-    ("2021-02-01", "Military Coup"),
-    ("2021-09-07", "NUG Defensive War"),
-    ("2023-10-27", "Operation 1027"),
-    ("2025-03-28", "7.7 Earthquake"),
-    ("2025-12-28", "General Elections"),
+    ("2021-02-01", "Feb 1, 2021 – Military Coup",           "Coup",       "#dc2626",
+     "The Myanmar military seized power and arrested elected leaders, sparking nationwide protests."),
+    ("2021-09-07", "Sept 7, 2021 – People's Defensive War", "NUG War",    "#d97706",
+     "The NUG called for armed resistance against the military, escalating the conflict."),
+    ("2023-10-27", "Oct 27, 2023 – Operation 1027",         "Op. 1027",   "#7c3aed",
+     "Rebel alliance launched a major offensive, capturing key territory in northern Shan State."),
+    ("2025-03-28", "Mar 28, 2025 – 7.7 Earthquake",         "Earthquake", "#0891b2",
+     "A major earthquake near Mandalay caused heavy destruction and worsened the crisis."),
+    ("2025-12-28", "Dec 28, 2025 – Junta Elections",        "Elections",  "#6b7280",
+     "Military held phased elections in controlled areas; widely rejected as illegitimate."),
 ]
 
 EVENT_DEFINITIONS = {
@@ -467,28 +473,46 @@ def _build_trend(monthly_df, start_month, end_month, region, key_events) -> go.F
             hovertemplate=f"<b>{label}</b><br>%{{x|%b %Y}}: %{{y:,}} (partial)<extra></extra>",
         ))
 
-    # Milestone vertical lines
+    # Milestone vertical lines — color-coded pills + hover diamonds
     if x_min is not None:
-        for date_str, name in MILESTONES:
+        for date_str, title, short_name, color, desc in MILESTONES:
             mdt = pd.Timestamp(date_str)
             if x_min <= mdt <= (x_max + pd.Timedelta(days=90)):
                 fig.add_shape(
                     type="line",
                     x0=mdt, x1=mdt, y0=0, y1=1,
                     xref="x", yref="paper",
-                    line=dict(dash="dash", color="#888888", width=1),
+                    line=dict(color=color, width=1.5, dash="dot"),
+                    opacity=0.55,
                 )
                 fig.add_annotation(
-                    x=mdt, y=0.97, xref="x", yref="paper",
-                    text=name, textangle=-90, showarrow=False,
-                    font=dict(size=9, color="#6B7280"),
-                    xanchor="left", yanchor="top",
+                    x=mdt, y=1.0, xref="x", yref="paper",
+                    text=f"<b>{short_name}</b>",
+                    showarrow=False,
+                    font=dict(size=8, color=color),
+                    xanchor="center", yanchor="bottom",
+                    bgcolor="rgba(255,255,255,0.92)",
+                    bordercolor=color, borderwidth=1, borderpad=2,
                 )
+                # Small diamond on hidden y2 axis — hover target with full description
+                fig.add_trace(go.Scatter(
+                    x=[mdt], y=[0.5], yaxis="y2",
+                    mode="markers",
+                    marker=dict(color=color, size=7, symbol="diamond",
+                                line=dict(color="white", width=1), opacity=0.75),
+                    showlegend=False, name="",
+                    hovertemplate=(
+                        f"<b>{title}</b><br>"
+                        f"<span style='color:#6b7280'>{desc}</span>"
+                        f"<extra></extra>"
+                    ),
+                ))
 
     fig.update_layout(
         height=240,
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=4, r=4, t=8, b=4),
+        margin=dict(l=4, r=4, t=28, b=4),
+        yaxis2=dict(overlaying="y", range=[0, 1], visible=False, fixedrange=True),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0,
                     font=dict(size=9), bgcolor="rgba(0,0,0,0)"),
         xaxis=dict(showgrid=False, tickformat="%b %Y", tickangle=-30,
