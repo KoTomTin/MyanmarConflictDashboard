@@ -19,8 +19,7 @@ from components.colors    import SEQUENTIAL_BLUES_ZERO_GREY
 from components.map_utils import apply_tight_geos, filter_geo_by_property
 
 
-DEFAULT_ACTOR      = "Myanmar Military Regime"
-ARMED_EVENT_TYPES  = frozenset(["Ground-based attack", "Air attack", "Drone attack"])
+DEFAULT_ACTOR = "Myanmar Military Regime"
 
 # (date, hover title, short pill, line color, description)
 MILESTONES = [
@@ -167,17 +166,10 @@ def _actor_options(actor_level: pd.DataFrame) -> list[dict]:
 
 # ── Store builder ──────────────────────────────────────────────────────────────
 
-def _armed_ids(acled: pd.DataFrame) -> frozenset:
-    """Return event IDs for ground-based, air, and drone attacks only."""
-    return frozenset(acled[acled["key_event"].isin(ARMED_EVENT_TYPES)]["event_id_cnty"])
-
-
 def _build_store(actor_level, geo, actor_name, start_month, end_month,
                  region, acled, mode) -> dict | None:
-    ids = _armed_ids(acled)
     al = actor_level[
-        (actor_level["actor_name"] == actor_name) &
-        (actor_level["event_id_cnty"].isin(ids))
+        actor_level["actor_name"] == actor_name
     ].copy()
     al["event_date"] = pd.to_datetime(al["event_date"], errors="coerce")
     al["month"] = al["event_date"].dt.to_period("M").astype(str)
@@ -498,26 +490,28 @@ def _build_alliance_chart(ally_pairs, actor_name, valid_ids):
     tbl = (
         ap.groupby("ally_name")["event_id_cnty"]
         .nunique().reset_index(name="events")
-        .sort_values("events", ascending=False)   # highest first (leftmost)
+        .sort_values("events", ascending=False)
         .head(15)
     )
 
     fig = go.Figure(go.Bar(
-        x=tbl["ally_name"],
-        y=tbl["events"],
+        y=tbl["ally_name"],
+        x=tbl["events"],
+        orientation="h",
         marker=dict(color="#3b82f6"),
         text=[f"{v:,}" for v in tbl["events"]],
         textposition="outside",
-        textfont=dict(size=9, color="#6B7280"),
+        textfont=dict(size=10, color="#374151"),
         cliponaxis=False,
-        hovertemplate="<b>%{x}</b><br>%{y:,} shared events<extra></extra>",
+        hovertemplate="<b>%{y}</b><br>%{x:,} shared events<extra></extra>",
     ))
     fig.update_layout(
-        height=260,
+        height=300,
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=4, r=8, t=20, b=4),
-        xaxis=dict(tickfont=dict(size=9), title=None, tickangle=-40, automargin=True),
-        yaxis=dict(showgrid=True, gridcolor="#f3f4f6", tickfont=dict(size=9),
+        margin=dict(l=4, r=80, t=12, b=4),
+        yaxis=dict(tickfont=dict(size=9), title=None,
+                   autorange="reversed", automargin=True),
+        xaxis=dict(showgrid=True, gridcolor="#f3f4f6", tickfont=dict(size=9),
                    title=None, rangemode="tozero"),
     )
     return dcc.Graph(figure=fig, config=_chart_config("actor_associated_actors"))
@@ -536,8 +530,8 @@ def _highest_events(al: pd.DataFrame, acled: pd.DataFrame, region):
     if by_pcode.empty:
         return "—", "—"
     top_pcode = by_pcode.idxmax()
-    match = acled[acled["Tsp_Pcode"] == top_pcode]["admin1"]
-    top_name = match.iloc[0] if not match.empty else top_pcode
+    match = acled[acled["Tsp_Pcode"] == top_pcode]["admin3"]
+    top_name = str(match.iloc[0]) if not match.empty else top_pcode
     return top_name, f"{int(by_pcode.max()):,}"
 
 
@@ -547,44 +541,41 @@ def layout():
     meta        = _get_defaults()
     acled       = load_acled_main()
     actor_level = load_actor_level()
-    ally_pairs  = load_ally_pairs()
+    # ally_pairs not loaded here — only needed by the callback (cached anyway)
     geo         = load_geojson()
 
     start_val   = meta["start_val"]
     end_val     = meta["end_val"]
     latest_str  = meta["latest_str"]
 
-    actor_opts  = _actor_options(actor_level)
-    admin1_opts = sorted(acled["admin1"].dropna().unique())
+    actor_opts       = _actor_options(actor_level)
+    admin1_opts      = sorted(acled["admin1"].dropna().unique())
+    total_townships  = len(_geo_pcodes(geo))
 
     default_store = {
         "start_month": start_val, "end_month": end_val,
         "region": None, "actor_name": DEFAULT_ACTOR, "preset_label": None,
     }
 
-    # ── Pre-build initial charts ───────────────────────────────────────────────
-    armed_ids  = _armed_ids(acled)
+    # ── Pre-compute fast KPIs (no chart building — charts filled by callback) ──
     al_default = actor_level[
-        (actor_level["actor_name"] == DEFAULT_ACTOR) &
-        (actor_level["event_id_cnty"].isin(armed_ids))
+        actor_level["actor_name"] == DEFAULT_ACTOR
     ].copy()
     al_default["event_date"] = pd.to_datetime(al_default["event_date"], errors="coerce")
     al_default["month"] = al_default["event_date"].dt.to_period("M").astype(str)
 
-    store        = _build_store(actor_level, geo, DEFAULT_ACTOR, start_val, end_val,
-                                None, acled, "time_range")
-    init_map     = _build_choropleth(store, geo) if store else _empty_fig()
-    init_trend   = _build_trend(al_default)
-
-    valid_ids    = set(al_default["event_id_cnty"].unique())
     n_townships  = al_default["Tsp_Pcode"].nunique()
     _off_ids     = set(al_default[al_default["type2"] == "offend"]["event_id_cnty"])
     _def_ids     = set(al_default[al_default["type2"] == "being_offended"]["event_id_cnty"]) - _off_ids
     n_offenses   = len(_off_ids)
     n_defenses   = len(_def_ids)
     h_region, h_count = _highest_events(al_default, acled, None)
-    init_alliance = _build_alliance_chart(ally_pairs, DEFAULT_ACTOR, valid_ids)
     init_summary  = _build_filter_summary(start_val, end_val, None, DEFAULT_ACTOR)
+
+    # Empty figure placeholders — the update_actor callback fills these immediately
+    # (prevent_initial_call=False) so the user sees spinners briefly, not blank cards.
+    init_map   = _empty_fig(height=530)
+    init_trend = _empty_fig(height=220)
 
     return html.Div([
 
@@ -598,7 +589,7 @@ def layout():
                 html.H4("Actor Analysis", className="page-title"),
                 html.Div("Geographic footprint · alliance network · engagement trend",
                          className="page-subtitle"),
-                html.Div("Armed conflict only — ground-based, air & drone attacks",
+                html.Div("Armed conflict only — ground-based attacks, airstrikes, drones & massacres",
                          className="page-subtitle page-subtitle--armed"),
             ], className="page-header-left"),
             html.Div(f"Last Updated: {latest_str}", className="page-last-updated"),
@@ -730,9 +721,9 @@ def layout():
             html.Div([
 
                 html.Div([
-                    html.Div([html.Div("Townships",           className="kpi-label"),
-                              html.Div(_fmt(n_townships),  id="ac-kpi-townships",  className="kpi-value"),
-                              html.Div("unique locations",   className="kpi-sub")],
+                    html.Div([html.Div("Townships",                        className="kpi-label"),
+                              html.Div(_fmt(n_townships),  id="ac-kpi-townships", className="kpi-value"),
+                              html.Div(f"of {total_townships} in Myanmar",         className="kpi-sub")],
                              className="kpi-card kpi-accent-teal"),
                     html.Div([html.Div("Offensives",          className="kpi-label"),
                               html.Div(_fmt(n_offenses),   id="ac-kpi-offenses",   className="kpi-value"),
@@ -750,8 +741,10 @@ def layout():
                         html.Div("Co-involved in the same armed conflict events",
                                  className="card-subtitle"),
                     ], className="dash-card-head"),
-                    html.Div(init_alliance, id="ac-alliance-table",
-                             className="panel-body"),
+                    dcc.Loading(
+                        html.Div(id="ac-alliance-table", className="panel-body"),
+                        type="dot", color="#2563eb",
+                    ),
                 ], className="dash-card"),
 
                 html.Div([
@@ -791,6 +784,31 @@ def layout():
 # ══════════════════════════════════════════════════════════════════════════════
 # Callbacks
 # ══════════════════════════════════════════════════════════════════════════════
+
+# 0. Filters → update actor dropdown counts to reflect current date/region scope
+@callback(
+    Output("ac-actor", "options"),
+    Input("ac-applied-filters", "data"),
+    prevent_initial_call=True,
+)
+def update_actor_options(applied):
+    if not applied:
+        raise PreventUpdate
+    actor_level = load_actor_level()
+    al = actor_level.copy()
+    al["event_date"] = pd.to_datetime(al["event_date"], errors="coerce")
+    al["month"] = al["event_date"].dt.to_period("M").astype(str)
+    start_month = applied.get("start_month")
+    end_month   = applied.get("end_month")
+    region      = applied.get("region")
+    if start_month: al = al[al["month"] >= start_month]
+    if end_month:   al = al[al["month"] <= end_month]
+    if region:
+        acled = load_acled_main()
+        valid_pcodes = set(acled[acled["admin1"] == region]["Tsp_Pcode"].dropna().unique())
+        al = al[al["Tsp_Pcode"].isin(valid_pcodes)]
+    return _actor_options(al)
+
 
 # 1. Mode card buttons → mode store + button styles
 @callback(
@@ -879,6 +897,8 @@ def reset_filters(n):
 
 
 # 5. Filters + mode → rebuild all charts
+# prevent_initial_call=False so charts load immediately on page mount
+# (layout() returns empty placeholders; callback fills them on first render)
 @callback(
     Output("ac-map",              "figure"),
     Output("ac-kpi-townships",    "children"),
@@ -892,7 +912,7 @@ def reset_filters(n):
     Output("ac-actor-banner-name","children"),
     Input("ac-applied-filters",   "data"),
     Input("ac-mode",              "data"),
-    prevent_initial_call=True,
+    prevent_initial_call=False,
 )
 def update_actor(applied, mode):
     if not applied:
@@ -910,11 +930,8 @@ def update_actor(applied, mode):
     ally_pairs  = load_ally_pairs()
     geo         = load_geojson()
 
-    # Filter to armed events only
-    ids = _armed_ids(acled)
     al = actor_level[
-        (actor_level["actor_name"] == actor_name) &
-        (actor_level["event_id_cnty"].isin(ids))
+        actor_level["actor_name"] == actor_name
     ].copy()
     al["event_date"] = pd.to_datetime(al["event_date"], errors="coerce")
     al["month"] = al["event_date"].dt.to_period("M").astype(str)

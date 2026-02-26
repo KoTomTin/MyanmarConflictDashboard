@@ -478,6 +478,12 @@ def clean_dataframe(df: pd.DataFrame, pcode_lookup: pd.DataFrame) -> pd.DataFram
     print("  Normalising fatalities...")
     df["fatalities"] = pd.to_numeric(df["fatalities"], errors="coerce").fillna(0).astype(int)
 
+    print("  Recoding massacres...")
+    massacre_mask = (df["civilian_targeting"] == "Yes") & (df["fatalities"] >= 5)
+    df.loc[massacre_mask, "key_event"] = "Massacres"
+    if massacre_mask.sum():
+        print(f"    {massacre_mask.sum():,} mass-casualty civilian attacks recoded as Massacres.")
+
     # Keep only required columns that actually exist
     keep = [c for c in FINAL_COLS if c in df.columns]
     df = df[keep].copy()
@@ -499,8 +505,8 @@ def build_actor_level(df_cleaned: pd.DataFrame) -> pd.DataFrame:
     Output columns (slim — join with acled_cleaned on event_id_cnty for event properties):
         event_id_cnty, actor_name, type1, type2, allies
     """
-    # Filter to combat events (key_event was split from "Armed conflict" into 3 categories)
-    COMBAT_EVENTS = {"Ground-based attack", "Air attack", "Drone attack"}
+    # Filter to combat events (includes Massacres — mass-casualty civilian attacks by armed actors)
+    COMBAT_EVENTS = {"Ground-based attack", "Air attack", "Drone attack", "Massacres"}
     df = df_cleaned[df_cleaned["key_event"].isin(COMBAT_EVENTS)].copy()
 
     # Only keep event_id_cnty as the join key — event properties live in acled_cleaned
@@ -734,6 +740,15 @@ def main(update_only: bool = False, export_csv: bool = False):
     # Sort by date
     df_all["event_date"] = pd.to_datetime(df_all["event_date"])
     df_all = df_all.sort_values("event_date").reset_index(drop=True)
+
+    # Apply Massacres recode to full dataset (idempotent — handles historical rows
+    # loaded from parquet that predate this recoding step in clean_dataframe).
+    if "civilian_targeting" in df_all.columns and "fatalities" in df_all.columns:
+        massacre_mask = (df_all["civilian_targeting"] == "Yes") & (df_all["fatalities"] >= 5)
+        n_recoded = massacre_mask.sum()
+        df_all.loc[massacre_mask, "key_event"] = "Massacres"
+        if n_recoded:
+            print(f"  Applied Massacres recode to {n_recoded:,} events in full dataset.")
 
     # ── SAVE acled_cleaned ──────────────────────────────────────────────────
     print(f"\n[3/4] Saving acled_cleaned.parquet...")

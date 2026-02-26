@@ -45,17 +45,17 @@ MILESTONES = [
 ]
 
 EVENT_DEFINITIONS = {
-    "Ground-based attack":          "armed clashes and explosions on the ground",
-    "Air attack":                   "confirmed military airstrikes by state forces",
-    "Drone attack":                 "aerial attacks using unmanned drone aircraft",
-    "Massacre":                     "violence against civilians with 5+ fatalities",
-    "Massacres":                    "violence against civilians with 5+ fatalities",
-    "Violence against civilians":   "targeted attacks, abductions, or sexual violence",
-    "Arrests":                      "detention or arrest of individuals by any actor",
-    "Looting/property destruction": "theft or destruction of civilian property",
-    "Protests":                     "demonstrations and gatherings",
-    "Displacement":                 "forced movement of civilians",
-    "Others":                       "conflict events not classified in the above categories",
+    "Ground-based attack":          "ground clashes, explosions and shelling between armed groups",
+    "Air attack":                   "airstrikes by military aircraft",
+    "Drone attack":                 "aerial strikes carried out by unmanned drone aircraft",
+    "Massacre":                     "attack on civilians resulting in 5 or more fatalities",
+    "Massacres":                    "attack on civilians resulting in 5 or more fatalities",
+    "Violence against civilians":   "targeted killings, abductions or sexual violence against civilians",
+    "Arrests":                      "detention or arrest of civilians or combatants by any actor",
+    "Looting/property destruction": "theft, arson or deliberate destruction of civilian property",
+    "Protests":                     "peaceful or disruptive demonstrations, strikes and gatherings",
+    "Displacement":                 "forced displacement of civilians from their homes or villages",
+    "Others":                       "other conflict-related events not in the main categories (e.g. sabotage, blockades)",
 }
 
 # Neighbouring country labels — lon/lat placed just outside Myanmar's borders.
@@ -532,36 +532,44 @@ def _build_activity_bar(monthly_df, start_month, end_month, region, key_events) 
     if end_month:   df = df[df["month"] <= end_month]
     if region:      df = df[df["admin1"] == region]
     if key_events:  df = df[df["key_event"].isin(key_events)]
-    if df.empty:    return _empty_fig("No data", height=260)
+    if df.empty:    return _empty_fig("No data", height=300)
 
     counts = (
         df.groupby("key_event", observed=True)["events"].sum()
         .reindex(KEY_EVENT_ORDER).fillna(0)
     )
     counts = counts[counts > 0].sort_values(ascending=False)
-    if counts.empty: return _empty_fig("No data", height=260)
+    if counts.empty: return _empty_fig("No data", height=300)
 
+    defs = [[EVENT_DEFINITIONS.get(k, "")] for k in counts.index]
     fig = go.Figure(go.Bar(
-        x=counts.index,
-        y=counts.values,
+        y=counts.index,
+        x=counts.values,
+        orientation="h",
         marker=dict(color="#3b82f6"),
         text=[f"{int(v):,}" for v in counts.values],
         textposition="outside",
-        textfont=dict(size=10),
+        textfont=dict(size=10, color="#374151"),
         cliponaxis=False,
-        hovertemplate="<b>%{x}</b><br>%{y:,} events<extra></extra>",
+        customdata=defs,
+        hovertemplate=(
+            "<b>%{y}</b><br>"
+            "%{x:,} events<br>"
+            "<i>%{customdata[0]}</i>"
+            "<extra></extra>"
+        ),
     ))
     fig.update_layout(
-        height=260,
+        height=300,
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=4, r=4, t=24, b=8),
-        xaxis=dict(
-            tickfont=dict(size=10), title=None,
-            tickangle=-35, automargin=True,
-        ),
+        margin=dict(l=4, r=80, t=12, b=4),
         yaxis=dict(
+            tickfont=dict(size=9), title=None,
+            autorange="reversed", automargin=True,
+        ),
+        xaxis=dict(
             showgrid=True, gridcolor="#f3f4f6",
-            tickfont=dict(size=10), title=None,
+            tickfont=dict(size=9), title=None,
             rangemode="tozero",
         ),
     )
@@ -576,10 +584,15 @@ def _highest_events(monthly_df, start_month, end_month, region, key_events):
     if end_month:   df = df[df["month"] <= end_month]
     if key_events:  df = df[df["key_event"].isin(key_events)]
     if df.empty:    return "—", "—"
-    if region:
-        return region, f"{int(df[df['admin1'] == region]['events'].sum()):,}"
-    by_r = df.groupby("admin1")["events"].sum().sort_values(ascending=False)
-    return by_r.index[0], f"{int(by_r.iloc[0]):,}"
+    subset = df[df["admin1"] == region] if region else df
+    by_tsp = subset.groupby("Tsp_Pcode", observed=True)["events"].sum().sort_values(ascending=False)
+    if by_tsp.empty:
+        return "—", "—"
+    top_pcode = by_tsp.index[0]
+    acled = load_acled_main()
+    match = acled[acled["Tsp_Pcode"] == top_pcode]["admin3"]
+    top_name = str(match.iloc[0]) if not match.empty else str(top_pcode)
+    return top_name, f"{int(by_tsp.iloc[0]):,}"
 
 
 # ── Layout ─────────────────────────────────────────────────────────────────────
@@ -768,9 +781,9 @@ def layout():
 
                 html.Div([
                     html.Div([
-                        html.Div("Total Conflicts",             className="kpi-label"),
+                        html.Div("Total Conflicts",                   className="kpi-label"),
                         html.Div(init_conflicts, id="ov-kpi-conflicts", className="kpi-value"),
-                        html.Div("events recorded",             className="kpi-sub"),
+                        html.Div("all conflict types incl. protests", className="kpi-sub"),
                     ], className="kpi-card kpi-accent-blue"),
                     html.Div([
                         html.Div("Total Fatalities",            className="kpi-label"),
@@ -792,7 +805,9 @@ def layout():
 
                 html.Div([
                     html.Div([
-                        html.Div("Key Activity Types", className="card-title"),
+                        html.Div("Conflict Types", className="card-title"),
+                        html.Div("Hover a bar to see what each category means",
+                                 className="card-subtitle"),
                     ], className="dash-card-head"),
                     dcc.Loading(
                         dcc.Graph(id="ov-activity-bar", figure=init_bar,

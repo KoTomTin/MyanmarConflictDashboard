@@ -53,10 +53,6 @@ def load_acled_main(version: float | None = None) -> pd.DataFrame:
             df[col] = df[col].astype(str).str.strip()
     if "fatalities" in df.columns:
         df["fatalities"] = pd.to_numeric(df["fatalities"], errors="coerce").fillna(0).astype(int)
-    # Recode mass civilian killings as "Massacres"
-    if "civilian_targeting" in df.columns and "fatalities" in df.columns:
-        massacre_mask = (df["civilian_targeting"] == "Yes") & (df["fatalities"] >= 5)
-        df.loc[massacre_mask, "key_event"] = "Massacres"
     # Convert low-cardinality columns to category — cuts ~65 MB RAM
     for col in _MAIN_CAT_COLS:
         if col in df.columns:
@@ -83,21 +79,14 @@ def load_ally_pairs(version: float | None = None) -> pd.DataFrame:
             df[col] = df[col].astype("category")
     return df
 
-# ---- Monthly township aggregation (rebuilt from acled_main so Massacres recoding applies) ----
+# ---- Monthly township aggregation (pre-built by pipeline, Massacres recoding already applied) ----
 @lru_cache(maxsize=1)
 def load_monthly_township(version: float | None = None) -> pd.DataFrame:
-    """Aggregate acled_main (incl. Massacres recoding) into monthly township counts.
-    Columns: Tsp_Pcode, month, key_event, admin1, events, fatalities."""
-    version = version or _mtime(ACLED_MAIN_PARQUET)
-    acled = load_acled_main()  # lru_cached — free second call
-    df = acled.copy()
-    df["month"] = df["event_date"].dt.to_period("M").astype(str)
-    monthly = (
-        df.groupby(["Tsp_Pcode", "month", "key_event", "admin1"], observed=True)
-        .agg(events=("event_date", "count"), fatalities=("fatalities", "sum"))
-        .reset_index()
-    )
+    """Read pre-aggregated monthly township counts from parquet.
+    Columns: Tsp_Pcode, admin1, month, key_event, events, fatalities."""
+    version = version or _mtime(MONTHLY_TSP_PARQUET)
+    df = pd.read_parquet(MONTHLY_TSP_PARQUET)
     for col in _MONTHLY_CAT_COLS:
-        if col in monthly.columns:
-            monthly[col] = monthly[col].astype("category")
-    return monthly
+        if col in df.columns:
+            df[col] = df[col].astype("category")
+    return df

@@ -8,20 +8,17 @@ from flask import request as flask_request
 _ov = importlib.import_module("pages.1_overview")
 _ac = importlib.import_module("pages.2_actor")
 _ab = importlib.import_module("pages.3_about")
-_me = importlib.import_module("pages.4_methodology")
 
 PAGE_MAP = {
-    "/":            _ov.layout,
-    "/actor":       _ac.layout,
-    "/about":       _ab.layout,
-    "/methodology": _me.layout,
+    "/":      _ov.layout,
+    "/actor": _ac.layout,
+    "/about": _ab.layout,
 }
 
 NAV_ITEMS = [
-    {"path": "/",            "label": "Overview"},
-    {"path": "/actor",       "label": "Actor Analysis"},
-    {"path": "/methodology", "label": "Methodology"},
-    {"path": "/about",       "label": "About"},
+    {"path": "/",      "label": "Overview"},
+    {"path": "/actor", "label": "Actor Analysis"},
+    {"path": "/about", "label": "About"},
 ]
 
 app = dash.Dash(
@@ -38,9 +35,10 @@ def sidebar():
         dcc.Link(
             html.Div(item["label"], className="nav-item"),
             href=item["path"],
+            id=f"nav-link-{i}",
             className="nav-link-wrap",
         )
-        for item in NAV_ITEMS
+        for i, item in enumerate(NAV_ITEMS)
     ]
     return html.Div([
         html.Div([
@@ -82,7 +80,13 @@ def serve_layout():
             dbc.Col(sidebar(), md=2, className="g-0 d-none d-md-flex"),
             dbc.Col(
                 html.Main(
-                    html.Div(page_content, id="page-content"),
+                    dcc.Loading(
+                        html.Div(page_content, id="page-content"),
+                        id="page-loading",
+                        type="dot",
+                        color="#2563eb",
+                        delay_show=120,   # only show spinner if load takes >120ms
+                    ),
                     className="main",
                 ),
                 xs=12, md=10, className="g-0",
@@ -94,6 +98,7 @@ def serve_layout():
 app.layout = serve_layout
 
 
+# ── Navigate to page ──────────────────────────────────────────────────────────
 @callback(
     Output("page-content", "children"),
     Input("url", "pathname"),
@@ -113,6 +118,20 @@ def render_page(pathname):
         print(f"[render_page] ERROR for {pathname!r}: {e}")
         traceback.print_exc()
         return html.Div(f"Error: {e}", style={"color": "red", "padding": "20px"})
+
+
+# ── Highlight active nav link ─────────────────────────────────────────────────
+@callback(
+    [Output(f"nav-link-{i}", "className") for i in range(len(NAV_ITEMS))],
+    Input("url", "pathname"),
+)
+def highlight_active_nav(pathname):
+    pathname = pathname or "/"
+    return [
+        "nav-link-wrap nav-link-wrap--active" if item["path"] == pathname
+        else "nav-link-wrap"
+        for item in NAV_ITEMS
+    ]
 
 
 if __name__ == "__main__":
