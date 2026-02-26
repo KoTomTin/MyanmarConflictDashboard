@@ -438,37 +438,101 @@ body {
 }
 
 /* ── Time Range: one-line preset chips + From→To dropdowns ──── */
-.filter-group--time {
-  min-width: 460px;
-  flex: 2.8;
+.filter-group--datepicker {
+  min-width: 240px;
+  flex: 1.8;          /* narrower — let Region/Type get more room */
 }
-.time-range-controls {
+
+/* Row of quick-preset chips */
+.quick-btn-row {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  gap: 5px;
+  flex-wrap: wrap;
   margin-top: 5px;
-  flex-wrap: nowrap;
+  margin-bottom: 8px;
 }
-/* subtle vertical rule between chips and dropdowns */
-.time-sep {
-  width: 1px;
-  height: 20px;
-  background: #D1D5DB;
-  flex-shrink: 0;
-  margin: 0 2px;
+
+/* Two date-from / date-to cards — strictly equal width */
+.date-card-group {
+  display: flex;
+  gap: 8px;
 }
-.range-arrow {
-  color: #9CA3AF;
-  font-size: 0.8rem;
-  flex-shrink: 0;
-  line-height: 1;
+.date-card {
+  flex: 1 1 0;          /* equal flex basis forces equal width */
+  min-width: 0;         /* allow shrinking below content width */
+  /* no overflow:hidden — it clips the calendar popup */
+  background: #EFF6FF;
+  border: 1.5px solid #BFDBFE;
+  border-radius: 8px;
+  padding: 7px 10px 6px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-shadow: 0 1px 3px rgba(37,99,235,0.07);
 }
-/* month dropdowns: fixed width so label always fits */
-.month-dropdown {
-  min-width: 112px;
-  max-width: 130px;
-  font-size: 0.78rem !important;
-  flex-shrink: 0;
+.date-card:hover {
+  border-color: #93C5FD;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.12);
+}
+.date-card:focus-within {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+}
+.date-card-header {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #1d4ed8;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+
+/* Calendar popup — must sit above all cards and filter rows */
+.SingleDatePicker_picker { z-index: 200 !important; }
+.DayPicker               { z-index: 200 !important; }
+
+/* Strip all default react-dates chrome inside our cards */
+.date-card .SingleDatePicker,
+.date-card .SingleDatePickerInput {
+  width: 100% !important;
+}
+.date-card .SingleDatePickerInput {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+.date-card .DateInput {
+  background: transparent !important;
+  width: 100% !important;
+  flex: 1 !important;
+}
+.date-card .DateInput_input {
+  border: none !important;
+  border-bottom: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+  color: #1e3a8a !important;
+  font-family: var(--font) !important;
+  width: 100% !important;
+  cursor: pointer !important;
+  line-height: 1.4 !important;
+}
+.date-card .DateInput_input:focus {
+  outline: none !important;
+  border-bottom: 1.5px solid #2563eb !important;
+}
+.date-card .SingleDatePickerInput_calendarIcon {
+  padding: 0 4px 0 0 !important;
+  margin: 0 !important;
+}
+.date-card .SingleDatePickerInput_calendarIcon svg {
+  width: 14px !important;
+  height: 14px !important;
+  fill: #2563eb !important;
 }
 
 /* Quick date preset chips */
@@ -621,8 +685,9 @@ body {
   gap: 10px;
 }
 .kpis-row--2 { grid-template-columns: repeat(2, 1fr); }
-.kpis-row--6 { grid-template-columns: repeat(3, 1fr); }
 .kpis-row--3 { grid-template-columns: repeat(3, 1fr); }
+.kpis-row--4 { grid-template-columns: repeat(4, 1fr); }
+.kpis-row--6 { grid-template-columns: repeat(3, 1fr); }
 
 /* KPI card — flat */
 .kpi-card {
@@ -710,6 +775,32 @@ body {
   font-family: var(--font);
 }
 .filter-summary:empty { display: none; }
+
+/* ── Actor banner (Actor Analysis page) ─────────────────────── */
+.actor-banner {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 2px 0 14px;
+  margin-bottom: 2px;
+}
+.actor-banner-label {
+  font-size: 0.70rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  white-space: nowrap;
+  font-family: var(--font);
+}
+.actor-banner-name {
+  font-size: 1.55rem;
+  font-weight: 900;
+  color: #1e3a8a;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  font-family: var(--font);
+}
 
 /* ── Page body: LEFT (map, sticky) | RIGHT (charts) ──────────── */
 .page-body {
@@ -983,6 +1074,7 @@ body {
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 1400px) {
   .kpis-row--6 { grid-template-columns: repeat(3, 1fr); }
+  .kpis-row--4 { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 1100px) {
   .page-body { grid-template-columns: 1fr; }
@@ -1001,12 +1093,11 @@ body {
   .filter-controls { flex-direction: column; }
   .filter-group, .filter-group--wide, .filter-group--xwide,
   .filter-group--time, .filter-group--datepicker { min-width: 100%; flex: unset; }
-  .time-range-controls { flex-wrap: wrap; }
+  .date-card-group { flex-direction: column; }
   .page-wrap { padding: 10px 10px 24px; }
   .snap-cards { grid-template-columns: repeat(2, 1fr); }
   .mode-toggle-cards { flex-direction: column; }
   .kpis-row--2 { grid-template-columns: 1fr; }
-  .month-dropdown { min-width: 100px; max-width: none; flex: 1; }
   /* Date picker: single month on mobile */
   .DateRangePicker_picker { transform: scale(0.92); transform-origin: top left; }
 }

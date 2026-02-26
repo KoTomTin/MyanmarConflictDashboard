@@ -498,32 +498,27 @@ def _build_alliance_chart(ally_pairs, actor_name, valid_ids):
     tbl = (
         ap.groupby("ally_name")["event_id_cnty"]
         .nunique().reset_index(name="events")
-        .sort_values("events", ascending=True)   # ascending so highest is at top of chart
-        .tail(15)
+        .sort_values("events", ascending=False)   # highest first (leftmost)
+        .head(15)
     )
 
     fig = go.Figure(go.Bar(
-        x=tbl["events"],
-        y=tbl["ally_name"],
-        orientation="h",
-        marker=dict(
-            color=tbl["events"],
-            colorscale=[[0, "#BFDBFE"], [1, "#1D4ED8"]],
-            showscale=False,
-        ),
+        x=tbl["ally_name"],
+        y=tbl["events"],
+        marker=dict(color="#3b82f6"),
         text=[f"{v:,}" for v in tbl["events"]],
         textposition="outside",
         textfont=dict(size=9, color="#6B7280"),
-        hovertemplate="<b>%{y}</b><br>%{x:,} shared events<extra></extra>",
+        cliponaxis=False,
+        hovertemplate="<b>%{x}</b><br>%{y:,} shared events<extra></extra>",
     ))
-    n = len(tbl)
     fig.update_layout(
-        height=max(180, min(34 * n + 36, 340)),
+        height=260,
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=4, r=56, t=4, b=4),
-        xaxis=dict(showgrid=True, gridcolor="#f3f4f6",
-                   tickfont=dict(size=9), title=None, showticklabels=False),
-        yaxis=dict(tickfont=dict(size=10), title=None, automargin=True),
+        margin=dict(l=4, r=8, t=20, b=4),
+        xaxis=dict(tickfont=dict(size=9), title=None, tickangle=-40, automargin=True),
+        yaxis=dict(showgrid=True, gridcolor="#f3f4f6", tickfont=dict(size=9),
+                   title=None, rangemode="tozero"),
     )
     return dcc.Graph(figure=fig, config=_chart_config("actor_associated_actors"))
 
@@ -561,7 +556,6 @@ def layout():
 
     actor_opts  = _actor_options(actor_level)
     admin1_opts = sorted(acled["admin1"].dropna().unique())
-    month_opts  = _month_opts(acled["event_date"].min(), acled["event_date"].max())
 
     default_store = {
         "start_month": start_val, "end_month": end_val,
@@ -584,8 +578,10 @@ def layout():
 
     valid_ids    = set(al_default["event_id_cnty"].unique())
     n_townships  = al_default["Tsp_Pcode"].nunique()
-    n_offenses   = al_default[al_default["type2"] == "offend"]["event_id_cnty"].nunique()
-    n_defenses   = al_default[al_default["type2"] == "being_offended"]["event_id_cnty"].nunique()
+    _off_ids     = set(al_default[al_default["type2"] == "offend"]["event_id_cnty"])
+    _def_ids     = set(al_default[al_default["type2"] == "being_offended"]["event_id_cnty"]) - _off_ids
+    n_offenses   = len(_off_ids)
+    n_defenses   = len(_def_ids)
     h_region, h_count = _highest_events(al_default, acled, None)
     init_alliance = _build_alliance_chart(ally_pairs, DEFAULT_ACTOR, valid_ids)
     init_summary  = _build_filter_summary(start_val, end_val, None, DEFAULT_ACTOR)
@@ -608,35 +604,48 @@ def layout():
             html.Div(f"Last Updated: {latest_str}", className="page-last-updated"),
         ], className="page-header"),
 
+        # ── actor banner ────────────────────────────────────────────────────────
+        html.Div([
+            html.Span("Analyzing:", className="actor-banner-label"),
+            html.Span(DEFAULT_ACTOR, id="ac-actor-banner-name",
+                      className="actor-banner-name"),
+        ], className="actor-banner"),
+
         # ── filter card ────────────────────────────────────────────────────────
         html.Div([
             html.Div([
 
-                # Time Range: presets + inline From → To
+                # Time Range: quick presets + date-card pickers
                 html.Div([
                     html.Label("Time Range", className="filter-label"),
                     html.Div([
                         html.Button("Last 7 days",    id="ac-btn-7d",  n_clicks=0, className="quick-btn"),
                         html.Button("Last 30 days",   id="ac-btn-30d", n_clicks=0, className="quick-btn"),
                         html.Button("Since Feb 2021", id="ac-btn-all", n_clicks=0, className="quick-btn"),
-                        html.Div(className="time-sep"),
-                        dcc.Dropdown(
-                            id="ac-from-month",
-                            options=month_opts,
-                            value=start_val,
-                            clearable=False,
-                            className="month-dropdown",
-                        ),
-                        html.Span("→", className="range-arrow"),
-                        dcc.Dropdown(
-                            id="ac-to-month",
-                            options=month_opts,
-                            value=end_val,
-                            clearable=False,
-                            className="month-dropdown",
-                        ),
-                    ], className="time-range-controls"),
-                ], className="filter-group filter-group--time"),
+                    ], className="quick-btn-row"),
+                    html.Div([
+                        html.Div([
+                            html.Div("Date From", className="date-card-header"),
+                            dcc.DatePickerSingle(
+                                id="ac-from-date",
+                                date=start_val,
+                                display_format="DD/MM/YYYY",
+                                first_day_of_week=1,
+                                className="date-picker-single",
+                            ),
+                        ], className="date-card"),
+                        html.Div([
+                            html.Div("Date To", className="date-card-header"),
+                            dcc.DatePickerSingle(
+                                id="ac-to-date",
+                                date=end_val,
+                                display_format="DD/MM/YYYY",
+                                first_day_of_week=1,
+                                className="date-picker-single",
+                            ),
+                        ], className="date-card"),
+                    ], className="date-card-group"),
+                ], className="filter-group filter-group--datepicker"),
 
                 html.Div([
                     html.Label("Region", className="filter-label"),
@@ -732,7 +741,7 @@ def layout():
                     html.Div([html.Div("Defensive",           className="kpi-label"),
                               html.Div(_fmt(n_defenses),   id="ac-kpi-defenses",   className="kpi-value"),
                               html.Div("as targeted",         className="kpi-sub")],
-                             className="kpi-card kpi-accent-blue"),
+                             className="kpi-card kpi-accent-red"),
                 ], className="kpis-row kpis-row--3 kpis-compact"),
 
                 html.Div([
@@ -798,11 +807,11 @@ def switch_mode(n_total, n_anim):
     return "time_range", "mode-card mode-card--active", "mode-card"
 
 
-# 2. Quick preset buttons → apply immediately + sync dropdowns
+# 2. Quick preset buttons → apply immediately + sync date pickers
 @callback(
     Output("ac-applied-filters", "data", allow_duplicate=True),
-    Output("ac-from-month",      "value",              allow_duplicate=True),
-    Output("ac-to-month",        "value",              allow_duplicate=True),
+    Output("ac-from-date",       "date",               allow_duplicate=True),
+    Output("ac-to-date",         "date",               allow_duplicate=True),
     Input("ac-btn-7d",           "n_clicks"),
     Input("ac-btn-30d",          "n_clicks"),
     Input("ac-btn-all",          "n_clicks"),
@@ -821,13 +830,15 @@ def set_quick_dates(n7, n30, nall, region, actor):
     else:
         start_dt = pd.Timestamp("2021-02-01")
         label = "Since Feb 2021"
-    start_m = start_dt.strftime("%Y-%m")
-    end_m   = max_dt.strftime("%Y-%m")
+    start_m    = start_dt.strftime("%Y-%m")
+    end_m      = max_dt.strftime("%Y-%m")
+    start_date = start_dt.strftime("%Y-%m-%d")
+    end_date   = max_dt.strftime("%Y-%m-%d")
     return (
         {"start_month": start_m, "end_month": end_m,
          "region": region, "actor_name": actor or DEFAULT_ACTOR,
          "preset_label": label},
-        start_m, end_m,
+        start_date, end_date,
     )
 
 
@@ -835,49 +846,50 @@ def set_quick_dates(n7, n30, nall, region, actor):
 @callback(
     Output("ac-applied-filters", "data"),
     Input("ac-apply-btn",        "n_clicks"),
-    State("ac-from-month",       "value"),
-    State("ac-to-month",         "value"),
+    State("ac-from-date",        "date"),
+    State("ac-to-date",          "date"),
     State("ac-region",           "value"),
     State("ac-actor",            "value"),
     prevent_initial_call=True,
 )
-def apply_filters(n, from_month, to_month, region, actor):
+def apply_filters(n, from_date, to_date, region, actor):
     d = _get_defaults()
-    start_m = from_month or d["start_val"]
-    end_m   = to_month   or d["end_val"]
+    start_m = (from_date or d["start_val"])[:7]
+    end_m   = (to_date   or d["end_val"])[:7]
     return {"start_month": start_m, "end_month": end_m,
             "region": region, "actor_name": actor or DEFAULT_ACTOR,
             "preset_label": None}
 
 
-# 4. Reset → restore dropdowns + default store
+# 4. Reset → restore date pickers + default store
 @callback(
     Output("ac-region",           "value"),
     Output("ac-actor",            "value"),
-    Output("ac-from-month",       "value",              allow_duplicate=True),
-    Output("ac-to-month",         "value",              allow_duplicate=True),
+    Output("ac-from-date",        "date",               allow_duplicate=True),
+    Output("ac-to-date",          "date",               allow_duplicate=True),
     Output("ac-applied-filters",  "data", allow_duplicate=True),
     Input("ac-reset-btn",         "n_clicks"),
     prevent_initial_call=True,
 )
 def reset_filters(n):
     d = _get_defaults()
-    defaults = {"start_month": d["start_val"], "end_month": d["end_val"],
+    defaults = {"start_month": d["start_val"][:7], "end_month": d["end_val"][:7],
                 "region": None, "actor_name": DEFAULT_ACTOR, "preset_label": None}
     return None, DEFAULT_ACTOR, d["start_val"], d["end_val"], defaults
 
 
 # 5. Filters + mode → rebuild all charts
 @callback(
-    Output("ac-map",             "figure"),
-    Output("ac-kpi-townships",   "children"),
-    Output("ac-kpi-offenses",    "children"),
-    Output("ac-kpi-defenses",    "children"),
+    Output("ac-map",              "figure"),
+    Output("ac-kpi-townships",    "children"),
+    Output("ac-kpi-offenses",     "children"),
+    Output("ac-kpi-defenses",     "children"),
     Output("ac-alliance-table",   "children"),
     Output("ac-trend",            "figure"),
     Output("ac-highest-region",   "children"),
     Output("ac-highest-count",    "children"),
     Output("ac-filter-summary",   "children"),
+    Output("ac-actor-banner-name","children"),
     Input("ac-applied-filters",   "data"),
     Input("ac-mode",              "data"),
     prevent_initial_call=True,
@@ -920,13 +932,15 @@ def update_actor(applied, mode):
         return (
             empty_map, "—", "—", "—",
             html.Div("No data.", className="table-empty"),
-            _empty_fig(height=220), "—", "—", filter_summary,
+            _empty_fig(height=220), "—", "—", filter_summary, actor_name,
         )
 
-    valid_ids  = set(al["event_id_cnty"].unique())
+    valid_ids   = set(al["event_id_cnty"].unique())
     n_townships = al["Tsp_Pcode"].nunique()
-    n_offenses  = al[al["type2"] == "offend"]["event_id_cnty"].nunique()
-    n_defenses  = al[al["type2"] == "being_offended"]["event_id_cnty"].nunique()
+    _off_ids    = set(al[al["type2"] == "offend"]["event_id_cnty"])
+    _def_ids    = set(al[al["type2"] == "being_offended"]["event_id_cnty"]) - _off_ids
+    n_offenses  = len(_off_ids)
+    n_defenses  = len(_def_ids)
 
     store = _build_store(actor_level, geo, actor_name, start_month, end_month,
                          region, acled, mode)
@@ -944,5 +958,5 @@ def update_actor(applied, mode):
         fig_map,
         _fmt(n_townships), _fmt(n_offenses), _fmt(n_defenses),
         alliance, fig_trend,
-        h_region, h_count, filter_summary,
+        h_region, h_count, filter_summary, actor_name,
     )

@@ -177,15 +177,28 @@ def build_pcode_lookup() -> pd.DataFrame:
     """
     Build a district+township → Tsp_Pcode lookup table from MIMU file.
     Matching key: admin2.lower() + '|' + admin3.lower()
-    All 358 combos are unique so this is safe.
+    Falls back to deriving the lookup from the existing cleaned parquet
+    if the source xlsx is missing.
     """
-    pcode = pd.read_excel(PCODE_FILE)
-    pcode["match_key"] = (
-        pcode["District/SAZ_Name_Eng"].str.strip().str.lower()
+    if PCODE_FILE.exists():
+        pcode = pd.read_excel(PCODE_FILE)
+        pcode["match_key"] = (
+            pcode["District/SAZ_Name_Eng"].str.strip().str.lower()
+            + "|"
+            + pcode["Township_Name_Eng"].str.strip().str.lower()
+        )
+        return pcode[["match_key", "Tsp_Pcode"]].drop_duplicates("match_key").copy()
+
+    # Fallback: rebuild lookup from the existing cleaned parquet
+    print("  Warning: pcode xlsx not found — rebuilding lookup from existing parquet.")
+    df = pd.read_parquet(OUTPUT_PARQUET, columns=["admin2", "admin3", "Tsp_Pcode"])
+    df = df.dropna(subset=["admin2", "admin3", "Tsp_Pcode"])
+    df["match_key"] = (
+        df["admin2"].astype(str).str.strip().str.lower()
         + "|"
-        + pcode["Township_Name_Eng"].str.strip().str.lower()
+        + df["admin3"].astype(str).str.strip().str.lower()
     )
-    return pcode[["match_key", "Tsp_Pcode"]].drop_duplicates("match_key").copy()
+    return df[["match_key", "Tsp_Pcode"]].drop_duplicates("match_key").copy()
 
 
 def fix_blank_admin3(df: pd.DataFrame) -> pd.DataFrame:
@@ -533,6 +546,18 @@ def build_actor_level(df_cleaned: pd.DataFrame) -> pd.DataFrame:
         subset=keep_cols + ["actor_name", "type1", "type2"]
     ).reset_index(drop=True)
 
+    # ── Offend takes precedence: if an actor appears on both sides of the same event,
+    # keep only their offensive role so offense + defense = total (no double-counting).
+    offend_keys = (
+        actor_level[actor_level["type2"] == "offend"][["event_id_cnty", "actor_name"]]
+        .drop_duplicates()
+        .assign(_has_offend=True)
+    )
+    actor_level = actor_level.merge(offend_keys, on=["event_id_cnty", "actor_name"], how="left")
+    actor_level = actor_level[
+        ~((actor_level["type2"] == "being_offended") & (actor_level["_has_offend"] == True))
+    ].drop(columns=["_has_offend"]).reset_index(drop=True)
+
     # ── Compute allies (actors on the same side in the same event) ───────────────
     # Group by event + side only (faster than all keep_cols)
     actors_by_side = (
@@ -683,11 +708,11 @@ def main(update_only: bool = False, export_csv: bool = False):
         # Parquet preserves datetime dtype — no re-parsing needed
         print(f"  Loaded {len(df_all):,} rows. Latest: {df_all['event_date'].max().date()}")
 
-        last_updated = read_last_updated()
-        api_start = last_updated if last_updated else "2026-02-01"
-        # Go back 1 day to catch any late-coded events
-        api_start_dt = pd.to_datetime(api_start) - timedelta(days=1)
-        api_start    = api_start_dt.strftime("%Y-%m-%d")
+        # Start from the latest event date in the existing data (not the last-run date),
+        # going back 7 days to catch any late-coded or corrected events.
+        latest_event_dt = df_all["event_date"].max()
+        api_start_dt    = latest_event_dt - timedelta(days=7)
+        api_start       = api_start_dt.strftime("%Y-%m-%d")
         api_end      = today_str
 
         print(f"\n[2/4] Fetching new data from ACLED API ({api_start} → {api_end})...")
