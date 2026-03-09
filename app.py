@@ -30,6 +30,22 @@ app = dash.Dash(
 server = app.server
 
 
+def mobile_topnav():
+    links = [
+        dcc.Link(
+            item["label"],
+            href=item["path"],
+            id=f"mob-nav-{i}",
+            className="mob-nav-link",
+        )
+        for i, item in enumerate(NAV_ITEMS)
+    ]
+    return html.Div([
+        html.Span("MCD", className="mob-brand"),
+        html.Div(links, className="mob-nav-links"),
+    ], className="mobile-topnav d-flex d-md-none")
+
+
 def sidebar():
     links = [
         dcc.Link(
@@ -76,6 +92,7 @@ def serve_layout():
 
     return dbc.Container([
         dcc.Location(id="url", refresh=False),
+        mobile_topnav(),
         dbc.Row([
             dbc.Col(sidebar(), md=2, className="g-0 d-none d-md-flex"),
             dbc.Col(
@@ -122,16 +139,23 @@ def render_page(pathname):
 
 # ── Highlight active nav link ─────────────────────────────────────────────────
 @callback(
-    [Output(f"nav-link-{i}", "className") for i in range(len(NAV_ITEMS))],
+    [Output(f"nav-link-{i}", "className") for i in range(len(NAV_ITEMS))]
+    + [Output(f"mob-nav-{i}", "className") for i in range(len(NAV_ITEMS))],
     Input("url", "pathname"),
 )
 def highlight_active_nav(pathname):
     pathname = pathname or "/"
-    return [
+    desktop = [
         "nav-link-wrap nav-link-wrap--active" if item["path"] == pathname
         else "nav-link-wrap"
         for item in NAV_ITEMS
     ]
+    mobile = [
+        "mob-nav-link mob-nav-link--active" if item["path"] == pathname
+        else "mob-nav-link"
+        for item in NAV_ITEMS
+    ]
+    return desktop + mobile
 
 
 if __name__ == "__main__":

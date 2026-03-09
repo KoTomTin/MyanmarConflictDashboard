@@ -1099,6 +1099,11 @@ body {
   background: var(--sidebar-hover-bg);
   color: var(--accent);
 }
+.mob-nav-link--active {
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-text);
+  font-weight: 700;
+}
 
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 1400px) {
