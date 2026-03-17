@@ -43,7 +43,7 @@ def mobile_topnav():
     return html.Div([
         html.Span("MCD", className="mob-brand"),
         html.Div(links, className="mob-nav-links"),
-    ], className="mobile-topnav d-flex d-md-none")
+    ], className="mobile-topnav")
 
 
 def sidebar():
