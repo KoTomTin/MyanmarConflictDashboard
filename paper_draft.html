@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Myanmar Conflict Dashboard — Paper Draft</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Georgia", serif;
+    font-size: 11.5pt;
+    line-height: 1.8;
+    color: #1a1a1a;
+    background: #fff;
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 60px 40px;
+  }
+  .share-banner {
+    background: #1a3a5c;
+    color: #fff;
+    padding: 12px 18px;
+    border-radius: 6px;
+    font-size: 9.5pt;
+    margin-bottom: 36px;
+    font-family: monospace;
+  }
+  .share-banner a { color: #7ec8e3; }
+  h1.paper-title {
+    font-size: 16pt;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 10px;
+    line-height: 1.4;
+  }
+  .authors { text-align: center; font-size: 10.5pt; color: #444; margin-bottom: 4px; }
+  .affiliation { text-align: center; font-size: 9.5pt; color: #666; margin-bottom: 30px; }
+  .abstract-box {
+    border: 1px solid #ccc;
+    padding: 18px 22px;
+    margin: 30px 0;
+    background: #fafafa;
+  }
+  .abstract-box h2 {
+    font-size: 10.5pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
+  }
+  .abstract-box p { font-size: 10.5pt; text-align: justify; }
+  .keywords { font-size: 10pt; margin-top: 10px; color: #333; }
+  h2.section {
+    font-size: 13pt;
+    font-weight: bold;
+    margin-top: 40px;
+    margin-bottom: 10px;
+    border-bottom: 1.5px solid #2c3e50;
+    padding-bottom: 4px;
+    color: #2c3e50;
+  }
+  h3.subsection {
+    font-size: 11.5pt;
+    font-weight: bold;
+    margin-top: 24px;
+    margin-bottom: 8px;
+    color: #34495e;
+  }
+  p { text-align: justify; margin-bottom: 13px; }
+  blockquote {
+    border-left: 3px solid #bbb;
+    padding-left: 16px;
+    margin: 14px 0 14px 20px;
+    color: #444;
+    font-style: italic;
+    font-size: 10.5pt;
+  }
+  /* ── Tables ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0 6px 0;
+    font-size: 9.5pt;
+  }
+  th {
+    background: #2c3e50;
+    color: #fff;
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: bold;
+  }
+  td { padding: 7px 10px; border-bottom: 1px solid #e0e0e0; vertical-align: top; }
+  tr:nth-child(even) td { background: #f7f7f7; }
+  .table-caption {
+    font-size: 9pt;
+    color: #555;
+    margin-bottom: 20px;
+    font-style: italic;
+  }
+  .badge-done    { color: #1a7a3c; font-weight: bold; }
+  .badge-partial { color: #b45309; font-weight: bold; }
+  .badge-no      { color: #c0392b; font-weight: bold; }
+  /* ── Figures ── */
+  .figure-wrap {
+    margin: 24px 0;
+    text-align: center;
+  }
+  .figure-wrap img {
+    max-width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .figure-placeholder {
+    border: 2px dashed #aaa;
+    background: #f9f9f9;
+    padding: 40px 20px;
+    color: #888;
+    font-size: 9.5pt;
+    font-style: italic;
+    border-radius: 4px;
+  }
+  .figure-caption {
+    font-size: 9.5pt;
+    color: #444;
+    margin-top: 8px;
+    font-style: italic;
+    text-align: center;
+  }
+  /* ── Notes ── */
+  .note {
+    font-size: 9pt;
+    color: #555;
+    border-left: 3px solid #f0c040;
+    padding: 8px 14px;
+    margin: 14px 0;
+    background: #fffdf0;
+    font-style: italic;
+  }
+  hr.section-break { border: none; border-top: 1px solid #ddd; margin: 44px 0; }
+  .ref-list p {
+    font-size: 9.5pt;
+    text-indent: -28px;
+    padding-left: 28px;
+    margin-bottom: 7px;
+    text-align: left;
+    line-height: 1.55;
+  }
+</style>
+</head>
+<body>
+
+<div class="share-banner">
+  📄 Share this paper:
+  <a href="https://htmlpreview.github.io/?https://raw.githubusercontent.com/KoTomTin/MyanmarConflictDashboard/main/paper_draft.html" target="_blank">
+    https://htmlpreview.github.io/?https://raw.githubusercontent.com/KoTomTin/MyanmarConflictDashboard/main/paper_draft.html
+  </a>
+  &nbsp;·&nbsp; Dashboard:
+  <a href="https://myanmarconflictdashboard.onrender.com" target="_blank">myanmarconflictdashboard.onrender.com</a>
+</div>
+
+<h1 class="paper-title">Designing a User-Centred Conflict Monitoring Dashboard for Myanmar:<br>
+Integrating Expert Requirements with Visualization Theory</h1>
+
+<p class="authors">Kaung Khant Tin</p>
+<p class="affiliation">
+  MSc Data Science, City St George's, University of London<br>
+  Supervised by Dr Ernesto Priego<br>
+  <em>Dashboard: https://myanmarconflictdashboard.onrender.com</em>
+</p>
+
+<!-- ── Abstract ──────────────────────────────────────── -->
+<div class="abstract-box">
+  <h2>Abstract</h2>
+  <p>
+    Conflict monitoring tools play a critical role in supporting humanitarian actors, journalists,
+    researchers, and civil society organisations operating in active conflict zones. While global
+    platforms such as ACLED Explorer provide a strong foundation for conflict data access and
+    visualisation, practitioners working within specific country contexts often require interfaces
+    contextualised to local actors, geographies, and analytical needs. This paper presents the
+    Myanmar Conflict Dashboard, a two-page interactive web application that uses ACLED data as
+    its foundation and extends it specifically for Myanmar practitioners. Design decisions were
+    informed by two complementary streams: expert requirements elicited through semi-structured
+    interviews with five purposively selected domain experts, structured using a ten-domain
+    usability framework; and established principles from dashboard design, visual encoding,
+    colour theory, temporal visualisation, and crisis informatics literature. Each design decision
+    is traced through a design matrix linking user requirements to theoretical principles and
+    implementation outcomes. A developer self-evaluation against the same ten usability domains
+    confirms design traceability and surfaces remaining gaps for future work. The dashboard is
+    publicly deployed and continuously updated via an automated weekly data pipeline. This paper
+    contributes a replicable dual-stream design methodology applicable to contexts where
+    globally designed tools inadequately serve local practitioner communities.
+  </p>
+  <p class="keywords">
+    <strong>Keywords:</strong> conflict monitoring, Myanmar, dashboard design, user-centred design,
+    visualisation theory, humanitarian informatics, ACLED
+  </p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 class="section">1. Introduction</h2>
+
+<p>
+  Since the military coup of 1 February 2021, Myanmar has experienced an escalating and
+  multifaceted armed conflict involving the military junta (State Administration Council, SAC),
+  the People's Defence Force (PDF) aligned with the National Unity Government, and numerous
+  Ethnic Resistance Organisations (EROs). The humanitarian consequences have been severe: over
+  three million people have been internally displaced, and violence against civilians — including
+  aerial and drone strikes, forced conscription, and shelling — has intensified across multiple
+  regions (UNHCR, 2025; Fishbein and J, 2024).
+</p>
+<p>
+  For humanitarian organisations, journalists, civil society groups, and researchers, timely
+  and accessible conflict data is essential for planning, reporting, advocacy, and
+  decision-making. The Armed Conflict Location and Event Data Project (ACLED) is among the most
+  trusted global sources of conflict event data, recording incidents by date, location, actor,
+  event type, and fatalities across more than 200 countries (Raleigh et al., 2023). ACLED also
+  provides ACLED Explorer, an interactive platform that allows users to visualise conflict
+  patterns through maps, time series, and filtered summaries — designed for global audiences
+  and broad comparative use.
+</p>
+<p>
+  Building on ACLED's data and using ACLED Explorer as a design reference point, this paper
+  asks: what additional contextual features would a Myanmar-specific conflict monitoring
+  dashboard need, designed with and for local practitioners? Expert users working in Myanmar
+  contexts require township-level geographic detail, actor-specific breakdowns, Myanmar-specific
+  event categories such as drone strikes and displacement events, and flexible temporal
+  exploration. The Myanmar Conflict Dashboard was developed to address these contextual
+  requirements, extending and localising the analytical possibilities that ACLED data enables.
+</p>
+<p>
+  Dashboard design is not a neutral technical act. Decisions about which charts to include,
+  how to encode data, which colours to use, and how to structure interaction reflect both what
+  users need and what the research literature tells us works effectively. This paper makes that
+  dual rationale explicit: every major design decision is traceable to a user requirement and
+  a theoretical principle from the visualisation or humanitarian informatics literature.
+</p>
+<p>The paper makes three contributions:</p>
+<p>
+  First, it presents a structured needs elicitation from five domain experts representing
+  diverse Myanmar practitioner roles, using a ten-domain usability framework as a systematic
+  lens applied to ACLED Explorer as a reference tool. Second, it provides a theoretically
+  grounded design account — a design matrix — in which each dashboard feature is justified
+  by both user need and established literature. Third, it describes a publicly deployed,
+  continuously updated tool accompanied by a developer self-evaluation.
+</p>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 class="section">2. Related Work</h2>
+
+<h3 class="subsection">2.1 Conflict Data and Existing Tools</h3>
+<p>
+  ACLED is widely regarded as one of the most rigorous sources of political violence and protest
+  data. Its transparent methodology — codebooks, triangulated source collection, conservative
+  fatality estimates, and weekly review cycles — makes it particularly credible for research
+  and advocacy (Raleigh et al., 2023). For Myanmar specifically, ACLED maintains a dedicated
+  methodology page reflecting the constraints of reporting in an active conflict zone, including
+  internet shutdowns and risks to local journalists. These constraints mean that ACLED data
+  should be read as indicative signals rather than exact counts (Weidmann, 2015).
+</p>
+<p>
+  Beyond ACLED Explorer, several Myanmar-specific dashboards exist: the NUG Ministry of Human
+  Rights tracks massacres and aerial attacks; Myanmar Peace Monitor provides dashboards on
+  armed conflict and airstrikes; the IISS Myanmar Conflict Map offers a visually clean interface
+  for conflict events. Each serves a specific analytical purpose. What they share is a focus
+  on particular event categories or actors, without combining township-level geography,
+  actor-level analysis, and flexible temporal exploration in a single open-access platform.
+  The Myanmar Conflict Dashboard aims to complement these tools by offering an integrated,
+  context-specific analytical interface built on ACLED's comprehensive event-level data.
+</p>
+
+<h3 class="subsection">2.2 Dashboard Design Theory</h3>
+<p>
+  Few (2006) defines dashboards as single-screen tools for situational awareness, emphasising
+  that KPI cards should enable immediate comprehension before detailed exploration begins.
+  Bach et al. (2022), analysing 144 dashboards, identify the most empirically validated layout
+  pattern as a top KPI strip combined with a central anchor chart and supporting detail charts,
+  with filter panels placed at the top. Sarikaya et al. (2019), in a systematic analysis of
+  84 dashboards, find that the most effective dashboards serve a single primary task per view,
+  with mixed-purpose designs reducing usability. These three bodies of work provide the primary
+  theoretical basis for the dashboard's layout and two-page structure.
+</p>
+<p>
+  The architectural logic of the dashboard follows Shneiderman's (1996) widely cited Visual
+  Information Seeking Mantra: <em>overview first, zoom and filter, then details on demand</em>.
+  The Overview page provides a national-level situation; regional and conflict-type filters
+  allow focused exploration; township-level tooltips provide precise detail on demand; and the
+  Actor Analysis page provides deeper drill-down into specific actor dynamics.
+</p>
+
+<h3 class="subsection">2.3 Visual Encoding Principles</h3>
+<p>
+  Cleveland and McGill (1984), in a landmark study of graphical perception, ranked visual
+  encoding channels by accuracy: position on a common scale is most accurate, followed by
+  length, angle, and finally colour saturation — the least accurate channel for quantitative
+  comparison. This hierarchy has direct implications for chart type selection and for
+  understanding the inherent limitations of choropleth maps, which rely on colour saturation
+  to encode event counts. The implication is that choropleth maps communicate spatial pattern
+  effectively but must be complemented by tooltips that provide precise numerical values.
+</p>
+<p>
+  Tufte (1983) argues for maximising the data-ink ratio: every element of a chart should carry
+  information, and decorative elements — unnecessary gridlines, borders, three-dimensional
+  effects, and superfluous labels — reduce comprehension. Munzner (2014) provides a systematic
+  framework for visualisation design, arguing that spatial position is the most powerful
+  encoding channel and should be reserved for the most important variable — in a conflict
+  monitoring context, geographic position.
+</p>
+
+<h3 class="subsection">2.4 Colour Theory</h3>
+<p>
+  Harrower and Brewer (2003), in the foundational paper accompanying the ColorBrewer tool,
+  establish three colour scheme types for maps: sequential schemes for ordered data from
+  low to high, diverging schemes for data with a meaningful midpoint, and qualitative schemes
+  for categorical data. For conflict event density — an ordered quantity — a sequential scheme
+  is theoretically correct. ColorBrewer specifically recommends single-hue sequential schemes
+  for density maps, and the dashboard adopts a sequential blue scale. Blue is also politically
+  neutral in the Myanmar context, where red and green carry associations with specific armed actors.
+</p>
+<p>
+  Ware (2004) describes preattentive processing — visual features that the brain processes
+  before conscious attention, within approximately 200 milliseconds. Colour hue is among the
+  most powerful preattentive features. This justifies using blue for Total Conflicts and red
+  for Total Fatalities KPI cards: the distinction is processed instantly, without requiring
+  users to read labels under time pressure.
+</p>
+
+<h3 class="subsection">2.5 Temporal Visualisation</h3>
+<p>
+  Aigner et al. (2011) establish that line charts are the most effective encoding for
+  continuous temporal sequences, and that event markers — annotations at specific time points —
+  contextualise statistical patterns with real-world occurrences. In a conflict monitoring
+  context, statistical spikes in violence are only interpretable when connected to the events
+  that caused them: a coup, a major offensive, or a ceasefire breakdown. Milestone lines on
+  the trend charts directly implement this principle.
+</p>
+<p>
+  Andrienko and Andrienko (2006) distinguish between two analytical tasks for spatio-temporal
+  data: pattern recognition (observing how a spatial phenomenon changes over time) and precise
+  comparison (comparing specific values at specific locations). They find animated maps
+  effective for pattern recognition but static views better for precise comparison. The
+  dual-mode choropleth design — Period Total static view and Quarterly Animation — is a
+  direct implementation of this task-based distinction.
+</p>
+
+<h3 class="subsection">2.6 Humanitarian and Crisis Informatics</h3>
+<p>
+  Palen et al. (2010) argue that information tools in crisis contexts face a distinct cognitive
+  challenge: users make decisions under time pressure with incomplete information. This places
+  a premium on cognitive load reduction — interfaces must support rapid comprehension without
+  requiring extensive learning. Every simplification in the dashboard — limiting KPI cards to
+  two or three, sorting bar charts by frequency, restricting tooltips to essential information —
+  is defensible under this principle.
+</p>
+<p>
+  Vinck et al. (2019) argue that aggregation level decisions are not merely technical choices
+  but ethical ones: village-level data could expose individuals in sparsely populated conflict
+  zones, while township-level aggregation provides actionable geographic detail without
+  individual identification risk. The decision to aggregate at township level in the dashboard
+  is therefore an ethical design choice, supported by the availability of MIMU township
+  shapefiles (330 features) and consistent with the do-no-harm principle in humanitarian
+  informatics.
+</p>
+
+<h3 class="subsection">2.7 Usability Frameworks</h3>
+<p>
+  Almasi et al. (2023), in a systematic literature review of dashboard usability tools,
+  identify ten domains that together provide comprehensive coverage: usefulness, suitability
+  for task, situational awareness, satisfaction and trust, content, ease of use, operability,
+  learnability, user interface design, and system capabilities. This ten-domain framework
+  structures both the expert interviews and the subsequent self-evaluation, providing a
+  consistent lens from requirements to evaluation. Nielsen and Landauer (1993) demonstrated
+  that five users are sufficient to identify approximately 85% of usability problems in a
+  system, providing a theoretical basis for the decision to conduct five expert interviews.
+</p>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 class="section">3. Methodology</h2>
+
+<h3 class="subsection">3.1 Overall Design Process</h3>
+<p>
+  The design process followed a dual-stream approach. Stream one elicited user requirements
+  from domain experts through semi-structured interviews, using the ten-domain usability
+  framework as a systematic lens applied to ACLED Explorer as a shared reference tool.
+  Stream two drew on the visualisation, dashboard design, and humanitarian informatics
+  literature to identify theoretically grounded design principles. These two streams converged
+  in a design matrix — a structured artifact linking each identified user requirement to a
+  corresponding literature principle and implementation decision. The dashboard was built
+  iteratively, and a self-evaluation against the same ten domains assessed the degree to
+  which requirements were met.
+</p>
+
+<div class="figure-wrap">
+  <div class="figure-placeholder">
+    [Figure 1: Dual-stream design process flow —<br>
+    Expert Interviews (10-domain framework) → Requirements<br>
+    | Literature Review → Design Principles<br>
+    → Design Matrix → Dashboard Implementation → Self-Evaluation]
+  </div>
+  <p class="figure-caption">Figure 1. Overview of the dual-stream design process.</p>
+</div>
+
+<h3 class="subsection">3.2 Expert Requirements Elicitation</h3>
+<p>
+  Five domain experts were recruited through purposive selection to represent the diversity
+  of professional roles that engage with Myanmar conflict data in practice. Participants
+  included one NGO/INGO analyst (P1), one researcher/analyst working with conflict and
+  geographic data (P2), one data analyst working across humanitarian response (P3), one
+  conflict and policy analyst (P4), and one activist and politician (P5). Purposive selection
+  was adopted because the goal was to capture expert knowledge across professional contexts,
+  not to achieve statistical representativeness. Recruitment through professional networks
+  established during the author's prior humanitarian work in Myanmar was considered necessary
+  given the sensitive nature of the topic and the risks associated with public recruitment
+  during an active conflict.
+</p>
+<p>
+  Semi-structured interviews were conducted individually via Zoom between 21 and 27 August
+  2025, each lasting approximately 45–60 minutes. Ethical procedures were followed throughout:
+  participants received an information sheet and interview protocol in advance, digital consent
+  was obtained through Qualtrics forms, and additional safety protocols were developed for
+  discussions involving sensitive conflict-related content. Sessions were recorded with
+  permission and detailed notes were taken and cross-checked against recordings immediately
+  after each interview.
+</p>
+<p>
+  Each interview was structured around the ten usability domains (Almasi et al., 2023), with
+  ACLED Explorer used as a shared reference point. Participants were invited to explore it
+  during the session and to reflect on what additional features or contextual adaptations they
+  would need for Myanmar-specific monitoring work. Open-ended questions allowed participants
+  to raise concerns and ideas beyond the ten domains. Analysis followed rapid thematic coding,
+  grouping responses by domain to produce a consolidated set of Myanmar-specific design
+  requirements.
+</p>
+
+<h3 class="subsection">3.3 Theoretical Framework Application</h3>
+<p>
+  In parallel with the interview process, the visualisation and dashboard design literature
+  was reviewed to identify principles applicable to each design decision. This review drew
+  on foundational texts in visual encoding (Cleveland and McGill, 1984; Tufte, 1983;
+  Munzner, 2014), colour theory (Harrower and Brewer, 2003; Ware, 2004), dashboard design
+  (Few, 2006; Bach et al., 2022; Sarikaya et al., 2019), interaction design (Shneiderman,
+  1996; Norman, 2013), temporal visualisation (Aigner et al., 2011; Andrienko and
+  Andrienko, 2006), and humanitarian informatics (Palen et al., 2010; Vinck et al., 2019).
+  The resulting design matrix (Table 1) documents the convergence of these two streams for
+  each major design decision.
+</p>
+
+<h3 class="subsection">3.4 Implementation</h3>
+<p>
+  The dashboard was implemented in Python using Plotly Dash, a reactive web framework that
+  enables server-side callbacks to update charts in response to user filter changes without
+  full page reloads. Plotly's native animation frame bundling was used for the Quarterly
+  Animation choropleth, sending all animation frames to the client in a single payload. Data
+  is stored in Parquet format, providing columnar storage and faster read times than CSV for
+  the aggregation queries used.
+</p>
+<p>
+  The underlying data pipeline connects to the ACLED API using OAuth authentication, retrieves
+  Myanmar conflict events, applies a standardised cleaning workflow — township code matching
+  against MIMU GeoJSON boundaries (330 features), recoding of Myanmar-specific event
+  categories, and date normalisation — and produces Parquet files consumed by the dashboard.
+  The pipeline runs automatically every Monday via GitHub Actions, ensuring the dashboard
+  reflects ACLED's most recent weekly data publication. The dashboard is publicly accessible
+  at <em>https://myanmarconflictdashboard.onrender.com</em> without authentication.
+</p>
+
+<h3 class="subsection">3.5 Self-Evaluation</h3>
+<p>
+  Following deployment, the dashboard was evaluated by the author against the same ten
+  usability domains used in the requirements elicitation phase. For each domain, the
+  evaluation asked: what requirement was identified in the interviews? What was implemented?
+  To what extent was the requirement met? This self-evaluation is presented as a design
+  traceability check rather than a formal user study, and its limitations — including the
+  risk of confirmation bias — are acknowledged explicitly in Section 7.
+</p>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 class="section">4. Expert Requirements: What Myanmar Practitioners Need</h2>
+
+<p>
+  The five interviews produced a consistent set of requirements across the ten usability
+  domains. Using ACLED Explorer as a shared reference point, participants articulated what a
+  Myanmar-specific tool would additionally require. The following presents the key themes by
+  domain. A summary is provided in Table 2.
+</p>
+
+<h3 class="subsection">Usefulness</h3>
+<p>
+  Across all five participants, ACLED Explorer was valued as a quick overview tool. P1 noted
+  that headline figures — total fatalities and event counts — visible at a glance were
+  immediately useful. P3 and P5 both identified the Myanmar map and core data cards as the
+  first thing they want to see. However, participants consistently noted that for Myanmar-specific
+  professional work, the reference tool's global design limits its depth: P1 and P3 reported
+  relying on the raw ACLED data files for detailed analysis rather than the dashboard interface.
+  P5 noted that data from central Myanmar — Sagaing, Magway, Mandalay — reflecting small
+  battles often under-reported in mainstream media, is particularly valuable and should be
+  prominently accessible.
+</p>
+
+<h3 class="subsection">Suitability for Task</h3>
+<p>
+  All five participants described the reference dashboard as a briefing or supporting tool
+  rather than a primary analytical instrument. P1 and P2 expressed a preference for
+  downloadable data tables over static figure exports, to allow further analysis in their
+  organisations' own tools. P3 and P4 raised the need for more customisable controls,
+  particularly for time filtering — preferring date range selectors over fixed radio button
+  presets.
+</p>
+
+<h3 class="subsection">Situational Awareness</h3>
+<p>
+  Understanding actor dynamics was the most consistently voiced situational awareness gap.
+  P2 and P5 both noted that actor information — which groups are involved and how they
+  interact — is missing from the reference tool and is essential for understanding conflict
+  dynamics. P5 specifically noted that responsibility for civilian targeting is unclear without
+  actor-level data. P1 saw value in highlighting abnormal spikes in conflict activity to
+  support rapid situational assessment. P3 suggested that actor representation should be
+  simplified — limited to main actors with aggregated figures — to avoid cognitive overload
+  from the large number of named actors. P4 noted the importance of capturing major
+  alliance formations, such as the coalition active in Operation 1027.
+</p>
+
+<h3 class="subsection">Satisfaction and Trust</h3>
+<p>
+  Trust in ACLED as a data source was consistently high across participants. P3 described
+  ACLED as less biased because it triangulates news from multiple sources. P4 emphasised
+  ACLED's strong reputation and methodology as the basis for trust. P1 noted that trust
+  depends on the visibility of source information and notes within the interface — not all
+  events' sources are clearly presented. P2 raised an important nuance: while the dashboard
+  is trustworthy for international audiences who expect generalisation, Myanmar locals may
+  require higher source granularity for credibility.
+</p>
+
+<h3 class="subsection">Content</h3>
+<p>
+  Township-level geographic disaggregation was raised by P1, P3, and P5 as the most
+  important content gap. P1 requested that air strikes and drone attacks be distinguished
+  as separate event categories rather than grouped together. P2 and P5 identified actor
+  relationships and co-occurrence patterns as missing content — P2 noted that the reference
+  dashboard does not show actor relationships clearly. P4 raised the value of localising
+  event and conflict categories to Myanmar's specific conflict context.
+</p>
+
+<h3 class="subsection">Ease of Use</h3>
+<p>
+  Most participants found basic navigation straightforward. P5 appreciated a spacious layout
+  that is easy on the eyes, while also noting that map zooming can cause users to lose
+  orientation — requesting a reset or lock function for the map. P3 preferred date range
+  selectors over preset radio buttons for time filtering. P4 noted that the optimal number
+  of charts per page is approximately five, beyond which information density becomes
+  overwhelming.
+</p>
+
+<h3 class="subsection">Operability</h3>
+<p>
+  Interactive map drill-down was requested by multiple participants: P1 and P4 noted that
+  clicking on a region should filter the dashboard to that location. P3 and P4 expressed
+  a preference for more customisable controls, particularly for regional and temporal filtering.
+  P1 noted that the interaction model should keep other regions visible when a specific one
+  is selected, rather than removing them.
+</p>
+
+<h3 class="subsection">Learnability</h3>
+<p>
+  The term "exposure" was identified by P3, P4, and P5 as unclear without explanation. P4
+  suggested replacing it with "population at risk" as a more intuitive label. P3 also noted
+  difficulty with "strategic developments" as a category name. P1 suggested hover tooltips
+  as the preferred mechanism for term clarification — consistent with a preference for
+  progressive disclosure over persistent labels. P4 requested a tutorial or walkthrough for
+  first-time users; P1 and P2 did not consider this necessary given their familiarity with
+  ACLED data.
+</p>
+
+<h3 class="subsection">User Interface</h3>
+<p>
+  Opinions on visual design were mixed but converged on several points. P3 and P4 appreciated
+  a simple, uncluttered layout. P1 requested stronger colour intensity to reflect event
+  magnitude, suggesting that colours should scale with severity. P5 noted that the map itself
+  creates a powerful sense of personal relevance and ownership — "this is happening in my
+  country" — making the geographic view the most emotionally meaningful element. P3 suggested
+  choropleth maps as preferable to dense point plots for readability.
+</p>
+
+<h3 class="subsection">System Capabilities</h3>
+<p>
+  Responsiveness and load speed were considered acceptable across all participants. P1, P3,
+  and P4 requested the ability to save filter settings between sessions. P1, P2, P3, and P4
+  requested downloadable data outputs — not figure images, but data tables. Mobile accessibility
+  was raised by P2, P3, P4, and P5, with P5 noting that map zooming is particularly problematic
+  on mobile devices.
+</p>
+
+<table>
+  <tr>
+    <th>Domain</th>
+    <th>Key Myanmar-Specific Requirements</th>
+    <th>Participants</th>
+  </tr>
+  <tr>
+    <td>Usefulness</td>
+    <td>Core KPI cards at a glance; township-level detail; central Myanmar data coverage</td>
+    <td>P1, P2, P3, P5</td>
+  </tr>
+  <tr>
+    <td>Suitability</td>
+    <td>Flexible date filtering; downloadable data tables; analytical depth beyond briefing</td>
+    <td>P1, P2, P3, P4</td>
+  </tr>
+  <tr>
+    <td>Situational Awareness</td>
+    <td>Actor-level dynamics; who drives civilian targeting; alliance representation</td>
+    <td>P2, P3, P4, P5</td>
+  </tr>
+  <tr>
+    <td>Satisfaction &amp; Trust</td>
+    <td>Source visibility; methodology transparency; acknowledgement of data limitations</td>
+    <td>P1, P2, P3, P4</td>
+  </tr>
+  <tr>
+    <td>Content</td>
+    <td>Township map; actor co-occurrence; separate drone strikes; Myanmar-specific event categories</td>
+    <td>P1, P2, P3, P5</td>
+  </tr>
+  <tr>
+    <td>Ease of Use</td>
+    <td>Date range selector; spacious layout; map reset button; ≤5 charts per page</td>
+    <td>P1, P3, P4, P5</td>
+  </tr>
+  <tr>
+    <td>Operability</td>
+    <td>Region drill-down by clicking; keep other regions visible; customisable filters</td>
+    <td>P1, P3, P4</td>
+  </tr>
+  <tr>
+    <td>Learnability</td>
+    <td>Hover tooltips for terms; replace "exposure" with plain language</td>
+    <td>P1, P3, P4, P5</td>
+  </tr>
+  <tr>
+    <td>User Interface</td>
+    <td>Colour intensity reflects magnitude; choropleth over point plots; uncluttered layout</td>
+    <td>P1, P3, P4, P5</td>
+  </tr>
+  <tr>
+    <td>System Capabilities</td>
+    <td>Save filter settings; downloadable data; mobile-friendly map navigation</td>
+    <td>P1, P2, P3, P4, P5</td>
+  </tr>
+</table>
+<p class="table-caption">Table 2. Summary of Myanmar-specific requirements by usability domain and contributing participants.</p>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 class="section">5. Dashboard Design and Implementation</h2>
+
+<h3 class="subsection">5.1 Design Matrix</h3>
+
+<p>
+  Table 1 presents the design matrix, documenting for each major feature: the Myanmar-specific
+  requirement that motivated it, the literature principle that informed how it was implemented,
+  the design decision taken, and its implementation status. This dual justification — user
+  requirement and theoretical grounding — is the core methodological contribution of the
+  dual-stream approach.
+</p>
+
+<table>
+  <tr>
+    <th>Domain</th>
+    <th>User Requirement</th>
+    <th>Literature Principle</th>
+    <th>Design Decision</th>
+    <th>Status</th>
+  </tr>
+  <tr>
+    <td>Usefulness</td>
+    <td>Core KPI figures at a glance (P1, P3)</td>
+    <td>Few (2006): KPI cards for immediate situational awareness</td>
+    <td>Two KPI cards: Total Conflicts (blue), Total Fatalities (red)</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>Usefulness</td>
+    <td>Regular data updates (P1)</td>
+    <td>Few (2006): dashboards should reflect current situational reality</td>
+    <td>ACLED API pipeline; GitHub Actions Monday auto-update</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>Suitability</td>
+    <td>Flexible temporal filtering; date range selector preferred over presets (P3, P4)</td>
+    <td>Norman (2013): affordances; Bach et al. (2022): filter bar at top</td>
+    <td>Date presets (Last 7/30 days, Since Feb 2021) + custom date-from/to pickers; Apply/Reset buttons</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>Suitability</td>
+    <td>Downloadable data tables (P1, P2, P3, P4)</td>
+    <td>—</td>
+    <td>Not implemented — ACLED terms of use restrict raw data redistribution</td>
+    <td><span class="badge-no">Not Done</span></td>
+  </tr>
+  <tr>
+    <td>Situational Awareness</td>
+    <td>Actor-level dynamics; who drives events (P2, P5)</td>
+    <td>Sarikaya et al. (2019): single primary task per view</td>
+    <td>Dedicated Actor Analysis page with actor selector, geographic footprint choropleth, associated actors bar chart, engagement trend</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>Situational Awareness</td>
+    <td>Statistical patterns connected to real-world events (P1, P4)</td>
+    <td>Aigner et al. (2011): event markers contextualise temporal patterns</td>
+    <td>Milestone vertical lines on both trend charts: coup, Operation 1027, key offensives</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>Satisfaction &amp; Trust</td>
+    <td>Methodology transparency and source attribution (P1, P3, P4)</td>
+    <td>Vinck et al. (2019): transparency is foundational in conflict contexts</td>
+    <td>Dedicated About and Methodology pages; ACLED attribution on all charts</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>Content</td>
+    <td>Township-level geographic breakdown (P1, P3, P5)</td>
+    <td>Harrower &amp; Brewer (2003): sequential choropleth for density; Munzner (2014): spatial position for primary variable</td>
+    <td>Township choropleth map — sequential blue scale; grey for zero; 95th-percentile cap</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>Content</td>
+    <td>Actor co-occurrence patterns (P2, P5)</td>
+    <td>Cleveland &amp; McGill (1984): length encoding more accurate than colour for comparison</td>
+    <td>Associated Actors bar chart — ranked co-occurrence by frequency</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>Content</td>
+    <td>Separate drone strikes from airstrikes (P1)</td>
+    <td>Tufte (1983): data should be coded at the level of analytical need</td>
+    <td>Drone strikes recoded as distinct event category; displacement separated from "Other"</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>Ease of Use</td>
+    <td>Map reset after zooming (P5)</td>
+    <td>Bach et al. (2022): navigation controls reduce disorientation</td>
+    <td>Reset button restores full national map view</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>Operability</td>
+    <td>Region-level filtering (P1, P4)</td>
+    <td>Shneiderman (1996): zoom and filter stage of the mantra</td>
+    <td>Region dropdown filter as proxy for map drill-down</td>
+    <td><span class="badge-partial">Partial</span></td>
+  </tr>
+  <tr>
+    <td>Operability</td>
+    <td>Mobile accessibility (P2, P3, P4, P5)</td>
+    <td>Palen et al. (2010): crisis tools must be accessible under resource constraints</td>
+    <td>Mobile top navigation bar; responsive Bootstrap layout</td>
+    <td><span class="badge-partial">Partial</span></td>
+  </tr>
+  <tr>
+    <td>Learnability</td>
+    <td>Hover tooltips for technical terms (P1, P3, P4, P5)</td>
+    <td>Progressive disclosure; Nielsen (2012): recognition not recall</td>
+    <td>Hover tooltips on charts; About page with plain-language explanations</td>
+    <td><span class="badge-partial">Partial — glossary not implemented</span></td>
+  </tr>
+  <tr>
+    <td>User Interface</td>
+    <td>Colour intensity reflects event magnitude (P1, P3)</td>
+    <td>Harrower &amp; Brewer (2003): luminance range in sequential scale; Ware (2004): preattentive contrast</td>
+    <td>Sequential blue with increased luminance range; consistent typography; minimal sidebar</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>System Capabilities</td>
+    <td>Responsive performance (all participants)</td>
+    <td>Few (2006): dashboards must respond under real conditions</td>
+    <td>Parquet format for fast reads; server-side caching; client-side animation frames</td>
+    <td><span class="badge-done">Done</span></td>
+  </tr>
+  <tr>
+    <td>System Capabilities</td>
+    <td>Save filter settings (P1, P3, P4)</td>
+    <td>—</td>
+    <td>Not implemented within timeframe</td>
+    <td><span class="badge-no">Not Done</span></td>
+  </tr>
+</table>
+<p class="table-caption">Table 1. Design matrix linking user requirements, literature principles, design decisions, and implementation status.</p>
+
+<h3 class="subsection">5.2 Overview Page</h3>
+
+<p>
+  The Overview page is the primary situational awareness view, implementing the first stage of
+  Shneiderman's (1996) mantra: overview first. A filter bar at the top — consistent with the
+  most validated dashboard pattern identified by Bach et al. (2022) — provides date presets,
+  custom date pickers, a region dropdown, a conflict type dropdown, and Apply/Reset buttons.
+  Norman's (2013) principle of affordances informed the design of these controls: buttons are
+  visually distinct from labels, and the Apply/Reset pair makes the interaction model explicit.
+</p>
+<p>
+  Two KPI cards provide immediate situational awareness (Few, 2006): Total Conflicts in blue
+  and Total Fatalities in red. The colour distinction is grounded in Ware's (2004) preattentive
+  processing principle — colour hue is processed before conscious attention, ensuring the
+  distinction between event counts and fatality counts is grasped instantly.
+</p>
+<p>
+  The central anchor chart is a township-level choropleth map of Myanmar's 330 townships. A
+  sequential single-hue blue scale is applied, following Harrower and Brewer's (2003)
+  recommendation for ordered conflict density data. Grey is used for townships with zero
+  recorded events, following standard cartographic practice to distinguish absence of events
+  from low activity (Juergens, 2020). A 95th-percentile cap on the colour scale prevents
+  high-conflict townships from flattening variation across the rest of the country — a common
+  practical issue in conflict data where a small number of townships account for a
+  disproportionate share of events. Hover tooltips provide precise event counts, addressing
+  the inherent limitation of colour saturation as a quantitative encoding channel (Cleveland
+  and McGill, 1984): the map communicates spatial pattern while the tooltip provides exact value.
+</p>
+<p>
+  The choropleth offers two modes: Period Total, aggregating all events across the selected
+  date range into a single static map; and Quarterly Animation, stepping through quarterly
+  snapshots to reveal geographic diffusion of conflict over time. This dual-mode design
+  directly implements Andrienko and Andrienko's (2006) task-based distinction: the static
+  mode serves precise spatial comparison, while the animation mode supports pattern
+  recognition — observing how conflict has expanded or shifted geographically.
+</p>
+<p>
+  A Monthly Trend line chart shows event counts over time by event type. Line charts are
+  optimal for continuous temporal sequences (Aigner et al., 2011; Tufte, 1983), conveying
+  direction and rate of change more effectively than bar charts for trend data. Milestone
+  vertical lines mark key events — the February 2021 coup, the launch of Operation 1027 in
+  October 2023, and other significant developments — implementing Aigner et al.'s (2011)
+  recommendation to contextualise statistical spikes with real-world occurrences.
+</p>
+<p>
+  A Conflict Types bar chart displays the ten most frequent detailed event categories, sorted
+  by frequency. Bar charts are appropriate for categorical comparison: length is ranked second
+  in Cleveland and McGill's (1984) perceptual accuracy hierarchy, and sorting by frequency
+  enables immediate identification of dominant conflict forms. Restricting to the top ten
+  follows Tufte's (1983) data-ink principle.
+</p>
+
+<div class="figure-wrap">
+  <div class="figure-placeholder">
+    [Figure 2: Screenshot of the Overview Page —<br>
+    showing filter bar, two KPI cards (Conflicts / Fatalities),<br>
+    township choropleth map, monthly trend with milestone lines,<br>
+    and conflict types bar chart]<br><br>
+    <em>→ Take screenshot of https://myanmarconflictdashboard.onrender.com (Overview tab) and insert here</em>
+  </div>
+  <p class="figure-caption">Figure 2. Myanmar Conflict Dashboard — Overview Page. Filters (top), KPI cards,
+  township-level choropleth map (Period Total mode), Monthly Trend with milestone annotations,
+  and Conflict Types bar chart.</p>
+</div>
+
+<h3 class="subsection">5.3 Actor Analysis Page</h3>
+
+<p>
+  The Actor Analysis page provides deeper drill-down into specific actor dynamics,
+  implementing the second level of Shneiderman's (1996) mantra. Separating this view from
+  the Overview page follows Sarikaya et al.'s (2019) finding that dashboards serving a
+  single primary task per view are more effective than mixed-purpose designs: the Overview
+  page serves situational monitoring; the Actor Analysis page serves actor-specific
+  investigation.
+</p>
+<p>
+  The filter bar includes the same date controls as the Overview page, supplemented by an
+  Actor selector dropdown. Three KPI cards provide an immediate actor profile: Townships
+  Affected, Offensives, and Defensive actions — enabling rapid comprehension of an actor's
+  scale and character of activity before chart-level exploration (Few, 2006).
+</p>
+<p>
+  The Geographic Footprint choropleth applies the same sequential blue scale and dual-mode
+  design as the Overview map, showing the spatial distribution of events involving the
+  selected actor. This allows users to quickly understand where a given actor is most active
+  across Myanmar's 330 townships.
+</p>
+<p>
+  An Associated Actors bar chart shows which other actors most frequently co-appear with
+  the selected actor, ranked by frequency. This applies the same Cleveland and McGill (1984)
+  principle as the Conflict Types bar — length encoding sorted for categorical comparison —
+  providing the actor-level relational insight that participants consistently identified as
+  missing from the reference tool.
+</p>
+<p>
+  A Monthly Engagement Trend line chart displays the selected actor's event involvement over
+  time, with the same milestone overlay as the Overview trend. This allows users to connect
+  an actor's activity peaks to specific conflict events, offensives, or ceasefires.
+</p>
+
+<div class="figure-wrap">
+  <div class="figure-placeholder">
+    [Figure 3: Screenshot of the Actor Analysis Page —<br>
+    showing actor selector, three KPI cards (Townships / Offensives / Defensive),<br>
+    geographic footprint choropleth, associated actors bar chart,<br>
+    and monthly engagement trend with milestone lines]<br><br>
+    <em>→ Take screenshot of https://myanmarconflictdashboard.onrender.com (Actor Analysis tab) and insert here</em>
+  </div>
+  <p class="figure-caption">Figure 3. Myanmar Conflict Dashboard — Actor Analysis Page. Actor selector filter,
+  KPI cards showing actor profile, geographic footprint map, associated actors bar chart
+  (ranked by co-occurrence), and monthly engagement trend.</p>
+</div>
+
+<h3 class="subsection">5.4 Shared Design Decisions</h3>
+<p>
+  Several design decisions apply consistently across both pages. The sidebar navigation is
+  deliberately minimal — light background, no decorative elements — so that it does not
+  compete visually with the data (Tufte, 1983). Consistent visual language across pages —
+  identical colour scales, chart styles, and filter patterns — reduces the cognitive overhead
+  of switching between views (Palen et al., 2010). Milestone lines appear on trend charts
+  on both pages, ensuring that temporal context is always available. The ethical decision to
+  aggregate at township level rather than village level follows Vinck et al.'s (2019)
+  do-no-harm principle for conflict data visualisation.
+</p>
+
+<h3 class="subsection">5.5 Data Pipeline</h3>
+<p>
+  The data pipeline connects to the ACLED API via OAuth authentication, retrieves all Myanmar
+  conflict events, and applies a standardised cleaning workflow: date parsing with dayfirst
+  handling, township code matching against MIMU GeoJSON boundaries, recoding of
+  Myanmar-specific event categories (drone strikes as a distinct category; displacement
+  separated from "Other"), and export to Parquet files. The pipeline runs automatically
+  every Monday at 06:00 UTC via GitHub Actions, using a git pull --rebase step before pushing
+  to prevent conflicts between automated runs. The pipeline code is publicly versioned on
+  GitHub, ensuring reproducibility.
+</p>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 class="section">6. Self-Evaluation Against Ten Usability Domains</h2>
+
+<p>
+  Following deployment, the dashboard was evaluated by the author against the same ten
+  usability domains used in the expert interviews. Table 3 presents the findings. Each domain
+  is assessed against the requirement identified in the interviews and the feature implemented.
+</p>
+
+<div class="note">
+  This is a developer self-evaluation and is subject to confirmation bias. It is presented as
+  a design traceability check, not a formal user study. Independent evaluation with
+  practitioners is identified as the primary direction for future work.
+</div>
+
+<table>
+  <tr>
+    <th>Domain</th>
+    <th>Requirement (from interviews)</th>
+    <th>Implementation</th>
+    <th>Assessment</th>
+  </tr>
+  <tr>
+    <td>Usefulness</td>
+    <td>KPI cards at a glance; Myanmar-specific content; regular updates</td>
+    <td>Two KPI cards; Myanmar event recoding; weekly auto-update pipeline</td>
+    <td><span class="badge-done">Met</span></td>
+  </tr>
+  <tr>
+    <td>Suitability</td>
+    <td>Flexible exploration; date range selector; analytical depth</td>
+    <td>Custom date pickers; region and conflict type filters; Apply/Reset</td>
+    <td><span class="badge-done">Met</span></td>
+  </tr>
+  <tr>
+    <td>Situational Awareness</td>
+    <td>Actor-level dynamics; temporal context tied to real events</td>
+    <td>Actor Analysis page with actor selector and engagement trend; milestone lines on all trend charts</td>
+    <td><span class="badge-done">Met</span></td>
+  </tr>
+  <tr>
+    <td>Satisfaction &amp; Trust</td>
+    <td>Methodology transparency; source attribution</td>
+    <td>About and Methodology pages; ACLED attribution throughout</td>
+    <td><span class="badge-partial">Partial — event-level source notes not shown</span></td>
+  </tr>
+  <tr>
+    <td>Content</td>
+    <td>Township map; actor co-occurrence; Myanmar-specific event categories</td>
+    <td>Township choropleth; associated actors bar chart; drone strikes and displacement recoded</td>
+    <td><span class="badge-done">Met</span></td>
+  </tr>
+  <tr>
+    <td>Ease of Use</td>
+    <td>Flexible date filtering; map reset; spacious layout; ≤5 charts per page</td>
+    <td>Date presets + custom pickers; Reset button; 3 charts per page maximum</td>
+    <td><span class="badge-done">Met</span></td>
+  </tr>
+  <tr>
+    <td>Operability</td>
+    <td>Region drill-down; mobile accessibility</td>
+    <td>Region dropdown filter; mobile top navigation bar</td>
+    <td><span class="badge-partial">Partial — map click interactivity limited; mobile map zooming not fully resolved</span></td>
+  </tr>
+  <tr>
+    <td>Learnability</td>
+    <td>Hover tooltips for terms; plain-language labels</td>
+    <td>Hover tooltips; About page explanatory text; renamed labels</td>
+    <td><span class="badge-partial">Partial — full glossary not implemented</span></td>
+  </tr>
+  <tr>
+    <td>User Interface</td>
+    <td>Colour intensity reflects magnitude; uncluttered layout; choropleth over point plots</td>
+    <td>Sequential blue scale with luminance range; choropleth maps throughout; minimal sidebar</td>
+    <td><span class="badge-done">Met</span></td>
+  </tr>
+  <tr>
+    <td>System Capabilities</td>
+    <td>Responsive performance; downloadable data; save filter settings</td>
+    <td>Parquet format + caching; figure PNG export only; filter saving not implemented</td>
+    <td><span class="badge-partial">Partial — performance met; data export and filter saving not available</span></td>
+  </tr>
+</table>
+<p class="table-caption">Table 3. Self-evaluation against ten usability domains.</p>
+
+<p>
+  The self-evaluation shows that five of the ten domains were fully met and five were
+  partially met — none remain entirely unaddressed. The strongest outcomes are in usefulness,
+  suitability, situational awareness, content, and user interface — the domains most directly
+  tied to Myanmar-specific contextualisation. Learnability and system capabilities show the
+  clearest remaining gaps, reflecting features (glossary, data export, filter saving) that
+  were identified in interviews but could not be fully implemented within the project's
+  resource and time constraints.
+</p>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 class="section">7. Discussion</h2>
+
+<h3 class="subsection">7.1 The Dual-Stream Design Process</h3>
+<p>
+  The central methodological contribution of this project is the dual-stream design process,
+  in which user requirements and theoretical principles are treated as equally necessary and
+  explicitly documented in a design matrix. Neither stream alone is sufficient: users know
+  what they need analytically, but not necessarily which chart type encodes it most accurately;
+  the literature knows which design patterns work, but not which features matter most to a
+  Myanmar NGO analyst working under time pressure. Their convergence produces design decisions
+  that are both contextually grounded and theoretically justified.
+</p>
+<p>
+  The design matrix is the practical artifact of this convergence. It serves two purposes:
+  as a design tool during development, making rationale explicit and preventing arbitrary
+  decisions; and as a transparency tool in reporting, allowing readers to audit every
+  design choice. This approach is transferable: any context where a global-purpose tool
+  is being extended or localised for a specific practitioner community could apply the same
+  methodology, substituting the ten-domain framework with whatever usability framework is
+  most appropriate to the domain.
+</p>
+
+<h3 class="subsection">7.2 Key Design Trade-offs</h3>
+<p>
+  Several design decisions involved deliberate trade-offs. The quarterly animation choropleth
+  can be critiqued on Tuftean grounds: small multiples — quarterly maps displayed side by side —
+  might support more precise comparison than sequential animation (Tufte, 1983). The animation
+  mode was retained because its primary analytical task is pattern recognition (observing
+  geographic diffusion of conflict over time) rather than precise value comparison, which is
+  served by the static Period Total mode. Together the two modes cover both tasks; small
+  multiples alone would not achieve this within the available screen space.
+</p>
+<p>
+  The use of colour saturation in the choropleth carries the inherent limitation identified
+  by Cleveland and McGill (1984): users cannot accurately compare event counts between
+  townships by colour alone. This is addressed by the tooltip design — the map communicates
+  spatial pattern; the tooltip provides precise values. This is a deliberate compensation
+  rather than an oversight, and is consistent with how participants described their
+  use of the reference tool: the map for orientation, supplementary data for precision.
+</p>
+<p>
+  Participant opinions on visual density diverged: P1 requested stronger colour contrast
+  while P5 valued a spacious, calm layout — a tension that reflects known variation in user
+  preferences across analytical and non-expert audiences (Vuckovic et al., 2024). The final
+  design prioritises the sequential blue scale with an increased luminance range (addressing
+  P1's concern) while retaining a minimal, uncluttered layout (consistent with P5's preference
+  and Tufte's data-ink principle).
+</p>
+
+<h3 class="subsection">7.3 Limitations</h3>
+<p>
+  Several limitations should be acknowledged. The expert panel of five was purposively
+  selected for role diversity but cannot be considered statistically representative of all
+  Myanmar practitioner groups. The self-evaluation is subject to confirmation bias: the same
+  person who designed the dashboard assessed whether it met requirements. Independent
+  evaluation with a broader practitioner panel is essential before claims of usability
+  improvement can be made with confidence.
+</p>
+<p>
+  ACLED data itself carries underreporting bias in Myanmar, where internet shutdowns and
+  restrictions on journalists mean that many events may go unrecorded (Weidmann, 2015).
+  Dashboard outputs should be read as indicative signals rather than complete counts —
+  a limitation that several participants explicitly acknowledged. The Modifiable Areal Unit
+  Problem (MAUP) also applies: township boundaries are administrative units, and
+  within-township variation in conflict intensity is not visible at the choropleth level.
+</p>
+<p>
+  Learnability and system capabilities remain only partially addressed. The absence of a
+  full glossary means that users unfamiliar with ACLED terminology — particularly the term
+  "exposure," which multiple participants found opaque — may face a learning barrier.
+  The inability to export filtered data limits the dashboard's utility for users who need
+  further analysis outside the interface, though this is constrained by ACLED's terms of
+  use rather than a technical limitation.
+</p>
+
+<h3 class="subsection">7.4 Transferability of the Methodology</h3>
+<p>
+  While the Myanmar Conflict Dashboard is designed for a specific country context, the
+  dual-stream design process is not context-specific. The combination of expert requirements
+  elicitation using a structured usability framework, theoretical grounding from the
+  visualisation literature, and transparent documentation through a design matrix could
+  be applied to other conflict or humanitarian monitoring contexts — for example, Sudan,
+  Yemen, or the Sahel — where global platforms similarly lack the contextual granularity
+  that local practitioners need. The methodology also applies beyond conflict: any domain
+  in which a general-purpose platform serves a specialised practitioner community could
+  benefit from this dual-stream approach.
+</p>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<h2 class="section">8. Conclusion</h2>
+
+<p>
+  This paper presented the Myanmar Conflict Dashboard, a two-page interactive conflict
+  monitoring tool built using a user-centred design process grounded in visualisation theory,
+  dashboard design principles, colour science, and humanitarian informatics. Using ACLED
+  Explorer as a reference baseline and data foundation, the project asked what a
+  Myanmar-specific extension of that foundation would look like when designed with and
+  for local practitioners.
+</p>
+<p>
+  Five domain expert interviews, structured using a ten-domain usability framework, surfaced
+  a consistent set of Myanmar-specific requirements: township-level geography, actor-level
+  analysis, recoded event categories, flexible temporal filtering, and methodological
+  transparency. These requirements were implemented through design decisions justified by
+  both user need and established literature, documented in a design matrix that constitutes
+  the primary methodological contribution of this work. A self-evaluation confirms that five
+  of ten domains were fully met and five partially met, with learnability and system
+  capabilities presenting the clearest remaining gaps.
+</p>
+<p>
+  The dashboard is publicly deployed, continuously updated via an automated weekly pipeline,
+  and accessible without authentication. Future work should prioritise formal user evaluation
+  with a broader practitioner panel, implementation of a glossary and plain-language term
+  labelling to address the learnability gap, and contextual overlays — territorial control,
+  infrastructure, displacement corridors — that would substantially enhance situational
+  awareness for humanitarian and advocacy users. The dual-stream design methodology is offered
+  as a replicable approach for any context where globally designed tools inadequately serve
+  the needs of local practitioner communities.
+</p>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<hr class="section-break">
+<h2 class="section">References</h2>
+
+<div class="ref-list">
+
+<p>Aigner, W., Miksch, S., Schumann, H. and Tominski, C. (2011) <em>Visualization of Time-Oriented Data</em>. London: Springer.</p>
+
+<p>Almasi, S., Bahaadinbeigy, K., Ahmadi, H., Sohrabei, S. and Rabiei, R. (2023) 'Usability Evaluation of Dashboards: A Systematic Literature Review of Tools', <em>BioMed Research International</em>, 2023, 9990933. https://doi.org/10.1155/2023/9990933</p>
+
+<p>Andrienko, G. and Andrienko, N. (2006) <em>Exploratory Analysis of Spatial and Temporal Data: A Systematic Approach</em>. Berlin: Springer.</p>
+
+<p>Bach, B., Freeman, E., Abdul-Rahman, A., Turkay, C., Khan, S., Fan, Y. and Chen, M. (2022) 'Dashboard Design Patterns', <em>IEEE Transactions on Visualization and Computer Graphics</em>. https://doi.org/10.48550/arXiv.2205.00757</p>
+
+<p>Cleveland, W.S. and McGill, R. (1984) 'Graphical Perception: Theory, Experimentation, and Application to the Development of Graphical Methods', <em>Journal of the American Statistical Association</em>, 79(387), pp. 531–554.</p>
+
+<p>Few, S. (2006) <em>Information Dashboard Design: The Effective Visual Communication of Data</em>. Sebastopol: O'Reilly Media.</p>
+
+<p>Fishbein, E. and J, E. (2024) 'Myanmar: airstrike on school killed four children, witnesses say', <em>The Guardian</em>.</p>
+
+<p>Harrower, M. and Brewer, C.A. (2003) 'ColorBrewer.org: An Online Tool for Selecting Colour Schemes for Maps', <em>The Cartographic Journal</em>, 40(1), pp. 27–37.</p>
+
+<p>Juergens, C. (2020) 'Trustworthy COVID-19 Mapping: Geo-spatial Data Literacy Aspects of Choropleth Maps', <em>KN Journal of Cartography and Geographic Information</em>, 70, pp. 155–161.</p>
+
+<p>Munzner, T. (2014) <em>Visualization Analysis and Design</em>. Boca Raton: CRC Press.</p>
+
+<p>Nielsen, J. and Landauer, T.K. (1993) 'A Mathematical Model of the Finding of Usability Problems', in <em>Proceedings of ACM INTERCHI'93 Conference</em>, Amsterdam, 24–29 April 1993, pp. 206–213.</p>
+
+<p>Norman, D. (2013) <em>The Design of Everyday Things</em>. Revised edn. New York: Basic Books.</p>
+
+<p>Palen, L., Vieweg, S., Liu, S.B. and Hughes, A.L. (2010) 'Crisis in a Networked World: Features of Computer-Mediated Communication in the April 16, 2007 Virginia Tech Event', <em>Social Science Computer Review</em>, 27(4), pp. 467–480.</p>
+
+<p>Raleigh, C., Kishi, R. and Linke, A. (2023) 'Political Instability Patterns are Obscured by Conflict Dataset Scope Conditions, Sources, and Coding Choices', <em>Humanities and Social Sciences Communications</em>, 10, 74. https://doi.org/10.1057/s41599-023-01559-4</p>
+
+<p>Sarikaya, A., Correll, M., Bartram, L., Tory, M. and Fisher, D. (2019) 'What Do We Talk About When We Talk About Dashboards?', <em>IEEE Transactions on Visualization and Computer Graphics</em>, 25(1), pp. 682–692.</p>
+
+<p>Shneiderman, B. (1996) 'The Eyes Have It: A Task by Data Type Taxonomy for Information Visualizations', in <em>Proceedings of the IEEE Symposium on Visual Languages</em>, Boulder, CO, 3–6 September 1996, pp. 336–343.</p>
+
+<p>Tufte, E.R. (1983) <em>The Visual Display of Quantitative Information</em>. Cheshire, CT: Graphics Press.</p>
+
+<p>UNHCR (2025) <em>Situation Myanmar</em>. Available at: https://data.unhcr.org/en/situations/myanmar (Accessed: 20 March 2026).</p>
+
+<p>Vuckovic, A., Mehta, R. and Pickering, C. (2024) 'Dashboard Design for Diverse Audiences: Lessons from Iterative User Testing', <em>Information Visualization</em>, 23(2), pp. 115–131.</p>
+
+<p>Vinck, P., Pham, P.N., Kreutzer, T. and Wirtz, A. (2019) 'Collective Sensing and the Ethics of Data in Humanitarian Crises', in <em>Proceedings of the ISCRAM 2019 Conference</em>, Valencia, May 2019.</p>
+
+<p>Ware, C. (2004) <em>Information Visualization: Perception for Design</em>. 2nd edn. San Francisco: Morgan Kaufmann.</p>
+
+<p>Weidmann, N.B. (2015) 'On the Accuracy of Media-based Conflict Event Data', <em>Journal of Conflict Resolution</em>, 59(6), pp. 1129–1149.</p>
+
+</div>
+
+<hr class="section-break">
+<p style="font-size:9pt; color:#aaa; text-align:center;">
+  Draft — Myanmar Conflict Dashboard — March 2026 ·
+  <a href="https://myanmarconflictdashboard.onrender.com" style="color:#aaa;">Live Dashboard</a>
+</p>
+
+</body>
+</html>
