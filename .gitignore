@@ -29,10 +29,11 @@ data/processed/*.csv
 *.ipynb
 .ipynb_checkpoints/
 
-# Screenshots / media
-*.png
-*.jpg
-*.jpeg
+# Screenshots / media (root-level loose files; paper screenshots in screenshots/ are tracked)
+/*.png
+/*.jpg
+/*.jpeg
+/*.PNG
 
 # Logs
 *.log
