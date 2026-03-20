@@ -845,16 +845,23 @@ Integrating Expert Requirements with Visualization Theory</h1>
 </p>
 
 <div class="figure-wrap">
-  <div class="figure-placeholder">
-    [Figure 2: Screenshot of the Overview Page —<br>
-    showing filter bar, two KPI cards (Conflicts / Fatalities),<br>
-    township choropleth map, monthly trend with milestone lines,<br>
-    and conflict types bar chart]<br><br>
-    <em>→ Take screenshot of https://myanmarconflictdashboard.onrender.com (Overview tab) and insert here</em>
+  <img src="screenshots/overview_full.png" alt="Overview Page — full dashboard view showing filter bar, KPI cards, choropleth map, monthly trend chart, and conflict types bar chart">
+  <p class="figure-caption">Figure 2. Myanmar Conflict Dashboard — Overview Page. Filter bar and quick-select presets (top), two KPI cards (Total Conflicts in blue, Total Fatalities in red), township-level choropleth map in Period Total mode, Monthly Trend of Events with milestone annotations, and Conflict Types bar chart (sorted by frequency).</p>
+</div>
+
+<div class="figure-wrap" style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin:24px 0;">
+  <div style="flex:1; min-width:240px;">
+    <img src="screenshots/overview_map.png" alt="Choropleth map of conflict incidents by township" style="width:100%; border:1px solid #ddd; border-radius:4px;">
+    <p class="figure-caption">Figure 2a. Township choropleth map (sequential blue scale; Period Total mode). Yinmarbin township is highlighted as highest-event location.</p>
   </div>
-  <p class="figure-caption">Figure 2. Myanmar Conflict Dashboard — Overview Page. Filters (top), KPI cards,
-  township-level choropleth map (Period Total mode), Monthly Trend with milestone annotations,
-  and Conflict Types bar chart.</p>
+  <div style="flex:1; min-width:240px;">
+    <img src="screenshots/overview_trend.png" alt="Monthly trend of events with milestone lines" style="width:100%; border:1px solid #ddd; border-radius:4px;">
+    <p class="figure-caption">Figure 2b. Monthly Trend of Events with five milestone annotations: Coup (Feb 2021), NUG War (Sep 2021), Op. 1027 (Oct 2023), Earthquake (Mar 2025), Elections (Nov 2025).</p>
+  </div>
+  <div style="flex:1; min-width:240px;">
+    <img src="screenshots/overview_conflict_types.png" alt="Conflict Types horizontal bar chart" style="width:100%; border:1px solid #ddd; border-radius:4px;">
+    <p class="figure-caption">Figure 2c. Conflict Types bar chart — ten categories sorted by frequency. Ground-based attacks dominate (37,125), followed by protests (15,322) and violence against civilians (10,230).</p>
+  </div>
 </div>
 
 <h3 class="subsection">5.3 Actor Analysis Page</h3>
@@ -893,16 +900,28 @@ Integrating Expert Requirements with Visualization Theory</h1>
 </p>
 
 <div class="figure-wrap">
-  <div class="figure-placeholder">
-    [Figure 3: Screenshot of the Actor Analysis Page —<br>
-    showing actor selector, three KPI cards (Townships / Offensives / Defensive),<br>
-    geographic footprint choropleth, associated actors bar chart,<br>
-    and monthly engagement trend with milestone lines]<br><br>
-    <em>→ Take screenshot of https://myanmarconflictdashboard.onrender.com (Actor Analysis tab) and insert here</em>
+  <img src="screenshots/actor_analysis_full.png" alt="Actor Analysis Page — full dashboard view showing actor selector, KPI cards, geographic footprint, associated actors bar chart, and monthly engagement trend">
+  <p class="figure-caption">Figure 3. Myanmar Conflict Dashboard — Actor Analysis Page (Myanmar Military Regime selected). Actor selector filter, three KPI cards (Townships Affected, Offensives, Defensive Events), geographic footprint choropleth, Associated Actors bar chart ranked by co-occurrence, and Monthly Engagement Trend with milestone annotations.</p>
+</div>
+
+<div class="figure-wrap" style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin:24px 0;">
+  <div style="flex:1; min-width:240px;">
+    <img src="screenshots/actor_map.png" alt="Actor geographic footprint choropleth" style="width:100%; border:1px solid #ddd; border-radius:4px;">
+    <p class="figure-caption">Figure 3a. Geographic Footprint — actor-filtered township choropleth showing spatial distribution of the selected actor's events. Kawkareik is the most active township (888 events).</p>
   </div>
-  <p class="figure-caption">Figure 3. Myanmar Conflict Dashboard — Actor Analysis Page. Actor selector filter,
-  KPI cards showing actor profile, geographic footprint map, associated actors bar chart
-  (ranked by co-occurrence), and monthly engagement trend.</p>
+  <div style="flex:1; min-width:240px;">
+    <img src="screenshots/actor_associated.png" alt="Associated Actors bar chart" style="width:100%; border:1px solid #ddd; border-radius:4px;">
+    <p class="figure-caption">Figure 3b. Associated Actors bar chart — co-actors ranked by event co-occurrence. Pyu Saw Htee (2,423) is the most frequent co-actor with the Myanmar Military Regime.</p>
+  </div>
+  <div style="flex:1; min-width:240px;">
+    <img src="screenshots/actor_engagement_trend.png" alt="Monthly Engagement Trend — offensive vs defensive" style="width:100%; border:1px solid #ddd; border-radius:4px;">
+    <p class="figure-caption">Figure 3c. Monthly Engagement Trend — Offensive (red) and Defensive (blue) event counts with milestone annotations, enabling temporal analysis of actor behaviour.</p>
+  </div>
+</div>
+
+<div class="figure-wrap" style="max-width:340px; margin:24px auto;">
+  <img src="screenshots/mobile_view.png" alt="Mobile view of the Overview page on iPhone" style="width:100%; border:1px solid #ddd; border-radius:8px;">
+  <p class="figure-caption">Figure 4. Mobile responsive view of the Overview page on a smartphone. Controls adapt to a stacked single-column layout with a sticky top navigation bar, addressing the mobile accessibility requirements raised by P2, P3, P4, and P5.</p>
 </div>
 
 <h3 class="subsection">5.4 Shared Design Decisions</h3>
