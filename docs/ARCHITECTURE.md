@@ -35,6 +35,13 @@ The application is a multi-page Dash app served from `app.py`. It uses a custom 
 - `monthly_township.parquet`: pre-aggregated township-month metrics for fast charts and maps
 - `last_updated.txt`: pipeline refresh date
 
+## Boundary Geometry
+
+- `data/shapes/boundaries.geojson`: source township boundary file
+- `data/shapes/boundaries_web.geojson`: web-optimized simplified boundary file used by the app when present
+
+The runtime loader prefers the simplified web file so choropleth callbacks do not have to ship the full raw geometry on every render.
+
 ## Non-Runtime Material
 
 - `docs/`: living project and operational documentation

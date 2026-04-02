@@ -43,6 +43,9 @@ The pipeline writes:
 - `data/processed/monthly_township.parquet`
 - `data/processed/last_updated.txt`
 
+For runtime map performance, the app prefers `data/shapes/boundaries_web.geojson`
+when present. You can rebuild it with `python pipeline/build_web_geojson.py`.
+
 ## Documentation Map
 
 - [Architecture](docs/ARCHITECTURE.md)

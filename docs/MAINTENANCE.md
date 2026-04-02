@@ -37,8 +37,9 @@ Also update these when their content changes:
 
 1. Make the code change.
 2. Run a lightweight verification step such as `python -m py_compile ...` or a local app launch.
-3. Update docs if routes, workflows, or directory structure changed.
-4. Keep `research/` references valid if files were moved.
+3. If map boundary geometry changed, rebuild `data/shapes/boundaries_web.geojson` with `python pipeline/build_web_geojson.py`.
+4. Update docs if routes, workflows, or directory structure changed.
+5. Keep `research/` references valid if files were moved.
 
 ## Cleanup Checklist
 

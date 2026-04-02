@@ -13,3 +13,4 @@
 - Increased the update workflow cadence to every 6 hours so published ACLED changes reach the repo sooner.
 - Reduced the Overview page's initial load weight by hydrating heavy graphs after the page mounts instead of embedding them in the first layout payload.
 - Clarified the UI header so it shows both the latest event date and the last sync date, avoiding the old misleading `Last Updated` label.
+- Added a web-optimized township boundary GeoJSON and updated the loader to prefer it, cutting the default Overview map callback payload from roughly 11.5 MB to roughly 1.2 MB locally.

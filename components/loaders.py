@@ -16,6 +16,7 @@ ALLY_PAIRS_PARQUET   = DATA / "acled_actor_ally_pairs.parquet"
 MONTHLY_TSP_PARQUET  = DATA / "monthly_township.parquet"
 LAST_UPDATED_FILE    = DATA / "last_updated.txt"
 BOUNDARIES_GEOJSON   = GEO / "boundaries.geojson"
+WEB_BOUNDARIES_GEOJSON = GEO / "boundaries_web.geojson"
 
 def _mtime(p: Path) -> float:
     try:
@@ -26,8 +27,9 @@ def _mtime(p: Path) -> float:
 # ---- Geo ----
 @lru_cache(maxsize=1)
 def load_geojson(version: float | None = None) -> dict:
-    version = version or _mtime(BOUNDARIES_GEOJSON)
-    with open(BOUNDARIES_GEOJSON, "r", encoding="utf-8") as f:
+    source = WEB_BOUNDARIES_GEOJSON if WEB_BOUNDARIES_GEOJSON.exists() else BOUNDARIES_GEOJSON
+    version = version or _mtime(source)
+    with open(source, "r", encoding="utf-8") as f:
         return json.load(f)
 
 # Low-cardinality string columns — convert to category to save ~100 MB RAM

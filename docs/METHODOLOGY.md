@@ -83,6 +83,8 @@ The dashboard does not build all map inputs from the full event-level dataset on
 
 The animated choropleths use Plotly native animation frames bundled into the figure, rather than per-frame server callbacks. This keeps quarter-by-quarter playback responsive in the browser.
 
+To reduce the size of the initial map callback, the app prefers a simplified web geometry file, `data/shapes/boundaries_web.geojson`, instead of the full raw township boundary file when that optimized asset is available.
+
 ## Limits And Biases
 
 - ACLED reflects reported events, not every event that happened.
