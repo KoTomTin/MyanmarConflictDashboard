@@ -1,0 +1,48 @@
+# Maintenance
+
+## Documentation Rule
+
+Project facts should not live only in chat history. When the project changes, update the relevant markdown files in the same change.
+
+## Minimum Docs To Review On Each Meaningful Change
+
+- `README.md`
+- `docs/ARCHITECTURE.md`
+- `docs/PROJECT_STATUS.md`
+- `CHANGELOG.md`
+
+Also update these when their content changes:
+
+- `docs/ABOUT.md`
+- `docs/METHODOLOGY.md`
+- `research/README.md`
+
+## Workspace Rules
+
+- Do not keep duplicate full-project copies in the root directory.
+- Do not leave loose screenshots or report exports in the root directory.
+- Keep runtime code separate from research/report material.
+- Prefer markdown for persistent project knowledge.
+
+## Data Refresh Workflow
+
+1. Run `python pipeline/pipeline.py --update-only` for normal refreshes.
+2. Confirm `data/processed/last_updated.txt` changed as expected.
+3. Confirm `data/processed/acled_sync_state.json` advanced as expected.
+4. Spot-check record counts and latest event date.
+5. Update `docs/PROJECT_STATUS.md` if the coverage window changed materially.
+6. Add a short entry to `CHANGELOG.md` for meaningful operational changes.
+
+## App Change Workflow
+
+1. Make the code change.
+2. Run a lightweight verification step such as `python -m py_compile ...` or a local app launch.
+3. Update docs if routes, workflows, or directory structure changed.
+4. Keep `research/` references valid if files were moved.
+
+## Cleanup Checklist
+
+- Remove `__pycache__/` directories before finishing major cleanup work.
+- Remove stray `.DS_Store` files outside protected tool directories.
+- Keep `.env` and other secrets local.
+- Keep generated PDFs and interview notes out of the core runtime footprint.

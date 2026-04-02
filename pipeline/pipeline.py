@@ -23,12 +23,13 @@ Usage:
 import os
 import sys
 import re
+import json
 import argparse
 import requests
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from dotenv import load_dotenv
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
@@ -42,10 +43,13 @@ ACTOR_LEVEL_PARQUET = DATA_DIR / "acled_actor_level.parquet"
 ALLY_PAIRS_PARQUET  = DATA_DIR / "acled_actor_ally_pairs.parquet"
 LAST_UPDATED             = DATA_DIR / "last_updated.txt"
 MONTHLY_TSP_PARQUET      = DATA_DIR / "monthly_township.parquet"
+SYNC_STATE_FILE          = DATA_DIR / "acled_sync_state.json"
 
 VERIFY_DIR = ROOT / "data" / "verify"   # CSV exports for local inspection — gitignored
 
 DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+SYNC_OVERLAP_SECONDS = 48 * 60 * 60
 
 # ── Credentials ────────────────────────────────────────────────────────────────
 load_dotenv(ROOT / ".env")
@@ -109,13 +113,37 @@ def get_token():
     return resp.json()["access_token"]
 
 
+def utc_now_ts() -> int:
+    return int(datetime.now(timezone.utc).timestamp())
+
+
+def read_sync_state() -> dict:
+    if not SYNC_STATE_FILE.exists():
+        return {}
+    try:
+        return json.loads(SYNC_STATE_FILE.read_text())
+    except Exception:
+        return {}
+
+
+def write_sync_state(state: dict):
+    SYNC_STATE_FILE.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n")
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # 2. API FETCH — paginated
 # ══════════════════════════════════════════════════════════════════════════════
 
-def fetch_myanmar_api(token, start_date: str, end_date: str) -> pd.DataFrame:
+def fetch_myanmar_api(
+    token,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    start_timestamp: int | None = None,
+) -> pd.DataFrame:
     """
-    Fetch all Myanmar events between start_date and end_date (YYYY-MM-DD strings).
+    Fetch Myanmar events using either:
+      - event_date BETWEEN start_date and end_date, or
+      - timestamp >= start_timestamp
     Handles pagination automatically (5 000 rows per page).
     """
     all_rows = []
@@ -123,19 +151,27 @@ def fetch_myanmar_api(token, start_date: str, end_date: str) -> pd.DataFrame:
     page     = 1
     headers  = {"Authorization": f"Bearer {token}"}
 
-    print(f"  Fetching Myanmar events {start_date} → {end_date} ...")
+    if start_timestamp is not None:
+        print(f"  Fetching Myanmar events uploaded/updated since timestamp {start_timestamp} ...")
+    else:
+        print(f"  Fetching Myanmar events {start_date} → {end_date} ...")
 
     while True:
+        params = {
+            "country": "Myanmar",
+            "limit": 5000,
+            "offset": offset,
+        }
+        if start_timestamp is not None:
+            params["timestamp"] = start_timestamp
+        else:
+            params["event_date"] = f"{start_date}|{end_date}"
+            params["event_date_where"] = "BETWEEN"
+
         resp = requests.get(
             "https://acleddata.com/api/acled/read",
             headers=headers,
-            params={
-                "country":           "Myanmar",
-                "event_date":        f"{start_date}|{end_date}",
-                "event_date_where":  "BETWEEN",
-                "limit":             5000,
-                "offset":            offset,
-            },
+            params=params,
             timeout=60,
         )
         if resp.status_code != 200:
@@ -167,6 +203,49 @@ def fetch_myanmar_api(token, start_date: str, end_date: str) -> pd.DataFrame:
         print(f"    Dropped {dropped} rows with future/invalid dates.")
 
     return df
+
+
+def fetch_deleted_event_ids(token, start_timestamp: int) -> set[str]:
+    """
+    Fetch deleted Myanmar event IDs from the deleted endpoint using deleted_timestamp.
+    ACLED documents this as the correct way to keep local datasets aligned with removals.
+    """
+    deleted_ids = set()
+    offset      = 0
+    page        = 1
+    headers     = {"Authorization": f"Bearer {token}"}
+
+    print(f"  Fetching deleted Myanmar event IDs since timestamp {start_timestamp} ...")
+
+    while True:
+        resp = requests.get(
+            "https://acleddata.com/api/deleted/read",
+            headers=headers,
+            params={
+                "event_id_cnty": "MMR",
+                "deleted_timestamp": start_timestamp,
+                "limit": 5000,
+                "offset": offset,
+            },
+            timeout=60,
+        )
+        if resp.status_code != 200:
+            raise RuntimeError(f"Deleted endpoint error ({resp.status_code}): {resp.text[:300]}")
+
+        data = resp.json().get("data", [])
+        print(f"    Deleted page {page}: {len(data)} rows")
+
+        for row in data:
+            event_id = str(row.get("event_id_cnty", "")).strip()
+            if event_id:
+                deleted_ids.add(event_id)
+
+        if len(data) < 5000:
+            break
+        offset += 5000
+        page   += 1
+
+    return deleted_ids
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -665,6 +744,9 @@ def print_summary(df: pd.DataFrame):
 def main(update_only: bool = False, export_csv: bool = False):
     pcode_lookup = build_pcode_lookup()
     today_str    = date.today().isoformat()
+    sync_state   = read_sync_state()
+    sync_started_at = utc_now_ts()
+    sync_completed = False
 
     if not update_only:
         # ── FULL RUN: process historical Excel ─────────────────────────────
@@ -693,6 +775,7 @@ def main(update_only: bool = False, export_csv: bool = False):
                 df_all = pd.concat([df_hist, df_api_clean], ignore_index=True)
             else:
                 df_all = df_hist
+            sync_completed = True
         except Exception as e:
             print(f"  ⚠  API fetch failed: {e}")
             print("  Continuing with historical data only.")
@@ -714,26 +797,38 @@ def main(update_only: bool = False, export_csv: bool = False):
         # Parquet preserves datetime dtype — no re-parsing needed
         print(f"  Loaded {len(df_all):,} rows. Latest: {df_all['event_date'].max().date()}")
 
-        # Start from the latest event date in the existing data (not the last-run date),
-        # going back 7 days to catch any late-coded or corrected events.
-        latest_event_dt = df_all["event_date"].max()
-        api_start_dt    = latest_event_dt - timedelta(days=7)
-        api_start       = api_start_dt.strftime("%Y-%m-%d")
-        api_end      = today_str
+        # Timestamp-based sync follows ACLED's guidance for catching both new rows and
+        # edits to older events. We keep a 48-hour overlap to avoid edge misses.
+        if sync_state.get("last_sync_timestamp"):
+            sync_from_ts = max(int(sync_state["last_sync_timestamp"]) - SYNC_OVERLAP_SECONDS, 0)
+            print(f"  Resuming from stored sync timestamp {sync_state['last_sync_timestamp']} with 48h overlap.")
+        else:
+            latest_event_dt = df_all["event_date"].max()
+            fallback_dt = latest_event_dt - timedelta(days=14)
+            sync_from_ts = int(pd.Timestamp(fallback_dt).tz_localize("UTC").timestamp())
+            print("  No sync state found; falling back to a 14-day timestamp overlap from the latest stored event.")
 
-        print(f"\n[2/4] Fetching new data from ACLED API ({api_start} → {api_end})...")
+        print(f"\n[2/4] Fetching new and updated data from ACLED API (timestamp >= {sync_from_ts})...")
         try:
             token  = get_token()
-            df_api = fetch_myanmar_api(token, api_start, api_end)
+            df_api = fetch_myanmar_api(token, start_timestamp=sync_from_ts)
             if not df_api.empty:
                 df_api_clean = clean_dataframe(df_api, pcode_lookup)
                 df_all = pd.concat([df_all, df_api_clean], ignore_index=True)
                 before = len(df_all)
                 df_all = df_all.drop_duplicates(subset=["event_id_cnty"], keep="last")
-                net_new = before - len(df_all) * -1  # rows added minus dupes removed
                 print(f"  Net new rows after dedup: {before - len(df_all) + len(df_api_clean):,}")
             else:
                 print("  No new events found.")
+
+            deleted_ids = fetch_deleted_event_ids(token, sync_from_ts)
+            if deleted_ids:
+                before = len(df_all)
+                df_all = df_all[~df_all["event_id_cnty"].astype(str).isin(deleted_ids)].copy()
+                print(f"  Deleted rows removed: {before - len(df_all):,}")
+            else:
+                print("  No deleted Myanmar event IDs found in the sync window.")
+            sync_completed = True
         except Exception as e:
             print(f"  ⚠  API fetch failed: {e}")
 
@@ -783,6 +878,16 @@ def main(update_only: bool = False, export_csv: bool = False):
 
     print(f"  last_updated.txt → {today_str}")
 
+    # Persist sync cursor after successful incremental syncs or any full rebuild.
+    if sync_completed:
+        write_sync_state({
+            "last_sync_timestamp": sync_started_at,
+            "last_sync_utc": datetime.fromtimestamp(sync_started_at, tz=timezone.utc).isoformat(),
+            "latest_event_date": str(df_all["event_date"].max().date()),
+            "row_count": int(len(df_all)),
+        })
+        print(f"  acled_sync_state.json → {sync_started_at}")
+
     print_summary(df_all)
 
     if export_csv:
@@ -811,4 +916,3 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     main(update_only=args.update_only, export_csv=args.export_csv)
-

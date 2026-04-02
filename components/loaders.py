@@ -14,6 +14,7 @@ ACLED_MAIN_PARQUET   = DATA / "acled_cleaned.parquet"
 ACTOR_LEVEL_PARQUET  = DATA / "acled_actor_level.parquet"
 ALLY_PAIRS_PARQUET   = DATA / "acled_actor_ally_pairs.parquet"
 MONTHLY_TSP_PARQUET  = DATA / "monthly_township.parquet"
+LAST_UPDATED_FILE    = DATA / "last_updated.txt"
 BOUNDARIES_GEOJSON   = GEO / "boundaries.geojson"
 
 def _mtime(p: Path) -> float:
@@ -90,3 +91,12 @@ def load_monthly_township(version: float | None = None) -> pd.DataFrame:
         if col in df.columns:
             df[col] = df[col].astype("category")
     return df
+
+
+@lru_cache(maxsize=1)
+def load_last_updated(version: float | None = None) -> str:
+    version = version or _mtime(LAST_UPDATED_FILE)
+    try:
+        return LAST_UPDATED_FILE.read_text(encoding="utf-8").strip()
+    except FileNotFoundError:
+        return ""

@@ -22,7 +22,7 @@ from dash import dcc, html, callback, Output, Input, State, ctx
 from dash.exceptions import PreventUpdate
 
 from components.loaders   import (load_acled_main, load_monthly_township,
-                                   load_geojson)
+                                   load_geojson, load_last_updated)
 from components.colors    import (KEY_EVENT_COLORS, KEY_EVENT_ORDER,
                                    SEQUENTIAL_BLUES_ZERO_GREY)
 from components.map_utils import apply_tight_geos, filter_geo_by_property
@@ -73,12 +73,14 @@ NEIGHBOR_LABELS = [
 
 def _get_defaults() -> dict:
     df = load_acled_main()
+    refreshed = load_last_updated()
     return {
         "start_val":  df["event_date"].min().strftime("%Y-%m-%d"),
         "end_val":    df["event_date"].max().strftime("%Y-%m-%d"),
         "start_month": df["event_date"].min().strftime("%Y-%m"),
         "end_month":   df["event_date"].max().strftime("%Y-%m"),
         "latest_str":  df["event_date"].max().strftime("%d %b %Y"),
+        "refreshed_str": pd.to_datetime(refreshed).strftime("%d %b %Y") if refreshed else "Unknown",
     }
 
 
@@ -600,9 +602,8 @@ def _highest_events(monthly_df, start_month, end_month, region, key_events):
 def layout():
     meta        = _get_defaults()
     df          = load_acled_main()
-    monthly_df  = load_monthly_township()
-    geo         = load_geojson()
     latest_str  = meta["latest_str"]
+    refreshed_str = meta["refreshed_str"]
     start_month = meta["start_month"]
     end_month   = meta["end_month"]
     start_date  = meta["start_val"]   # YYYY-MM-DD for DatePickerSingle
@@ -619,20 +620,14 @@ def layout():
         "preset_label": None,
     }
 
-    # ── Pre-build initial charts (data is lru_cached — fast) ──────────────────
-    store      = _build_store(monthly_df, geo, start_month, end_month, None, None, "time_range")
-    init_map   = _build_choropleth(store, geo, "events") if store else _empty_fig()
-    init_trend = _build_trend(monthly_df, start_month, end_month, None, None)
-    init_bar   = _build_activity_bar(monthly_df, start_month, end_month, None, None)
-
-    # KPIs
-    ac = df.copy()
-    ac["month"] = ac["event_date"].dt.to_period("M").astype(str)
-    ac = ac[(ac["month"] >= start_month) & (ac["month"] <= end_month)]
-    init_conflicts   = _fmt(len(ac))
-    init_fatalities  = _fmt(int(ac["fatalities"].sum()))
-    h_region, h_count = _highest_events(monthly_df, start_month, end_month, None, None)
-    init_summary     = _build_filter_summary(start_month, end_month, None, None, "time_range")
+    # Keep first layout light; charts are hydrated by callback after mount.
+    init_map        = _empty_fig(height=530)
+    init_trend      = _empty_fig(height=240)
+    init_bar        = _empty_fig("Loading conflict types...", height=300)
+    init_conflicts  = "—"
+    init_fatalities = "—"
+    h_region, h_count = "—", "—"
+    init_summary    = _build_filter_summary(start_month, end_month, None, None, "time_range")
 
     return html.Div([
 
@@ -647,7 +642,7 @@ def layout():
                 html.Div("Explore conflict incidents across Myanmar",
                          className="page-subtitle"),
             ], className="page-header-left"),
-            html.Div(f"Last Updated: {latest_str}", className="page-last-updated"),
+            html.Div(f"Data through: {latest_str} · Synced: {refreshed_str}", className="page-last-updated"),
         ], className="page-header"),
 
         # ── filter card ────────────────────────────────────────────────────────
@@ -941,7 +936,7 @@ def reset_filters(n):
     Input("ov-applied-filters", "data"),
     Input("ov-mode",            "data"),
     Input("ov-metric",          "value"),
-    prevent_initial_call=True,
+    prevent_initial_call=False,
 )
 def update_charts(applied, mode, metric):
     if not applied:

@@ -14,7 +14,7 @@ from dash import dcc, html, callback, Output, Input, State, ctx
 from dash.exceptions import PreventUpdate
 
 from components.loaders   import (load_acled_main, load_actor_level,
-                                   load_ally_pairs, load_geojson)
+                                   load_ally_pairs, load_geojson, load_last_updated)
 from components.colors    import SEQUENTIAL_BLUES_ZERO_GREY
 from components.map_utils import apply_tight_geos, filter_geo_by_property
 
@@ -49,10 +49,12 @@ NEIGHBOR_LABELS = [
 
 def _get_defaults() -> dict:
     df = load_acled_main()
+    refreshed = load_last_updated()
     return {
         "start_val":  df["event_date"].min().strftime("%Y-%m"),
         "end_val":    df["event_date"].max().strftime("%Y-%m"),
         "latest_str": df["event_date"].max().strftime("%d %b %Y"),
+        "refreshed_str": pd.to_datetime(refreshed).strftime("%d %b %Y") if refreshed else "Unknown",
     }
 
 
@@ -547,6 +549,7 @@ def layout():
     start_val   = meta["start_val"]
     end_val     = meta["end_val"]
     latest_str  = meta["latest_str"]
+    refreshed_str = meta["refreshed_str"]
 
     actor_opts       = _actor_options(actor_level)
     admin1_opts      = sorted(acled["admin1"].dropna().unique())
@@ -592,7 +595,7 @@ def layout():
                 html.Div("Armed conflict only — ground-based attacks, airstrikes, drones & massacres",
                          className="page-subtitle page-subtitle--armed"),
             ], className="page-header-left"),
-            html.Div(f"Last Updated: {latest_str}", className="page-last-updated"),
+            html.Div(f"Data through: {latest_str} · Synced: {refreshed_str}", className="page-last-updated"),
         ], className="page-header"),
 
         # ── actor banner ────────────────────────────────────────────────────────

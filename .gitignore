@@ -35,6 +35,10 @@ data/processed/*.csv
 /*.jpeg
 /*.PNG
 
+# Research outputs
+research/*.pdf
+research/*.xlsx
+
 # Logs
 *.log
 
