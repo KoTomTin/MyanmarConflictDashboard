@@ -19,7 +19,7 @@ def layout():
         html.Div([
             html.Div([
                 html.H4("About", className="page-title"),
-                html.Div("Myanmar Conflict Dashboard — Data, Guidance & Sources",
+                html.Div("Methods, sources, recoding choices, and contact information.",
                          className="page-subtitle"),
             ], className="page-header-left"),
         ], className="page-header"),

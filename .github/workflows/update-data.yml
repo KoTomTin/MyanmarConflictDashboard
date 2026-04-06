@@ -1,8 +1,8 @@
 name: Update ACLED Data
 
-# Poll several times per day. The pipeline is idempotent and only commits when
-# ACLED has actually changed, so this lets the hosted dashboard catch weekly
-# ACLED refreshes much sooner after publication.
+# Poll several times per day. The pipeline is idempotent and records the latest
+# successful check, even when the data coverage date itself does not move
+# forward on that run.
 on:
   schedule:
     - cron: '15 */6 * * *'

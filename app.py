@@ -8,16 +8,19 @@ from flask import request as flask_request
 _ov = importlib.import_module("pages.1_overview")
 _ac = importlib.import_module("pages.2_actor")
 _ab = importlib.import_module("pages.3_about")
+_al = importlib.import_module("pages.4_alerts")
 
 PAGE_MAP = {
     "/":      _ov.layout,
     "/actor": _ac.layout,
+    "/alerts": _al.layout,
     "/about": _ab.layout,
 }
 
 NAV_ITEMS = [
     {"path": "/",      "label": "Overview"},
     {"path": "/actor", "label": "Actor Analysis"},
+    {"path": "/alerts", "label": "Township Alerts"},
     {"path": "/about", "label": "About"},
 ]
 
@@ -30,7 +33,7 @@ app = dash.Dash(
 server = app.server
 
 
-def mobile_topnav():
+def topnav():
     links = [
         dcc.Link(
             item["label"],
@@ -41,37 +44,15 @@ def mobile_topnav():
         for i, item in enumerate(NAV_ITEMS)
     ]
     return html.Div([
-        html.Span("MCD", className="mob-brand"),
-        html.Div(links, className="mob-nav-links"),
-    ], className="mobile-topnav")
-
-
-def sidebar():
-    links = [
-        dcc.Link(
-            html.Div(item["label"], className="nav-item"),
-            href=item["path"],
-            id=f"nav-link-{i}",
-            className="nav-link-wrap",
-        )
-        for i, item in enumerate(NAV_ITEMS)
-    ]
-    return html.Div([
         html.Div([
-            html.Div("MCD", className="brand-abbr"),
-            html.Div("Myanmar Conflict", className="brand-name"),
-            html.Div("Dashboard", className="brand-name"),
+            html.Div("Myanmar Conflict Dashboard", className="brand-abbr"),
             html.Div("Tracking conflict since Feb 2021", className="brand-tagline"),
-        ], className="brand-block"),
-        html.Div(className="sidebar-divider"),
-        html.Nav(links, className="sidebar-nav"),
-        html.Div(className="sidebar-divider"),
+        ], className="topnav-brand"),
         html.Div([
-            html.Div("Data: ACLED", className="sidebar-meta"),
-            html.Div("Myanmar · Feb 2021 – present", className="sidebar-meta"),
-            html.Div("Contact: kothomasgye@gmail.com", className="sidebar-meta"),
-        ], className="sidebar-footer"),
-    ], className="sidebar")
+            html.Span("Pages", className="topnav-nav-label"),
+            html.Nav(links, className="topnav-links"),
+        ], className="topnav-nav"),
+    ], className="topnav-shell")
 
 
 def serve_layout():
@@ -92,23 +73,17 @@ def serve_layout():
 
     return dbc.Container([
         dcc.Location(id="url", refresh=False),
-        mobile_topnav(),
-        dbc.Row([
-            dbc.Col(sidebar(), md=2, className="g-0 d-none d-md-flex"),
-            dbc.Col(
-                html.Main(
-                    dcc.Loading(
-                        html.Div(page_content, id="page-content"),
-                        id="page-loading",
-                        type="dot",
-                        color="#2563eb",
-                        delay_show=120,   # only show spinner if load takes >120ms
-                    ),
-                    className="main",
-                ),
-                xs=12, md=10, className="g-0",
+        topnav(),
+        html.Main(
+            dcc.Loading(
+                html.Div(page_content, id="page-content"),
+                id="page-loading",
+                type="dot",
+                color="#2563eb",
+                delay_show=120,   # only show spinner if load takes >120ms
             ),
-        ], className="g-0"),
+            className="main",
+        ),
     ], fluid=True)
 
 
@@ -139,23 +114,17 @@ def render_page(pathname):
 
 # ── Highlight active nav link ─────────────────────────────────────────────────
 @callback(
-    [Output(f"nav-link-{i}", "className") for i in range(len(NAV_ITEMS))]
-    + [Output(f"mob-nav-{i}", "className") for i in range(len(NAV_ITEMS))],
+    [Output(f"mob-nav-{i}", "className") for i in range(len(NAV_ITEMS))],
     Input("url", "pathname"),
 )
 def highlight_active_nav(pathname):
     pathname = pathname or "/"
-    desktop = [
-        "nav-link-wrap nav-link-wrap--active" if item["path"] == pathname
-        else "nav-link-wrap"
-        for item in NAV_ITEMS
-    ]
     mobile = [
         "mob-nav-link mob-nav-link--active" if item["path"] == pathname
         else "mob-nav-link"
         for item in NAV_ITEMS
     ]
-    return desktop + mobile
+    return mobile
 
 
 if __name__ == "__main__":

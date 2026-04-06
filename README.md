@@ -5,7 +5,7 @@ The Myanmar Conflict Dashboard is a Dash/Plotly application for exploring townsh
 ## Current Snapshot
 
 - Framework: Dash + Plotly + Dash Bootstrap Components
-- Active runtime routes: `Overview`, `Actor Analysis`, `About`
+- Active runtime routes: `Overview`, `Actor Analysis`, `Township Alerts`, `About`
 - Data coverage in the current processed dataset: `2021-02-01` to `2026-03-27`
 - Last recorded pipeline refresh: `2026-04-02`
 - The UI now distinguishes `Data through` (latest event date) from `Synced` (pipeline refresh date)
@@ -50,6 +50,14 @@ when present. You can rebuild it with `python pipeline/build_web_geojson.py`.
 
 - [Architecture](docs/ARCHITECTURE.md)
 - [Project Status](docs/PROJECT_STATUS.md)
+- [Product Brief](docs/PRODUCT_BRIEF.md)
+- [Literature Review](docs/LITERATURE_REVIEW.md)
+- [Design Benchmarks](docs/DESIGN_BENCHMARKS.md)
+- [Redesign Plan](docs/REDESIGN_PLAN.md)
+- [Analytics Options](docs/ANALYTICS_OPTIONS.md)
+- [Metric Glossary](docs/METRIC_GLOSSARY.md)
+- [UI Audit](docs/UI_AUDIT.md)
+- [IA and Wireframes](docs/IA_AND_WIREFRAMES.md)
 - [Maintenance](docs/MAINTENANCE.md)
 - [About Content](docs/ABOUT.md)
 - [Methodology](docs/METHODOLOGY.md)

@@ -15,33 +15,31 @@ Frame advancement is pure client-side JS — zero Python round-trips per frame.
 This eliminates the per-frame callback lag of the previous Patch() approach.
 """
 import re
-import datetime
 import pandas as pd
 import plotly.graph_objects as go
 from dash import dcc, html, callback, Output, Input, State, ctx
 from dash.exceptions import PreventUpdate
 
-from components.loaders   import (load_acled_main, load_monthly_township,
-                                   load_geojson, load_last_updated)
+from components.loaders   import (load_acled_main, load_geojson, load_last_checked)
 from components.colors    import (KEY_EVENT_COLORS, KEY_EVENT_ORDER,
                                    SEQUENTIAL_BLUES_ZERO_GREY)
-from components.map_utils import apply_tight_geos, filter_geo_by_property
+from components.map_utils import apply_tight_geos, add_neighbor_labels, filter_geo_by_property
 
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
 # (date, hover title, short pill, line color, description)
 MILESTONES = [
-    ("2021-02-01", "Feb 1, 2021 – Military Coup",           "Coup",       "#dc2626",
+    ("2021-02-01", "Feb 1, 2021 – Military Coup",           "Military Coup",       "#dc2626",
      "The Myanmar military seized power and arrested elected leaders, sparking nationwide protests."),
-    ("2021-09-07", "Sept 7, 2021 – People's Defensive War", "NUG War",    "#d97706",
+    ("2021-09-07", "Sept 7, 2021 – NUG Declaration of War", "NUG Declaration",    "#d97706",
      "The NUG called for armed resistance against the military, escalating the conflict."),
     ("2023-10-27", "Oct 27, 2023 – Operation 1027",         "Op. 1027",   "#7c3aed",
      "Rebel alliance launched a major offensive, capturing key territory in northern Shan State."),
     ("2025-03-28", "Mar 28, 2025 – 7.7 Earthquake",         "Earthquake", "#0891b2",
      "A major earthquake near Mandalay caused heavy destruction and worsened the crisis."),
-    ("2025-12-28", "Dec 28, 2025 – Junta Elections",        "Elections",  "#6b7280",
-     "Military held phased elections in controlled areas; widely rejected as illegitimate."),
+    ("2025-12-28", "Dec 28, 2025 – SAC-organized Elections", "SAC-run Elections",  "#6b7280",
+     "The SAC held phased elections in controlled areas; the process was widely rejected as illegitimate."),
 ]
 
 EVENT_DEFINITIONS = {
@@ -55,32 +53,34 @@ EVENT_DEFINITIONS = {
     "Looting/property destruction": "theft, arson or deliberate destruction of civilian property",
     "Protests":                     "peaceful or disruptive demonstrations, strikes and gatherings",
     "Displacement":                 "forced displacement of civilians from their homes or villages",
-    "Others":                       "other conflict-related events not in the main categories (e.g. sabotage, blockades)",
+    "Others":                       "remaining activity outside the main dashboard groups, especially strategic developments such as changes to group activity, disrupted weapons use, base establishment, agreements, and non-violent transfers of territory",
 }
 
-# Neighbouring country labels — lon/lat placed just outside Myanmar's borders.
-# Rendered as Scattergeo text (italic, grey) on the choropleth figure.
-NEIGHBOR_LABELS = [
-    ("Bangladesh", 22.0,  90.8),   # west of Rakhine
-    ("India",       27.8,  94.5),  # north of Kachin/Sagaing
-    ("China",       25.5, 102.0),  # northeast of Shan/Kachin
-    ("Laos",        22.0, 102.8),  # east of Shan
-    ("Thailand",    14.5, 101.5),  # southeast of Tanintharyi
-]
-
+PLOTLY_FONT = "Avenir Next, Segoe UI, Arial, sans-serif"
+PLOTLY_DISPLAY = "Iowan Old Style, Palatino Linotype, Book Antiqua, Georgia, serif"
+PLOTLY_TEXT = "#415669"
+PLOTLY_GRID = "#e6ddd0"
+PLOTLY_HOVER_BG = "rgba(255,251,246,0.98)"
+PLOTLY_HOVER_BORDER = "#d9cfbf"
 
 # ── Module-level helpers ───────────────────────────────────────────────────────
 
 def _get_defaults() -> dict:
     df = load_acled_main()
-    refreshed = load_last_updated()
+    checked = load_last_checked()
+    checked_str = checked.get("display") or checked.get("date_display") or "Not yet recorded"
+    checked_note = checked.get("cadence_note") or "ACLED check every 6 hours"
+    timezone_label = checked.get("timezone_label") or "Yangon time"
+    if timezone_label and timezone_label.lower() not in checked_note.lower():
+        checked_note = f"{checked_note} · {timezone_label}"
     return {
         "start_val":  df["event_date"].min().strftime("%Y-%m-%d"),
         "end_val":    df["event_date"].max().strftime("%Y-%m-%d"),
         "start_month": df["event_date"].min().strftime("%Y-%m"),
         "end_month":   df["event_date"].max().strftime("%Y-%m"),
         "latest_str":  df["event_date"].max().strftime("%d %b %Y"),
-        "refreshed_str": pd.to_datetime(refreshed).strftime("%d %b %Y") if refreshed else "Unknown",
+        "checked_str": checked_str,
+        "checked_note": checked_note,
     }
 
 
@@ -93,11 +93,12 @@ def _fmt(n) -> str:
 def _empty_fig(msg="No data for this selection", height=500):
     fig = go.Figure()
     fig.add_annotation(text=msg, x=0.5, y=0.5, showarrow=False,
-                       font=dict(size=13, color="#9ca3af"), xref="paper", yref="paper")
+                       font=dict(size=13, color="#7a8895", family=PLOTLY_FONT), xref="paper", yref="paper")
     fig.update_layout(
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         height=height, margin=dict(l=0, r=0, t=0, b=0),
         xaxis_visible=False, yaxis_visible=False,
+        font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT),
     )
     return fig
 
@@ -126,8 +127,62 @@ def _month_to_quarter(month_str: str) -> str:
 
 
 def _quarter_label(q_str: str) -> str:
-    year, q = q_str.split("-")
+    q_str = str(q_str)
+    if "-" in q_str:
+        year, q = q_str.split("-")
+    else:
+        year, q = q_str[:4], q_str[4:]
     return f"{q} {year}"
+
+
+def _format_selected_range(
+    start_date: str | None,
+    end_date: str | None,
+    start_month: str | None = None,
+    end_month: str | None = None,
+) -> str:
+    def _fmt_date(value: str | None, *, month_fallback: bool = False) -> str:
+        if value:
+            try:
+                return pd.to_datetime(value).strftime("%d %b %Y")
+            except Exception:
+                pass
+        if month_fallback:
+            return value or "—"
+        return "—"
+
+    start_txt = _fmt_date(start_date)
+    end_txt = _fmt_date(end_date)
+    if start_txt == "—" and start_month:
+        start_txt = pd.Timestamp(start_month + "-01").strftime("%d %b %Y")
+    if end_txt == "—" and end_month:
+        end_ts = pd.Period(end_month, freq="M").end_time
+        end_txt = pd.Timestamp(end_ts).strftime("%d %b %Y")
+    if start_txt == end_txt:
+        return start_txt
+    return f"{start_txt} to {end_txt}"
+
+
+def _window_days(start_date: str | None, end_date: str | None) -> int | None:
+    if not start_date or not end_date:
+        return None
+    try:
+        return max((pd.to_datetime(end_date) - pd.to_datetime(start_date)).days + 1, 1)
+    except Exception:
+        return None
+
+
+def _filter_overview_events(acled_df, start_date, end_date, region, key_events):
+    df = acled_df.copy()
+    if start_date:
+        df = df[df["event_date"] >= pd.to_datetime(start_date)]
+    if end_date:
+        df = df[df["event_date"] <= pd.to_datetime(end_date)]
+    if region:
+        df = df[df["admin1"] == region]
+    if key_events:
+        df = df[df["key_event"].isin(key_events)]
+    return df
 
 
 def _is_generic_civilian(name: str) -> bool:
@@ -154,9 +209,9 @@ def _build_filter_summary(start_month, end_month, region, key_events,
         defn = EVENT_DEFINITIONS.get(evt, "")
         type_str = f"{evt} ({defn})" if defn else evt
     elif key_events:
-        type_str = f"{len(key_events)} conflict types"
+        type_str = f"{len(key_events)} event types"
     else:
-        type_str = "All conflict types"
+        type_str = "All event types"
 
     geo = f"in {region}" if region else "across Myanmar"
 
@@ -168,10 +223,52 @@ def _build_filter_summary(start_month, end_month, region, key_events,
     return f"Showing: {type_str} {geo} · {fmt_m(start_month)} – {fmt_m(end_month)}"
 
 
-def _chart_config(filename: str) -> dict:
+def _build_filter_chips(start_month, end_month, region, key_events,
+                        mode: str = "time_range",
+                        preset_label: str | None = None,
+                        start_date: str | None = None,
+                        end_date: str | None = None):
+    def fmt_m(m):
+        try:
+            return pd.Timestamp(m + "-01").strftime("%b %Y")
+        except Exception:
+            return m or ""
+
+    if key_events and len(key_events) == 1:
+        type_str = key_events[0]
+    elif key_events:
+        type_str = f"{len(key_events)} event types"
+    else:
+        type_str = "All event types"
+
+    time_str = preset_label or _format_selected_range(start_date, end_date, start_month, end_month)
+    chips = [
+        ("Date", time_str),
+        ("Region", region or "All Myanmar"),
+        ("Type", type_str),
+    ]
+    if mode == "animated":
+        chips.append(("View", "Animated by quarter"))
+    else:
+        chips.append(("View", "Cumulative"))
+
+    return html.Div(
+        [html.Span("Now showing", className="filter-chip filter-chip--label")] +
+        [
+            html.Span([
+                html.Span(f"{label}: ", className="filter-chip-key"),
+                html.Span(value, className="filter-chip-value"),
+            ], className="filter-chip")
+            for label, value in chips
+        ],
+        className="filter-chip-row",
+    )
+
+
+def _chart_config(filename: str, *, show_modebar: bool = False) -> dict:
     """Modebar config that shows only the download (camera) button on hover."""
     return {
-        "displayModeBar": "hover",
+        "displayModeBar": "hover" if show_modebar else False,
         "displaylogo": False,
         "modeBarButtonsToRemove": [
             "zoom2d", "pan2d", "select2d", "lasso2d",
@@ -193,51 +290,29 @@ def _q95(series: pd.Series) -> int:
     return max(int(s.quantile(0.95)) if len(s) >= 5 else int(s.max()), 1)
 
 
-# ── Neighbouring country labels on the choropleth map ─────────────────────────
-
-def _add_country_labels(fig: go.Figure) -> None:
-    """Add italic grey text labels for Myanmar's neighbours on the geo map."""
-    fig.add_trace(go.Scattergeo(
-        lon=[ll[2] for ll in NEIGHBOR_LABELS],
-        lat=[ll[1] for ll in NEIGHBOR_LABELS],
-        text=[ll[0] for ll in NEIGHBOR_LABELS],
-        mode="text",
-        textfont=dict(size=9, color="#94A3B8",
-                      family="Inter, Segoe UI, sans-serif"),
-        showlegend=False,
-        hoverinfo="skip",
-        name="",
-    ))
-    # Expand the geo viewport beyond Myanmar's tight bounds to show labels
-    fig.update_geos(
-        lonaxis_range=[89.5, 104.0],
-        lataxis_range=[8.0,  30.5],
-    )
-
-
 # ── Store builder ──────────────────────────────────────────────────────────────
 
-def _build_store(monthly_df, geo, start_month, end_month, region, key_events,
+def _build_store(acled_df, geo, start_date, end_date, region, key_events,
                  mode: str) -> dict | None:
-    df = monthly_df.copy()
-    if start_month: df = df[df["month"] >= start_month]
-    if end_month:   df = df[df["month"] <= end_month]
-    if region:      df = df[df["admin1"] == region]
-    if key_events:  df = df[df["key_event"].isin(key_events)]
-    if df.empty:    return None
+    df = _filter_overview_events(acled_df, start_date, end_date, region, key_events)
+    if df.empty:
+        return None
 
     active_geo = filter_geo_by_property(geo, "ST", region) if region else geo
     pcodes     = _geo_pcodes(active_geo)
     text       = _tsp_text(active_geo)
     n          = len(pcodes)
     pcode_idx  = {p: i for i, p in enumerate(pcodes)}
+    start_month = pd.to_datetime(start_date).strftime("%Y-%m") if start_date else None
+    end_month = pd.to_datetime(end_date).strftime("%Y-%m") if end_date else None
 
-    agg = df.groupby(["Tsp_Pcode", "month"]).agg(
-        events=("events", "sum"), fatalities=("fatalities", "sum"),
+    agg = df.groupby(["Tsp_Pcode", "event_date"]).agg(
+        events=("event_id_cnty", "nunique"),
+        fatalities=("fatalities", "sum"),
     ).reset_index()
 
     if mode == "animated":
-        agg["quarter"] = agg["month"].apply(_month_to_quarter)
+        agg["quarter"] = agg["event_date"].dt.to_period("Q").astype(str)
         qagg = agg.groupby(["Tsp_Pcode", "quarter"]).agg(
             events=("events", "sum"), fatalities=("fatalities", "sum"),
         ).reset_index()
@@ -263,6 +338,8 @@ def _build_store(monthly_df, geo, start_month, end_month, region, key_events,
             "matrix": matrix_ev, "matrix_fat": matrix_fat,
             "max_val":     _q95(qagg["events"]),
             "max_val_fat": _q95(qagg["fatalities"]),
+            "start_month": start_month,
+            "end_month": end_month,
             "pcodes": pcodes, "text": text, "region": region,
         }
     else:
@@ -281,6 +358,8 @@ def _build_store(monthly_df, geo, start_month, end_month, region, key_events,
             "z": z_ev, "z_fat": z_fat,
             "max_val":     _q95(pd.Series(z_ev)),
             "max_val_fat": _q95(pd.Series(z_fat)),
+            "start_month": start_month,
+            "end_month": end_month,
             "pcodes": pcodes, "text": text, "region": region,
         }
 
@@ -288,7 +367,7 @@ def _build_store(monthly_df, geo, start_month, end_month, region, key_events,
 # ── Choropleth builders ────────────────────────────────────────────────────────
 
 def _build_animated_choropleth(store: dict, geo: dict,
-                                metric: str = "events") -> go.Figure:
+                               metric: str = "events") -> go.Figure:
     """Plotly native animated choropleth — all frames bundled client-side."""
     active_geo = filter_geo_by_property(geo, "ST", store["region"]) if store.get("region") else geo
     matrix     = store["matrix_fat"] if metric == "fatalities" else store["matrix"]
@@ -311,7 +390,22 @@ def _build_animated_choropleth(store: dict, geo: dict,
         zmin=0, zmax=mv,
         marker_line_width=0.3, marker_line_color="#ffffff",
         hovertemplate=f"<b>%{{text}}</b><br>{hover_lbl}: %{{z:,}}<extra></extra>",
-        colorbar=dict(title=cb_title, thickness=12, len=0.4, x=1.01),
+        colorbar=dict(
+            title=dict(
+                text=cb_title,
+                side="top",
+                font=dict(size=11, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+            ),
+            tickfont=dict(size=10, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+            orientation="h",
+            thickness=10,
+            len=0.34,
+            x=0.5,
+            xanchor="center",
+            y=0.035,
+            yanchor="bottom",
+            outlinewidth=0,
+        ),
     )
 
     # Frames — only update z per frame (efficient, tiny payload per frame)
@@ -330,7 +424,7 @@ def _build_animated_choropleth(store: dict, geo: dict,
         {
             "args": [[str(i)],
                      {"frame": {"duration": 400, "redraw": True}, "mode": "immediate"}],
-            "label": lbl if (lbl.endswith("Q1") or i == 0 or i == n_frames - 1) else "",
+            "label": lbl if (lbl.startswith("Q1") or i == 0 or i == n_frames - 1) else "",
             "method": "animate",
         }
         for i, lbl in enumerate(labels)
@@ -339,24 +433,28 @@ def _build_animated_choropleth(store: dict, geo: dict,
     sliders = [{
         "active": 0,
         "steps": slider_steps,
-        "x": 0.05, "len": 0.9,
-        "y": 0, "yanchor": "top",
-        "pad": {"t": 50, "b": 10},
-        "currentvalue": {
-            "visible": True, "prefix": "Quarter: ",
-            "xanchor": "center",
-            "font": {"size": 11, "color": "#475569"},
-        },
-        "transition": {"duration": 200},
-        "bgcolor": "#F1F5F9",
-        "bordercolor": "#E5E7EB",
-        "borderwidth": 1,
-    }]
+            "x": 0.05, "len": 0.9,
+            "y": 0, "yanchor": "top",
+            "pad": {"t": 50, "b": 10},
+            "currentvalue": {
+                "visible": True, "prefix": "Quarter: ",
+                "xanchor": "center",
+                "font": {"size": 11, "color": PLOTLY_TEXT, "family": PLOTLY_FONT},
+            },
+            "transition": {"duration": 200},
+            "bgcolor": "rgba(250,246,240,0.96)",
+            "bordercolor": PLOTLY_HOVER_BORDER,
+            "borderwidth": 1,
+        }]
 
     updatemenus = [{
         "type": "buttons",
         "showactive": False,
         "y": 1.06, "x": 0.01, "xanchor": "left", "yanchor": "top",
+        "bgcolor": "rgba(255,251,246,0.96)",
+        "bordercolor": PLOTLY_HOVER_BORDER,
+        "borderwidth": 1,
+        "font": {"size": 11, "color": PLOTLY_TEXT, "family": PLOTLY_FONT},
         "buttons": [
             {
                 "args": [None, {"frame": {"duration": 600, "redraw": True},
@@ -375,17 +473,21 @@ def _build_animated_choropleth(store: dict, geo: dict,
 
     fig = go.Figure(data=[base_trace], frames=frames)
 
-    # Country labels (full Myanmar view only)
-    apply_tight_geos(fig, active_geo, height=580)
-
+    apply_tight_geos(fig, active_geo, height=860)
     if not store.get("region"):
-        _add_country_labels(fig)
+        add_neighbor_labels(fig)
 
     fig.update_layout(
-        margin=dict(l=0, r=60, t=52, b=100),
+        margin=dict(l=0, r=0, t=52, b=112),
         title=dict(
             text=f"<b>{labels[0] if labels else ''}</b>",
-            x=0.5, y=0.97, font=dict(size=13, color="#475569"),
+            x=0.5, y=0.97, font=dict(size=14, color="#32475b", family=PLOTLY_DISPLAY),
+        ),
+        font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT),
+        hoverlabel=dict(
+            bgcolor=PLOTLY_HOVER_BG,
+            bordercolor=PLOTLY_HOVER_BORDER,
+            font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=11),
         ),
         sliders=sliders,
         updatemenus=updatemenus,
@@ -393,7 +495,14 @@ def _build_animated_choropleth(store: dict, geo: dict,
     return fig
 
 
-def _build_choropleth(store: dict, geo: dict, metric: str = "events") -> go.Figure:
+def _build_choropleth(
+    store: dict,
+    geo: dict,
+    metric: str = "events",
+    *,
+    start_date: str | None = None,
+    end_date: str | None = None,
+) -> go.Figure:
     """Static (period total) choropleth."""
     active_geo = filter_geo_by_property(geo, "ST", store["region"]) if store.get("region") else geo
     z          = store["z_fat"] if metric == "fatalities" else store["z"]
@@ -410,97 +519,129 @@ def _build_choropleth(store: dict, geo: dict, metric: str = "events") -> go.Figu
         zmin=0, zmax=mv,
         marker_line_width=0.3, marker_line_color="#ffffff",
         hovertemplate=f"<b>%{{text}}</b><br>{hover_lbl}: %{{z:,}}<extra></extra>",
-        colorbar=dict(title=cb_title, thickness=12, len=0.5, x=1.01),
+        colorbar=dict(
+            title=dict(
+                text=cb_title,
+                side="top",
+                font=dict(size=11, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+            ),
+            tickfont=dict(size=10, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+            orientation="h",
+            thickness=10,
+            len=0.36,
+            x=0.5,
+            xanchor="center",
+            y=0.04,
+            yanchor="bottom",
+            outlinewidth=0,
+        ),
     ))
 
-    apply_tight_geos(fig, active_geo, height=530)
-
+    apply_tight_geos(fig, active_geo, height=820)
     if not store.get("region"):
-        _add_country_labels(fig)
+        add_neighbor_labels(fig)
+
+    title_text = _format_selected_range(
+        start_date,
+        end_date,
+        store.get("start_month"),
+        store.get("end_month"),
+    )
 
     fig.update_layout(
-        margin=dict(l=0, r=60, t=36, b=4),
-        title=dict(text="<b>Selected Period</b>", x=0.5, y=0.97,
-                   font=dict(size=13, color="#475569")),
+        margin=dict(l=0, r=0, t=36, b=28),
+        title=dict(text=f"<b>{title_text}</b>", x=0.5, y=0.97,
+                   font=dict(size=14, color="#32475b", family=PLOTLY_DISPLAY)),
+        font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT),
+        hoverlabel=dict(
+            bgcolor=PLOTLY_HOVER_BG,
+            bordercolor=PLOTLY_HOVER_BORDER,
+            font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=11),
+        ),
     )
     return fig
 
 
-# ── Monthly trend chart ────────────────────────────────────────────────────────
+# ── Trend chart ────────────────────────────────────────────────────────────────
 
-def _build_trend(monthly_df, start_month, end_month, region, key_events) -> go.Figure:
-    current_month = datetime.date.today().strftime("%Y-%m")
-    df = monthly_df.copy()
-    if start_month: df = df[df["month"] >= start_month]
-    if end_month:   df = df[df["month"] <= end_month]
-    if region:      df = df[df["admin1"] == region]
-    if key_events:  df = df[df["key_event"].isin(key_events)]
-    if df.empty:    return _empty_fig(height=240)
+def _build_trend(acled_df, start_date, end_date, region, key_events) -> go.Figure:
+    df = _filter_overview_events(acled_df, start_date, end_date, region, key_events)
+    if df.empty:
+        return _empty_fig(height=320)
 
     if key_events and len(key_events) == 1:
         label = key_events[0]
         color = KEY_EVENT_COLORS.get(label, "#94a3b8")
     else:
         label = "Total Events"
-        color = "#2563eb"
+        color = "#355c84"
 
-    monthly = (
-        df.groupby("month")["events"].sum()
-        .reset_index().sort_values("month")
-    )
-    monthly["month_dt"] = pd.to_datetime(monthly["month"] + "-01")
+    start_ts = pd.to_datetime(start_date) if start_date else df["event_date"].min()
+    end_ts = pd.to_datetime(end_date) if end_date else df["event_date"].max()
+    use_daily = (_window_days(start_date, end_date) or 999) <= 45
 
-    complete = monthly[monthly["month"] < current_month]
-    partial  = monthly[monthly["month"] == current_month]
+    if use_daily:
+        idx = pd.date_range(start_ts, end_ts, freq="D")
+        series = (
+            df.groupby(df["event_date"].dt.normalize())["event_id_cnty"]
+            .nunique()
+            .reindex(idx, fill_value=0)
+        )
+        trend = pd.DataFrame({"dt": idx, "events": series.values})
+        hover_fmt = "%d %b %Y"
+        tick_fmt = "%d %b"
+    else:
+        monthly = (
+            df.assign(period_dt=df["event_date"].dt.to_period("M").dt.to_timestamp())
+            .groupby("period_dt")["event_id_cnty"]
+            .nunique()
+            .reset_index(name="events")
+            .sort_values("period_dt")
+        )
+        trend = monthly.rename(columns={"period_dt": "dt"})
+        hover_fmt = "%b %Y"
+        tick_fmt = "%b %Y"
 
-    x_min = monthly["month_dt"].min() if not monthly.empty else None
-    x_max = monthly["month_dt"].max() if not monthly.empty else None
+    x_min = trend["dt"].min()
+    x_max = trend["dt"].max()
 
     fig = go.Figure()
-    if not complete.empty:
-        fig.add_trace(go.Scatter(
-            x=complete["month_dt"], y=complete["events"],
-            mode="lines", name=label,
-            fill="tozeroy", fillcolor=_hex_rgba(color, 0.10),
-            line=dict(color=color, width=2.5),
-            hovertemplate=f"<b>{label}</b><br>%{{x|%b %Y}}: %{{y:,}}<extra></extra>",
-        ))
-    if not partial.empty:
-        fig.add_trace(go.Scatter(
-            x=partial["month_dt"], y=partial["events"],
-            mode="markers", name=label,
-            showlegend=complete.empty,
-            marker=dict(color=color, size=9, symbol="circle-open",
-                        line=dict(width=2, color=color)),
-            hovertemplate=f"<b>{label}</b><br>%{{x|%b %Y}}: %{{y:,}} (partial)<extra></extra>",
-        ))
+    fig.add_trace(go.Scatter(
+        x=trend["dt"], y=trend["events"],
+        mode="lines+markers" if use_daily else "lines",
+        name=label,
+        showlegend=False,
+        fill="tozeroy",
+        fillcolor=_hex_rgba(color, 0.10),
+        line=dict(color=color, width=2.5),
+        marker=dict(color=color, size=6),
+        hovertemplate=f"<b>{label}</b><br>%{{x|{hover_fmt}}}: %{{y:,}}<extra></extra>",
+    ))
 
-    # Milestone vertical lines — color-coded pills + hover diamonds
     if x_min is not None:
-        for date_str, title, short_name, color, desc in MILESTONES:
+        for i, (date_str, title, short_name, milestone_color, desc) in enumerate(MILESTONES):
             mdt = pd.Timestamp(date_str)
             if x_min <= mdt <= (x_max + pd.Timedelta(days=90)):
                 fig.add_shape(
                     type="line",
                     x0=mdt, x1=mdt, y0=0, y1=1,
                     xref="x", yref="paper",
-                    line=dict(color=color, width=1.5, dash="dot"),
-                    opacity=0.55,
+                    line=dict(color=milestone_color, width=1.4, dash="dot"),
+                    opacity=0.5,
                 )
                 fig.add_annotation(
-                    x=mdt, y=1.0, xref="x", yref="paper",
+                    x=mdt, y=1.075 if i % 2 == 0 else 1.035, xref="x", yref="paper",
                     text=f"<b>{short_name}</b>",
                     showarrow=False,
-                    font=dict(size=8, color=color),
+                    font=dict(size=7.4, color=milestone_color, family=PLOTLY_FONT),
                     xanchor="center", yanchor="bottom",
-                    bgcolor="rgba(255,255,255,0.92)",
-                    bordercolor=color, borderwidth=1, borderpad=2,
+                    bgcolor=PLOTLY_HOVER_BG,
+                    bordercolor=milestone_color, borderwidth=1, borderpad=1,
                 )
-                # Small diamond on hidden y2 axis — hover target with full description
                 fig.add_trace(go.Scatter(
                     x=[mdt], y=[0.5], yaxis="y2",
                     mode="markers",
-                    marker=dict(color=color, size=7, symbol="diamond",
+                    marker=dict(color=milestone_color, size=7, symbol="diamond",
                                 line=dict(color="white", width=1), opacity=0.75),
                     showlegend=False, name="",
                     hovertemplate=(
@@ -511,47 +652,64 @@ def _build_trend(monthly_df, start_month, end_month, region, key_events) -> go.F
                 ))
 
     fig.update_layout(
-        height=240,
+        height=320,
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=4, r=4, t=28, b=4),
+        margin=dict(l=4, r=4, t=40, b=4),
         yaxis2=dict(overlaying="y", range=[0, 1], visible=False, fixedrange=True),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0,
-                    font=dict(size=9), bgcolor="rgba(0,0,0,0)"),
-        xaxis=dict(showgrid=False, tickformat="%b %Y", tickangle=-30,
-                   tickfont=dict(size=10), linecolor="#e5e7eb"),
-        yaxis=dict(showgrid=True, gridcolor="#f3f4f6", zeroline=False,
-                   tickfont=dict(size=10), title=None),
+        showlegend=False,
+        font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT),
+        xaxis=dict(
+            showgrid=False,
+            tickformat=tick_fmt,
+            tickangle=-30,
+            tickfont=dict(size=10, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+            linecolor=PLOTLY_GRID,
+        ),
+        yaxis=dict(showgrid=True, gridcolor=PLOTLY_GRID, zeroline=False,
+                   tickfont=dict(size=10, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+                   title=None, rangemode="tozero"),
         hovermode="x unified",
+        hoverlabel=dict(
+            bgcolor=PLOTLY_HOVER_BG,
+            bordercolor=PLOTLY_HOVER_BORDER,
+            font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=11),
+        ),
     )
     return fig
 
 
 # ── Key Activity Types bar chart ──────────────────────────────────────────────
 
-def _build_activity_bar(monthly_df, start_month, end_month, region, key_events) -> go.Figure:
-    df = monthly_df.copy()
-    if start_month: df = df[df["month"] >= start_month]
-    if end_month:   df = df[df["month"] <= end_month]
-    if region:      df = df[df["admin1"] == region]
-    if key_events:  df = df[df["key_event"].isin(key_events)]
-    if df.empty:    return _empty_fig("No data", height=300)
+def _build_activity_bar(acled_df, start_date, end_date, region, key_events) -> go.Figure:
+    df = _filter_overview_events(acled_df, start_date, end_date, region, None)
+    if df.empty:
+        return _empty_fig("No data", height=420)
 
     counts = (
-        df.groupby("key_event", observed=True)["events"].sum()
+        df.groupby("key_event", observed=True)["event_id_cnty"]
+        .nunique()
         .reindex(KEY_EVENT_ORDER).fillna(0)
     )
     counts = counts[counts > 0].sort_values(ascending=False)
-    if counts.empty: return _empty_fig("No data", height=300)
+    if counts.empty:
+        return _empty_fig("No data", height=420)
 
+    selected = set(key_events or [])
     defs = [[EVENT_DEFINITIONS.get(k, "")] for k in counts.index]
+    accent = "#355c84"
+    context = "#ced9e7"
+    colors = [
+        accent if (selected and evt in selected) else (context if selected else accent)
+        for evt in counts.index
+    ]
     fig = go.Figure(go.Bar(
         y=counts.index,
         x=counts.values,
         orientation="h",
-        marker=dict(color="#3b82f6"),
+        marker=dict(color=colors, line=dict(color="rgba(56,78,99,0.08)", width=0.5)),
         text=[f"{int(v):,}" for v in counts.values],
         textposition="outside",
-        textfont=dict(size=10, color="#374151"),
+        textfont=dict(size=10, color=PLOTLY_TEXT, family=PLOTLY_FONT),
         cliponaxis=False,
         customdata=defs,
         hovertemplate=(
@@ -561,18 +719,33 @@ def _build_activity_bar(monthly_df, start_month, end_month, region, key_events) 
             "<extra></extra>"
         ),
     ))
+    if selected:
+        note = "Selected event type highlighted for context" if len(selected) == 1 else "Selected event types highlighted for context"
+        fig.add_annotation(
+            x=1, y=1.07, xref="paper", yref="paper",
+            text=note,
+            showarrow=False,
+            xanchor="right",
+            font=dict(size=9, color="#64748B", family=PLOTLY_FONT),
+        )
     fig.update_layout(
-        height=300,
+        height=420,
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=4, r=80, t=12, b=4),
+        font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT),
         yaxis=dict(
-            tickfont=dict(size=9), title=None,
+            tickfont=dict(size=9, color=PLOTLY_TEXT, family=PLOTLY_FONT), title=None,
             autorange="reversed", automargin=True,
         ),
         xaxis=dict(
-            showgrid=True, gridcolor="#f3f4f6",
-            tickfont=dict(size=9), title=None,
+            showgrid=True, gridcolor=PLOTLY_GRID,
+            tickfont=dict(size=9, color=PLOTLY_TEXT, family=PLOTLY_FONT), title=None,
             rangemode="tozero",
+        ),
+        hoverlabel=dict(
+            bgcolor=PLOTLY_HOVER_BG,
+            bordercolor=PLOTLY_HOVER_BORDER,
+            font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=11),
         ),
     )
     return fig
@@ -580,19 +753,19 @@ def _build_activity_bar(monthly_df, start_month, end_month, region, key_events) 
 
 # ── Highest Events helper ─────────────────────────────────────────────────────
 
-def _highest_events(monthly_df, start_month, end_month, region, key_events):
-    df = monthly_df.copy()
-    if start_month: df = df[df["month"] >= start_month]
-    if end_month:   df = df[df["month"] <= end_month]
-    if key_events:  df = df[df["key_event"].isin(key_events)]
-    if df.empty:    return "—", "—"
-    subset = df[df["admin1"] == region] if region else df
-    by_tsp = subset.groupby("Tsp_Pcode", observed=True)["events"].sum().sort_values(ascending=False)
+def _highest_events(acled_df, start_date, end_date, region, key_events):
+    df = _filter_overview_events(acled_df, start_date, end_date, region, key_events)
+    if df.empty:
+        return "—", "—"
+    by_tsp = (
+        df.groupby("Tsp_Pcode", observed=True)["event_id_cnty"]
+        .nunique()
+        .sort_values(ascending=False)
+    )
     if by_tsp.empty:
         return "—", "—"
     top_pcode = by_tsp.index[0]
-    acled = load_acled_main()
-    match = acled[acled["Tsp_Pcode"] == top_pcode]["admin3"]
+    match = acled_df[acled_df["Tsp_Pcode"] == top_pcode]["admin3"]
     top_name = str(match.iloc[0]) if not match.empty else str(top_pcode)
     return top_name, f"{int(by_tsp.iloc[0]):,}"
 
@@ -603,7 +776,8 @@ def layout():
     meta        = _get_defaults()
     df          = load_acled_main()
     latest_str  = meta["latest_str"]
-    refreshed_str = meta["refreshed_str"]
+    checked_str = meta["checked_str"]
+    checked_note = meta["checked_note"]
     start_month = meta["start_month"]
     end_month   = meta["end_month"]
     start_date  = meta["start_val"]   # YYYY-MM-DD for DatePickerSingle
@@ -615,19 +789,29 @@ def layout():
     default_store = {
         "start_month":  start_month,
         "end_month":    end_month,
+        "start_date":   start_date,
+        "end_date":     end_date,
         "region":       None,
         "key_events":   None,
         "preset_label": None,
     }
 
     # Keep first layout light; charts are hydrated by callback after mount.
-    init_map        = _empty_fig(height=530)
-    init_trend      = _empty_fig(height=240)
-    init_bar        = _empty_fig("Loading conflict types...", height=300)
+    init_map        = _empty_fig(height=820)
+    init_trend      = _empty_fig(height=320)
+    init_bar        = _empty_fig("Loading conflict types...", height=420)
     init_conflicts  = "—"
     init_fatalities = "—"
     h_region, h_count = "—", "—"
-    init_summary    = _build_filter_summary(start_month, end_month, None, None, "time_range")
+    init_summary    = _build_filter_chips(
+        start_month,
+        end_month,
+        None,
+        None,
+        "time_range",
+        start_date=start_date,
+        end_date=end_date,
+    )
 
     return html.Div([
 
@@ -635,91 +819,94 @@ def layout():
         dcc.Store(id="ov-applied-filters", data=default_store),
         dcc.Store(id="ov-mode", data="time_range"),
 
-        # ── page header ────────────────────────────────────────────────────────
+        # ── hero ───────────────────────────────────────────────────────────────
         html.Div([
             html.Div([
                 html.H4("Overview", className="page-title"),
-                html.Div("Explore conflict incidents across Myanmar",
-                         className="page-subtitle"),
+                html.Div(
+                    "See where reported conflict is concentrated, how much is recorded, and how the selected period changes over time.",
+                    className="page-subtitle",
+                ),
             ], className="page-header-left"),
-            html.Div(f"Data through: {latest_str} · Synced: {refreshed_str}", className="page-last-updated"),
-        ], className="page-header"),
+            html.Div([
+                html.Div([
+                    html.Span("Data Through", className="hero-status-key"),
+                    html.Span(latest_str, className="hero-status-value-inline"),
+                ], className="hero-status-pill"),
+                html.Div([
+                    html.Span("Last checked with ACLED", className="hero-status-key"),
+                    html.Span(checked_str, className="hero-status-value-inline"),
+                ], className="hero-status-pill"),
+                html.Div(checked_note, className="hero-status-note hero-status-note--inline"),
+            ], className="hero-status-inline"),
+        ], className="page-header overview-hero"),
 
         # ── filter card ────────────────────────────────────────────────────────
         html.Div([
             html.Div([
-
-                # Time Range: quick presets + date-card pickers
-                html.Div([
-                    html.Label("Time Range", className="filter-label"),
-                    html.Div([
-                        html.Button("Last 7 days",    id="ov-btn-7d",  n_clicks=0, className="quick-btn"),
-                        html.Button("Last 30 days",   id="ov-btn-30d", n_clicks=0, className="quick-btn"),
-                        html.Button("Since Feb 2021", id="ov-btn-all", n_clicks=0, className="quick-btn"),
-                    ], className="quick-btn-row"),
-                    html.Div([
-                        html.Div([
-                            html.Div("Date From", className="date-card-header"),
-                            dcc.DatePickerSingle(
-                                id="ov-from-date",
-                                date=start_date,
-                                display_format="DD/MM/YYYY",
-                                first_day_of_week=1,
-                                className="date-picker-single",
-                            ),
-                        ], className="date-card"),
-                        html.Div([
-                            html.Div("Date To", className="date-card-header"),
-                            dcc.DatePickerSingle(
-                                id="ov-to-date",
-                                date=end_date,
-                                display_format="DD/MM/YYYY",
-                                first_day_of_week=1,
-                                className="date-picker-single",
-                            ),
-                        ], className="date-card"),
-                    ], className="date-card-group"),
-                ], className="filter-group filter-group--datepicker"),
+                html.Button("Last 7 days",    id="ov-btn-7d",  n_clicks=0, className="quick-btn"),
+                html.Button("Last 30 days",   id="ov-btn-30d", n_clicks=0, className="quick-btn"),
+                html.Button("Since Feb 2021", id="ov-btn-all", n_clicks=0, className="quick-btn"),
 
                 html.Div([
-                    html.Label("Region", className="filter-label"),
+                    html.Div([
+                        html.Div("From", className="date-card-header"),
+                        dcc.DatePickerSingle(
+                            id="ov-from-date",
+                            date=start_date,
+                            display_format="DD/MM/YYYY",
+                            first_day_of_week=1,
+                            className="date-picker-single",
+                        ),
+                    ], className="date-card date-card--compact"),
+                ], className="filter-strip-item filter-strip-item--date"),
+
+                html.Div([
+                    html.Div([
+                        html.Div("To", className="date-card-header"),
+                        dcc.DatePickerSingle(
+                            id="ov-to-date",
+                            date=end_date,
+                            display_format="DD/MM/YYYY",
+                            first_day_of_week=1,
+                            className="date-picker-single",
+                        ),
+                    ], className="date-card date-card--compact"),
+                ], className="filter-strip-item filter-strip-item--date"),
+
+                html.Div([
                     dcc.Dropdown(id="ov-region",
                                  options=[{"label": r, "value": r} for r in admin1_opts],
-                                 multi=False, placeholder="All Regions", clearable=True),
-                ], className="filter-group"),
+                                 multi=False, placeholder="Region · All Myanmar", clearable=True),
+                ], className="filter-strip-item filter-strip-item--select"),
 
                 html.Div([
-                    html.Label("Conflict Type", className="filter-label"),
                     dcc.Dropdown(id="ov-key-event",
                                  options=[{"label": k, "value": k} for k in key_evt_opts],
-                                 multi=False, placeholder="All Types", clearable=True),
-                ], className="filter-group filter-group--wide"),
+                                 multi=False, placeholder="Event Type · All", clearable=True),
+                ], className="filter-strip-item filter-strip-item--type"),
 
-                html.Div([
-                    html.Label("\u00a0", className="filter-label"),
-                    html.Div([
-                        html.Button("Apply", id="ov-apply-btn",
-                                    n_clicks=0, className="btn-apply"),
-                        html.Button("Reset", id="ov-reset-btn",
-                                    n_clicks=0, className="btn-reset"),
-                    ], className="btn-group"),
-                ], className="filter-group filter-group--btns"),
-
-            ], className="filter-controls"),
-        ], className="filter-card"),
+                html.Button("Reset", id="ov-reset-btn",
+                            n_clicks=0, className="btn-reset btn-reset--solo"),
+            ], className="filter-strip-row"),
+            html.Div(id="ov-key-event-note", className="filter-strip-help"),
+        ], id="ov-filter-card", className="filter-card filter-card--inline"),
 
         # ── filter summary ─────────────────────────────────────────────────────
         html.Div(init_summary, id="ov-filter-summary", className="filter-summary"),
 
-        # ── two-column body ────────────────────────────────────────────────────
+        # ── national picture feature grid ─────────────────────────────────────
         html.Div([
-
-            # ── LEFT: hero map ─────────────────────────────────────────────────
             html.Div([
                 html.Div([
-
                     html.Div([
-                        html.Div("Conflict Incidents in Myanmar", className="card-title"),
+                        html.Div("Conflict Geography", className="card-title"),
+                        html.Div(
+                            "Distribution of reported events or reported fatality estimates across Myanmar townships",
+                            className="card-subtitle",
+                        ),
+                    ], className="map-stage-copy"),
+                    html.Div([
                         dcc.RadioItems(
                             id="ov-metric",
                             options=[
@@ -728,101 +915,99 @@ def layout():
                             ],
                             value="events",
                             inline=True,
-                            className="metric-toggle",
+                            className="metric-toggle metric-toggle--quiet",
                         ),
-                    ], className="dash-card-head",
-                       style={"display": "flex", "justifyContent": "space-between",
-                              "alignItems": "center", "flexWrap": "wrap", "gap": "8px"}),
-
-                    html.Div([
                         html.Div([
-                            html.Div([
-                                html.Div("Period Total", className="mode-card-title"),
-                                html.Div("Cumulative events for selected time range",
-                                         className="mode-card-desc"),
-                            ]),
+                            html.Div("Cumulative", className="view-toggle-label"),
                         ], id="ov-mode-total-btn", n_clicks=0,
-                           className="mode-card mode-card--active"),
+                           className="view-toggle-btn view-toggle-btn--active"),
                         html.Div([
-                            html.Div([
-                                html.Div("Quarterly Animation", className="mode-card-title"),
-                                html.Div("Watch conflict spread quarter by quarter",
-                                         className="mode-card-desc"),
-                            ]),
+                            html.Div("Animated", className="view-toggle-label"),
                         ], id="ov-mode-anim-btn", n_clicks=0,
-                           className="mode-card"),
-                    ], className="mode-toggle-cards"),
+                           className="view-toggle-btn"),
+                    ], className="map-stage-controls"),
+                ], className="dash-card-head map-stage-head"),
 
-                    dcc.Loading(
-                        dcc.Graph(id="ov-map", figure=init_map,
-                                  config={**_chart_config("myanmar_conflict_map"),
-                                          "displayModeBar": True}),
-                        type="dot", color="#2563eb",
-                    ),
+                dcc.Loading(
+                        dcc.Graph(
+                            id="ov-map",
+                            figure=init_map,
+                            className="map-graph",
+                            style={"height": "100%"},
+                            config={**_chart_config("myanmar_conflict_map", show_modebar=True),
+                                "displayModeBar": True},
+                        ),
+                    type="dot", color="#2563eb",
+                ),
 
+                html.Div([
+                    html.Div("Most Active Township", className="highest-label"),
                     html.Div([
-                        html.Div("Highest Events", className="highest-label"),
-                        html.Div([
-                            html.Div(h_region, id="ov-highest-region", className="highest-region"),
-                            html.Div(h_count,  id="ov-highest-count",  className="highest-count"),
-                        ], className="highest-values"),
-                    ], className="highest-events"),
+                        html.Div(h_region, id="ov-highest-region", className="highest-region"),
+                        html.Div(h_count, id="ov-highest-count", className="highest-count"),
+                    ], className="highest-values"),
+                ], className="highest-events"),
+            ], className="dash-card map-stage overview-map-stage"),
 
-                ], className="dash-card"),
-            ], className="col-map"),
-
-            # ── RIGHT: charts stack ────────────────────────────────────────────
             html.Div([
-
                 html.Div([
                     html.Div([
-                        html.Div("Total Conflicts",                   className="kpi-label"),
+                        html.Div("Reported Events", className="kpi-label"),
                         html.Div(init_conflicts, id="ov-kpi-conflicts", className="kpi-value"),
-                        html.Div("all conflict types incl. protests", className="kpi-sub"),
-                    ], className="kpi-card kpi-accent-blue"),
+                        html.Div("All reported dashboard event records in the selected scope", className="kpi-sub"),
+                    ], className="kpi-card kpi-card--hero kpi-accent-blue"),
                     html.Div([
-                        html.Div("Total Fatalities",            className="kpi-label"),
+                        html.Div("Reported Fatality Estimate", className="kpi-label"),
                         html.Div(init_fatalities, id="ov-kpi-fatalities", className="kpi-value"),
-                        html.Div("deaths recorded",             className="kpi-sub"),
-                    ], className="kpi-card kpi-accent-red"),
-                ], className="kpis-row kpis-row--2"),
+                        html.Div("Summed ACLED reported fatalities in the selected scope", className="kpi-sub"),
+                    ], className="kpi-card kpi-card--support kpi-accent-red"),
+                ], className="kpis-row kpis-row--2 overview-kpi-strip"),
 
                 html.Div([
                     html.Div([
-                        html.Div("Monthly Trend of Events", className="card-title"),
+                        html.Div("Event Trend", className="card-title"),
+                        html.Div(
+                            "Use the timeline to see when reported events rose, fell, or shifted around major turning points",
+                            className="card-subtitle",
+                        ),
                     ], className="dash-card-head"),
                     dcc.Loading(
-                        dcc.Graph(id="ov-trend", figure=init_trend,
-                                  config=_chart_config("myanmar_monthly_trend")),
+                        dcc.Graph(
+                            id="ov-trend",
+                            figure=init_trend,
+                            config=_chart_config("myanmar_monthly_trend"),
+                        ),
                         type="dot", color="#2563eb",
                     ),
                 ], className="dash-card"),
 
                 html.Div([
                     html.Div([
-                        html.Div("Conflict Types", className="card-title"),
-                        html.Div("Hover a bar to see what each category means",
-                                 className="card-subtitle"),
+                        html.Div("Event Types", className="card-title"),
+                        html.Div(
+                            "Compare the composition of the selected period, not just the total volume",
+                            className="card-subtitle",
+                        ),
                     ], className="dash-card-head"),
                     dcc.Loading(
-                        dcc.Graph(id="ov-activity-bar", figure=init_bar,
-                                  config=_chart_config("myanmar_activity_types")),
+                        dcc.Graph(
+                            id="ov-activity-bar",
+                            figure=init_bar,
+                            config=_chart_config("myanmar_activity_types"),
+                        ),
                         type="dot", color="#2563eb",
                     ),
                 ], className="dash-card"),
-
-            ], className="col-charts"),
-
-        ], className="page-body"),
+            ], className="overview-feature-side"),
+        ], className="overview-feature-grid"),
 
         # ── data disclaimer ────────────────────────────────────────────────────
         html.Div([
             "Source: ",
             html.A("ACLED", href="https://acleddata.com", target="_blank",
                    style={"color": "inherit", "textDecoration": "underline"}),
-            " (Armed Conflict Location & Event Data Project). Our team has reviewed "
-            "and recoded events using local field knowledge. Displayed figures may "
-            "differ from official sources or on-the-ground reports.",
+            " (Armed Conflict Location & Event Data Project). ACLED records reported events, not every event that occurred. "
+            "Fatalities are reported estimates and may be revised. Our team has reviewed and analytically recoded parts of the data using local field knowledge, so some dashboard categories may differ from official ACLED outputs.",
         ], className="data-disclaimer"),
 
     ], className="page-wrap")
@@ -832,7 +1017,7 @@ def layout():
 # Callbacks
 # ══════════════════════════════════════════════════════════════════════════════
 
-# 1. Mode card buttons → update mode store + button styles
+# 1. View toggle buttons → update mode store + button styles
 @callback(
     Output("ov-mode",           "data"),
     Output("ov-mode-total-btn", "className"),
@@ -843,67 +1028,68 @@ def layout():
 )
 def switch_mode(n_total, n_anim):
     if ctx.triggered_id == "ov-mode-anim-btn":
-        return "animated", "mode-card", "mode-card mode-card--active"
-    return "time_range", "mode-card mode-card--active", "mode-card"
+        return "animated", "view-toggle-btn", "view-toggle-btn view-toggle-btn--active"
+    return "time_range", "view-toggle-btn view-toggle-btn--active", "view-toggle-btn"
 
 
-# 2. Quick date preset buttons → apply immediately + sync date pickers
+# 2. Quick date preset buttons → update date pickers
 @callback(
-    Output("ov-applied-filters", "data", allow_duplicate=True),
-    Output("ov-from-date",       "date",               allow_duplicate=True),
-    Output("ov-to-date",         "date",               allow_duplicate=True),
+    Output("ov-from-date",       "date"),
+    Output("ov-to-date",         "date"),
     Input("ov-btn-7d",           "n_clicks"),
     Input("ov-btn-30d",          "n_clicks"),
     Input("ov-btn-all",          "n_clicks"),
-    State("ov-region",           "value"),
-    State("ov-key-event",        "value"),
     prevent_initial_call=True,
 )
-def set_quick_dates(n7, n30, nall, region, key_events):
+def set_quick_dates(n7, n30, nall):
     max_dt = load_acled_main()["event_date"].max()
     if ctx.triggered_id == "ov-btn-7d":
         start_dt = max_dt - pd.Timedelta(days=7)
-        label = "Last 7 days"
     elif ctx.triggered_id == "ov-btn-30d":
         start_dt = max_dt - pd.Timedelta(days=30)
-        label = "Last 30 days"
     else:
         start_dt = pd.Timestamp("2021-02-01")
-        label = "Since Feb 2021"
-    if isinstance(key_events, str):
-        key_events = [key_events]
-    start_m    = start_dt.strftime("%Y-%m")
-    end_m      = max_dt.strftime("%Y-%m")
     start_date = start_dt.strftime("%Y-%m-%d")
     end_date   = max_dt.strftime("%Y-%m-%d")
-    return (
-        {"start_month": start_m, "end_month": end_m,
-         "region": region, "key_events": key_events,
-         "preset_label": label},
-        start_date,
-        end_date,
-    )
+    return start_date, end_date
 
 
-# 4. Apply button → save filter state to store (reads From/To date pickers)
+# 4. Filter controls → save filter state automatically
 @callback(
-    Output("ov-applied-filters", "data"),
-    Input("ov-apply-btn",        "n_clicks"),
-    State("ov-from-date",        "date"),
-    State("ov-to-date",          "date"),
-    State("ov-region",           "value"),
-    State("ov-key-event",        "value"),
+    Output("ov-applied-filters", "data", allow_duplicate=True),
+    Input("ov-from-date",        "date"),
+    Input("ov-to-date",          "date"),
+    Input("ov-region",           "value"),
+    Input("ov-key-event",        "value"),
     prevent_initial_call=True,
 )
-def apply_filters(n, from_date, to_date, region, key_events):
+def apply_filters(from_date, to_date, region, key_events):
     d = _get_defaults()
     start_m = (from_date or d["start_val"])[:7]
     end_m   = (to_date   or d["end_val"])[:7]
     if isinstance(key_events, str):
         key_events = [key_events]
     return {"start_month": start_m, "end_month": end_m,
+            "start_date": from_date or d["start_val"],
+            "end_date": to_date or d["end_val"],
             "region": region, "key_events": key_events,
             "preset_label": None}
+
+
+@callback(
+    Output("ov-key-event-note", "children"),
+    Input("ov-key-event", "value"),
+    prevent_initial_call=False,
+)
+def update_incident_type_note(selected_event):
+    if not selected_event:
+        return ""
+    definition = EVENT_DEFINITIONS.get(selected_event, "")
+    if not definition:
+        return ""
+    if selected_event == "Others":
+        return "Others mainly covers records not shown separately here, especially strategic developments such as changes to group activity, disrupted weapons use, base establishment, agreements, non-violent transfers of territory, and a small number of riot records."
+    return f"{selected_event}: {definition}."
 
 
 # 5. Reset button → clear all filters and restore date pickers to full range
@@ -919,6 +1105,7 @@ def apply_filters(n, from_date, to_date, region, key_events):
 def reset_filters(n):
     d = _get_defaults()
     defaults = {"start_month": d["start_month"], "end_month": d["end_month"],
+                "start_date": d["start_val"], "end_date": d["end_val"],
                 "region": None, "key_events": None, "preset_label": None}
     return None, None, d["start_val"], d["end_val"], defaults
 
@@ -944,6 +1131,8 @@ def update_charts(applied, mode, metric):
 
     start_month  = applied.get("start_month")
     end_month    = applied.get("end_month")
+    start_date   = applied.get("start_date")
+    end_date     = applied.get("end_date")
     region       = applied.get("region")
     key_events   = applied.get("key_events")
     preset_label = applied.get("preset_label")
@@ -953,36 +1142,36 @@ def update_charts(applied, mode, metric):
     mode   = mode   or "time_range"
     metric = metric or "events"
 
-    monthly_df = load_monthly_township()
-    acled      = load_acled_main()
-    geo        = load_geojson()
+    acled = load_acled_main()
+    geo   = load_geojson()
 
-    # KPIs
-    ac = acled.copy()
-    ac["month"] = ac["event_date"].dt.to_period("M").astype(str)
-    if start_month: ac = ac[ac["month"] >= start_month]
-    if end_month:   ac = ac[ac["month"] <= end_month]
-    if region:      ac = ac[ac["admin1"] == region]
-    if key_events:  ac = ac[ac["key_event"].isin(key_events)]
+    ac = _filter_overview_events(acled, start_date, end_date, region, key_events)
     n_conflicts  = _fmt(len(ac))
     n_fatalities = _fmt(int(ac["fatalities"].sum()))
 
-    filter_summary = _build_filter_summary(start_month, end_month, region, key_events,
-                                           mode, preset_label)
-    store = _build_store(monthly_df, geo, start_month, end_month, region, key_events, mode)
+    filter_summary = _build_filter_chips(start_month, end_month, region, key_events,
+                                         mode, preset_label,
+                                         start_date=start_date, end_date=end_date)
+    store = _build_store(acled, geo, start_date, end_date, region, key_events, mode)
 
     if store is None:
-        empty = _empty_fig("No data for this selection")
+        empty = _empty_fig("No data for this selection", height=820)
         return (empty, n_conflicts, n_fatalities, filter_summary,
-                _empty_fig(height=240), _empty_fig("No data", height=220), "—", "—")
+                _empty_fig(height=320), _empty_fig("No data", height=350), "—", "—")
 
     if mode == "animated":
         fig_map = _build_animated_choropleth(store, geo, metric)
     else:
-        fig_map = _build_choropleth(store, geo, metric)
+        fig_map = _build_choropleth(
+            store,
+            geo,
+            metric,
+            start_date=start_date,
+            end_date=end_date,
+        )
 
-    fig_trend = _build_trend(monthly_df, start_month, end_month, region, key_events)
-    fig_bar   = _build_activity_bar(monthly_df, start_month, end_month, region, key_events)
-    h_region, h_count = _highest_events(monthly_df, start_month, end_month, region, key_events)
+    fig_trend = _build_trend(acled, start_date, end_date, region, key_events)
+    fig_bar   = _build_activity_bar(acled, start_date, end_date, region, key_events)
+    h_region, h_count = _highest_events(acled, start_date, end_date, region, key_events)
 
     return fig_map, n_conflicts, n_fatalities, filter_summary, fig_trend, fig_bar, h_region, h_count

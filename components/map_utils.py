@@ -2,6 +2,7 @@
 """
 Geo helpers (reusable across pages):
 - apply_tight_geos(fig, geojson, ...)                   -> tight, tall map frame
+- add_neighbor_labels(fig)                              -> national context labels + wider border view
 - ensure_full_geoindex(df, geojson, ...)                -> add missing polygons (no holes)
 - filter_geo_by_property(geojson, prop, value)          -> sub-geojson by property (e.g., Admin1 name)
 - ids_from_geo(geojson, feature_key="properties.TS_PCODE") -> list of ids from geojson
@@ -39,7 +40,7 @@ def apply_tight_geos(
     geojson: dict,
     *,
     height: int = 720,
-    pad_frac: float = 0.01,
+    pad_frac: float = 0.014,
     show_colorbar: bool = True,
 ) -> go.Figure:
     min_lon, max_lon, min_lat, max_lat = _geo_bounds(geojson)
@@ -47,7 +48,19 @@ def apply_tight_geos(
     pad_lon, pad_lat = dlon * pad_frac, dlat * pad_frac
 
     fig.update_geos(
-        visible=False,
+        visible=True,
+        showframe=False,
+        showcoastlines=False,
+        coastlinecolor="#D7DFE9",
+        coastlinewidth=0.55,
+        showcountries=False,
+        countrycolor="#D7DFE9",
+        countrywidth=0.5,
+        showsubunits=False,
+        showland=False,
+        showocean=False,
+        showlakes=False,
+        bgcolor="rgba(0,0,0,0)",
         fitbounds=None,
         lonaxis_range=[min_lon - pad_lon, max_lon + pad_lon],
         lataxis_range=[min_lat - pad_lat, max_lat + pad_lat],
@@ -56,11 +69,16 @@ def apply_tight_geos(
     fig.update_layout(
         height=int(height),
         margin=dict(l=0, r=0, t=48, b=0),
-        geo=dict(domain=dict(x=[0.004, 0.996], y=[0.004, 0.996])),
+        geo=dict(domain=dict(x=[0.0, 1.0], y=[0.015, 0.985])),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         coloraxis_showscale=show_colorbar,
     )
+    return fig
+
+
+def add_neighbor_labels(fig: go.Figure, *, font_size: int = 9) -> go.Figure:
+    """Neighbor context removed: keep only the Myanmar map."""
     return fig
 
 

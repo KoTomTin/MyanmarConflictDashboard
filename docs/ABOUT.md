@@ -14,7 +14,7 @@ ACLED is a non-partisan conflict data project that codes political violence, pro
 
 **Geography:** Myanmar township level
 
-Our team has reviewed and recoded parts of the data using local field knowledge. In particular, civilian-targeting events with five or more recorded fatalities are recoded as **Massacres** for dashboard use. Dashboard totals may therefore differ from official ACLED outputs.
+Our team has reviewed and recoded parts of the data using local field knowledge. In particular, civilian-targeting events with five or more reported fatalities are recoded as **Massacres** for dashboard use. Dashboard totals may therefore differ from official ACLED outputs.
 
 ## What The Dashboard Shows
 
@@ -32,7 +32,7 @@ The Overview page lets users filter by date, region, and conflict type. It inclu
 The Actor Analysis page lets users focus on a single actor. It includes:
 
 - geographic footprint by township
-- offensive versus defensive engagement trends
+- actor-side engagement trends based on dashboard recoding
 - associated actors from the same-side event records
 
 ## Key Terms
@@ -42,9 +42,9 @@ The Actor Analysis page lets users focus on a single actor. It includes:
 | Ground-based attack | Battles, shelling, and armed clashes on the ground |
 | Air attack | Airstrikes by military aircraft |
 | Drone attack | Attacks using unmanned aerial vehicles |
-| Massacres | Civilian-targeting events with 5+ recorded fatalities, recoded for dashboard analysis |
+| Massacres | Civilian-targeting events with 5+ reported fatalities, recoded for dashboard analysis |
 | Violence against civilians | Attacks, killings, or abductions targeting non-combatants |
-| Offensive / Defensive | Whether an actor initiated violence or was on the receiving side in a conflict event |
+| Primary-side / Secondary-side records | Dashboard analytical grouping based on participant-side coding in an event; not a native ACLED aggressor or victim variable |
 | Myanmar Military Regime | Umbrella label used for SAC, Tatmadaw, police, and aligned regime actors |
 | ERO | Ethnic Resistance Organisation |
 | People's Defense Force | Post-coup resistance forces grouped under a common dashboard label |
@@ -52,10 +52,12 @@ The Actor Analysis page lets users focus on a single actor. It includes:
 ## Limitations
 
 - ACLED captures reported events only, so under-reporting is likely in hard-to-access areas.
-- Fatality counts are best estimates and can change as reporting improves.
+- Fatality figures are reported estimates and can change as reporting improves.
+- Fatalities are not generally attributable to specific actors from ACLED alone.
 - Some actor labels are standardized for clarity and may not match every local naming convention.
 - The dashboard's **Massacres** category is a local analytical recode, not a native ACLED field.
+- Actor-side metrics in the dashboard should not be read as definitive proof of aggression or victimhood in a given event.
 
 ## Contact
 
-For questions, corrections, or feedback: **kothomasgye@gmail.com**
+For questions, corrections, or feedback: **thomas@burma.ac**

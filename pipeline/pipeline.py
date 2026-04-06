@@ -30,6 +30,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
@@ -42,6 +43,7 @@ OUTPUT_PARQUET      = DATA_DIR / "acled_cleaned.parquet"
 ACTOR_LEVEL_PARQUET = DATA_DIR / "acled_actor_level.parquet"
 ALLY_PAIRS_PARQUET  = DATA_DIR / "acled_actor_ally_pairs.parquet"
 LAST_UPDATED             = DATA_DIR / "last_updated.txt"
+LAST_CHECKED             = DATA_DIR / "last_checked.json"
 MONTHLY_TSP_PARQUET      = DATA_DIR / "monthly_township.parquet"
 SYNC_STATE_FILE          = DATA_DIR / "acled_sync_state.json"
 
@@ -50,6 +52,7 @@ VERIFY_DIR = ROOT / "data" / "verify"   # CSV exports for local inspection — g
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 SYNC_OVERLAP_SECONDS = 48 * 60 * 60
+YANGON_TZ = ZoneInfo("Asia/Yangon")
 
 # ── Credentials ────────────────────────────────────────────────────────────────
 load_dotenv(ROOT / ".env")
@@ -578,8 +581,12 @@ def build_actor_level(df_cleaned: pd.DataFrame) -> pd.DataFrame:
     """
     Build actor-level dataset (1 row per actor per event).
     Filters to Armed conflict events only.
-    Uses primary_actor / assoc_actor_1 for the offending side,
-    secondary_actor / assoc_actor_2 for the defending side.
+    Uses primary_actor / assoc_actor_1 for the dashboard's primary side,
+    and secondary_actor / assoc_actor_2 for the dashboard's secondary side.
+
+    Note: these are dashboard analytical side assignments derived from the
+    recoded actor fields. They should not be interpreted as a native ACLED
+    aggressor/victim indicator.
 
     Output columns (slim — join with acled_cleaned on event_id_cnty for event properties):
         event_id_cnty, actor_name, type1, type2, allies
@@ -602,7 +609,7 @@ def build_actor_level(df_cleaned: pd.DataFrame) -> pd.DataFrame:
     def _valid_actor(name):
         return pd.notna(name) and str(name).strip() not in ("", "nan", "NaN")
 
-    # ── Offending side: primary_actor (main) + assoc_actor_1 (associated) ──────
+    # ── Primary side: primary_actor (main) + assoc_actor_1 (associated) ─────────
     off_main = df[keep_cols + ["primary_actor"]].rename(columns={"primary_actor": "actor_name"}).copy()
     off_main = off_main[off_main["actor_name"].apply(_valid_actor)]
     off_main["type1"] = "main"
@@ -613,7 +620,7 @@ def build_actor_level(df_cleaned: pd.DataFrame) -> pd.DataFrame:
     off_assoc["type1"] = "associated"
     off_assoc["type2"] = "offend"
 
-    # ── Defending side: secondary_actor (main) + assoc_actor_2 (associated) ────
+    # ── Secondary side: secondary_actor (main) + assoc_actor_2 (associated) ─────
     def_main = df[keep_cols + ["secondary_actor"]].rename(columns={"secondary_actor": "actor_name"}).copy()
     def_main = def_main[def_main["actor_name"].apply(_valid_actor)]
     def_main["type1"] = "main"
@@ -631,8 +638,8 @@ def build_actor_level(df_cleaned: pd.DataFrame) -> pd.DataFrame:
         subset=keep_cols + ["actor_name", "type1", "type2"]
     ).reset_index(drop=True)
 
-    # ── Offend takes precedence: if an actor appears on both sides of the same event,
-    # keep only their offensive role so offense + defense = total (no double-counting).
+    # ── Primary side takes precedence: if an actor appears on both sides of the
+    # same event, keep only their primary-side record to avoid double-counting.
     offend_keys = (
         actor_level[actor_level["type2"] == "offend"][["event_id_cnty", "actor_name"]]
         .drop_duplicates()
@@ -711,6 +718,22 @@ def read_last_updated() -> str | None:
 
 def write_last_updated(d: str):
     LAST_UPDATED.write_text(d)
+
+
+def write_last_checked(checked_at_utc: datetime):
+    checked_utc = checked_at_utc.astimezone(timezone.utc)
+    checked_yangon = checked_utc.astimezone(YANGON_TZ)
+    payload = {
+        "last_checked_utc": checked_utc.isoformat(),
+        "last_checked_yangon": checked_yangon.isoformat(),
+        "display": checked_yangon.strftime("%d %b %Y · %H:%M Yangon"),
+        "date_display": checked_yangon.strftime("%d %b %Y"),
+        "time_display": checked_yangon.strftime("%H:%M"),
+        "timezone_label": "Yangon time",
+        "cadence_note": "ACLED check every 6 hours",
+        "recorded_time": True,
+    }
+    LAST_CHECKED.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -880,12 +903,15 @@ def main(update_only: bool = False, export_csv: bool = False):
 
     # Persist sync cursor after successful incremental syncs or any full rebuild.
     if sync_completed:
+        checked_at_utc = datetime.now(timezone.utc)
+        write_last_checked(checked_at_utc)
         write_sync_state({
             "last_sync_timestamp": sync_started_at,
             "last_sync_utc": datetime.fromtimestamp(sync_started_at, tz=timezone.utc).isoformat(),
             "latest_event_date": str(df_all["event_date"].max().date()),
             "row_count": int(len(df_all)),
         })
+        print(f"  last_checked.json → {checked_at_utc.astimezone(YANGON_TZ).strftime('%Y-%m-%d %H:%M %Z')}")
         print(f"  acled_sync_state.json → {sync_started_at}")
 
     print_summary(df_all)

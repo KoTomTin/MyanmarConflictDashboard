@@ -21,6 +21,7 @@ Last reviewed: `2026-04-02`
 - Documentation lives under `docs/`.
 - Research and report artifacts live under `research/`.
 - Key project facts must be written into markdown files and updated with the codebase.
+- Current redesign work is local-only until explicitly approved for push/deployment.
 
 ## Known Intentional Choices
 

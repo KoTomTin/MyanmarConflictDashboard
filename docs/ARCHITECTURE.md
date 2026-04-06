@@ -6,12 +6,14 @@ The application is a multi-page Dash app served from `app.py`. It uses a custom 
 
 - `/`: Overview
 - `/actor`: Actor Analysis
+- `/alerts`: Township Alerts
 - `/about`: About
 
 ## Page Responsibilities
 
 - `pages/1_overview.py`: national and regional filters, choropleth map, KPI cards, trend chart, and conflict-type bar chart
 - `pages/2_actor.py`: actor selector, actor footprint map, associated actor chart, offensive/defensive trend, and actor KPIs
+- `pages/4_alerts.py`: township anomaly prototype using recent versus historical township baselines for armed conflict activity and fatalities
 - `pages/3_about.py`: markdown-backed informational page sourced from `docs/ABOUT.md`
 
 ## Shared Components
@@ -39,6 +41,7 @@ The application is a multi-page Dash app served from `app.py`. It uses a custom 
 
 - `data/shapes/boundaries.geojson`: source township boundary file
 - `data/shapes/boundaries_web.geojson`: web-optimized simplified boundary file used by the app when present
+- `data/shapes/neighbor_borders.geojson`: curated neighboring-country border context derived from Natural Earth and clipped to Myanmar's immediate surroundings
 
 The runtime loader prefers the simplified web file so choropleth callbacks do not have to ship the full raw geometry on every render.
 

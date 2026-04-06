@@ -56,6 +56,7 @@ The dashboard groups raw ACLED event data into higher-level analytical categorie
 - Looting/property destruction
 - Displacement
 - Others
+  In the current dashboard export, this is a broad residual category dominated by strategic developments not shown separately above, especially changes to group activity, disrupted weapons use, headquarters/base establishment, agreements, and non-violent transfers of territory. Smaller numbers of riot records also appear here.
 
 The air versus drone split is based on the `Air/drone strike` subtype plus contextual checks in the notes and actor classification.
 
@@ -70,10 +71,12 @@ Some city-level rows require hard-coded fallback handling for places such as Man
 `acled_actor_level.parquet` is derived from armed conflict event categories, including `Massacres`. Each event is expanded into actor-role rows so the dashboard can analyze:
 
 - who appeared in the event
-- whether they were on the offending or defending side
+- which dashboard-coded participant side they appeared on
 - which actors appeared alongside them on the same side
 
 `acled_actor_ally_pairs.parquet` is then built by exploding same-side actor relationships into pair rows.
+
+The current actor-side dataset is built from the recoded `primary_actor / assoc_actor_1` side and `secondary_actor / assoc_actor_2` side. This is a dashboard analytical grouping. ACLED's `Actor1` and `Actor2` fields do not, by themselves, identify an aggressor, victim, or side that suffered more harm. Any UI wording that implies `attacker`, `target`, `offensive`, or `defensive` roles should therefore be treated with caution unless supported by additional coding logic and documentation.
 
 ## Pre-Aggregation For Performance
 
@@ -85,9 +88,13 @@ The animated choropleths use Plotly native animation frames bundled into the fig
 
 To reduce the size of the initial map callback, the app prefers a simplified web geometry file, `data/shapes/boundaries_web.geojson`, instead of the full raw township boundary file when that optimized asset is available.
 
+Neighboring-country border context is drawn from a separate clipped Natural Earth-derived file, `data/shapes/neighbor_borders.geojson`, rather than Plotly's built-in world-outline layer. This keeps the surrounding borders source-controlled and avoids unrelated distant border segments appearing in the Myanmar map view.
+
 ## Limits And Biases
 
 - ACLED reflects reported events, not every event that happened.
-- Fatality values can be revised over time.
+- Fatality values are reported estimates, can be revised over time, and are generally not attributable to a specific actor from ACLED alone.
 - Local actor naming can vary across reports and may not map perfectly onto standardized labels.
 - Drone detection is heuristic and depends partly on event notes.
+- Township choropleths show the distribution of reported events or reported fatality estimates, not territorial control or complete ground-truth conflict intensity.
+- Dashboard actor-side groupings should not be interpreted as definitive proof of who initiated violence or who suffered all harm in an event.

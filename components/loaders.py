@@ -15,8 +15,10 @@ ACTOR_LEVEL_PARQUET  = DATA / "acled_actor_level.parquet"
 ALLY_PAIRS_PARQUET   = DATA / "acled_actor_ally_pairs.parquet"
 MONTHLY_TSP_PARQUET  = DATA / "monthly_township.parquet"
 LAST_UPDATED_FILE    = DATA / "last_updated.txt"
+LAST_CHECKED_FILE    = DATA / "last_checked.json"
 BOUNDARIES_GEOJSON   = GEO / "boundaries.geojson"
 WEB_BOUNDARIES_GEOJSON = GEO / "boundaries_web.geojson"
+NEIGHBOR_BORDERS_GEOJSON = GEO / "neighbor_borders.geojson"
 
 def _mtime(p: Path) -> float:
     try:
@@ -30,6 +32,15 @@ def load_geojson(version: float | None = None) -> dict:
     source = WEB_BOUNDARIES_GEOJSON if WEB_BOUNDARIES_GEOJSON.exists() else BOUNDARIES_GEOJSON
     version = version or _mtime(source)
     with open(source, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+@lru_cache(maxsize=1)
+def load_neighbor_borders(version: float | None = None) -> dict:
+    version = version or _mtime(NEIGHBOR_BORDERS_GEOJSON)
+    if not NEIGHBOR_BORDERS_GEOJSON.exists():
+        return {"type": "FeatureCollection", "features": []}
+    with open(NEIGHBOR_BORDERS_GEOJSON, "r", encoding="utf-8") as f:
         return json.load(f)
 
 # Low-cardinality string columns — convert to category to save ~100 MB RAM
@@ -102,3 +113,33 @@ def load_last_updated(version: float | None = None) -> str:
         return LAST_UPDATED_FILE.read_text(encoding="utf-8").strip()
     except FileNotFoundError:
         return ""
+
+
+@lru_cache(maxsize=1)
+def load_last_checked(version: float | None = None) -> dict:
+    version = version or max(_mtime(LAST_CHECKED_FILE), _mtime(LAST_UPDATED_FILE))
+    if LAST_CHECKED_FILE.exists():
+        try:
+            payload = json.loads(LAST_CHECKED_FILE.read_text(encoding="utf-8"))
+            if isinstance(payload, dict):
+                return payload
+        except Exception:
+            pass
+
+    fallback = load_last_updated(_mtime(LAST_UPDATED_FILE))
+    if not fallback:
+        return {}
+
+    try:
+        date_str = pd.to_datetime(fallback).strftime("%d %b %Y")
+    except Exception:
+        date_str = fallback
+
+    return {
+        "display": date_str,
+        "date_display": date_str,
+        "time_display": "",
+        "timezone_label": "Yangon time",
+        "cadence_note": "ACLED check every 6 hours",
+        "recorded_time": False,
+    }
