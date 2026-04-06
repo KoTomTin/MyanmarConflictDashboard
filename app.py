@@ -29,6 +29,7 @@ app = dash.Dash(
     external_stylesheets=[dbc.themes.FLATLY],
     suppress_callback_exceptions=True,
     title="Myanmar Conflict Dashboard",
+    update_title=None,
 )
 server = app.server
 
@@ -75,13 +76,7 @@ def serve_layout():
         dcc.Location(id="url", refresh=False),
         topnav(),
         html.Main(
-            dcc.Loading(
-                html.Div(page_content, id="page-content"),
-                id="page-loading",
-                type="dot",
-                color="#2563eb",
-                delay_show=120,   # only show spinner if load takes >120ms
-            ),
+            html.Div(page_content, id="page-content"),
             className="main",
         ),
     ], fluid=True)

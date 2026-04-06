@@ -24,7 +24,7 @@ DEFAULT_ACTOR = "Myanmar Military Regime"
 MILESTONES = [
     ("2021-02-01", "Feb 1, 2021 – Military Coup",           "Military<br>Coup",       "#dc2626",
      "The Myanmar military seized power and arrested elected leaders, sparking nationwide protests."),
-    ("2021-09-07", "Sept 7, 2021 – NUG Declaration of War", "NUG Declaration<br>of War",    "#d97706",
+    ("2021-09-07", "Sept 7, 2021 – NUG Declaration of People's Defensive War", "People's<br>Defensive War",    "#d97706",
      "The NUG called for armed resistance against the military, escalating the conflict."),
     ("2023-10-27", "Oct 27, 2023 – Operation 1027",         "Op. 1027",   "#7c3aed",
      "Rebel alliance launched a major offensive, capturing key territory in northern Shan State."),
@@ -725,6 +725,7 @@ def layout():
                 html.Div("Follow one actor's footprint, associated actors, and engagement pattern over time.",
                          className="page-subtitle"),
                 html.Div([
+                    html.Div("Prototype · work in progress", className="hero-pill hero-pill--prototype"),
                     html.Div([
                         html.Span("Actor", className="hero-status-key"),
                         html.Span(DEFAULT_ACTOR, id="ac-actor-banner-name",

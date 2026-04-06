@@ -32,7 +32,7 @@ from components.map_utils import apply_tight_geos, add_neighbor_labels, filter_g
 MILESTONES = [
     ("2021-02-01", "Feb 1, 2021 – Military Coup",           "Military Coup",       "#dc2626",
      "The Myanmar military seized power and arrested elected leaders, sparking nationwide protests."),
-    ("2021-09-07", "Sept 7, 2021 – NUG Declaration of War", "NUG Declaration",    "#d97706",
+    ("2021-09-07", "Sept 7, 2021 – NUG Declaration of People's Defensive War", "People's Defensive War",    "#d97706",
      "The NUG called for armed resistance against the military, escalating the conflict."),
     ("2023-10-27", "Oct 27, 2023 – Operation 1027",         "Op. 1027",   "#7c3aed",
      "Rebel alliance launched a major offensive, capturing key territory in northern Shan State."),
@@ -827,6 +827,9 @@ def layout():
                     "See where reported conflict is concentrated, how much is recorded, and how the selected period changes over time.",
                     className="page-subtitle",
                 ),
+                html.Div([
+                    html.Div("Prototype · work in progress", className="hero-pill hero-pill--prototype"),
+                ], className="hero-pill-row hero-pill-row--tight"),
             ], className="page-header-left"),
             html.Div([
                 html.Div([

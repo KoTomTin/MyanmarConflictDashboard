@@ -78,6 +78,29 @@ def _chart_config(filename: str, *, show_modebar: bool = False) -> dict:
     }
 
 
+def _empty_fig(message: str | None = None, *, height: int) -> go.Figure:
+    fig = go.Figure()
+    if message:
+        fig.add_annotation(
+            text=message,
+            x=0.5,
+            y=0.5,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+            font=dict(size=13, family=PLOTLY_FONT, color="#708192"),
+        )
+    fig.update_layout(
+        height=height,
+        margin=dict(l=0, r=0, t=0, b=0),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(visible=False),
+        yaxis=dict(visible=False),
+    )
+    return fig
+
+
 def _fmt(n) -> str:
     return f"{int(n):,}"
 
@@ -410,6 +433,23 @@ def _get_defaults():
         "checked_note": checked_note,
         "window_label": meta["window_label"],
         "default_tsp": default_tsp,
+        "regions": regions,
+    }
+
+
+def _get_layout_defaults():
+    checked = load_last_checked()
+    checked_str = checked.get("display") or checked.get("date_display") or "Not yet recorded"
+    checked_note = checked.get("cadence_note") or "ACLED check every 6 hours"
+    timezone_label = checked.get("timezone_label") or "Yangon time"
+    if timezone_label and timezone_label.lower() not in checked_note.lower():
+        checked_note = f"{checked_note} · {timezone_label}"
+
+    main = load_acled_main()
+    regions = sorted(main["admin1"].dropna().astype(str).unique().tolist())
+    return {
+        "checked_str": checked_str,
+        "checked_note": checked_note,
         "regions": regions,
     }
 
@@ -808,25 +848,14 @@ def _detail_children(row: pd.Series, *, thresholds: dict, window_label: str):
 
 
 def layout():
-    defaults = _get_defaults()
+    defaults = _get_layout_defaults()
     checked_str = defaults["checked_str"]
     checked_note = defaults["checked_note"]
-    window_label = defaults["window_label"]
-    default_tsp = defaults["default_tsp"]
     region_options = [{"label": r, "value": r} for r in defaults["regions"]]
-
-    snapshot, history, full_mix, geojson, meta = _filter_snapshot(None)
-    default_row = snapshot.loc[snapshot["Tsp_Pcode"] == default_tsp].iloc[0]
-    init_map = _build_map(snapshot, geojson, window_label, default_tsp)
-    init_rank = _build_ranking(snapshot)
-    init_trend = _build_detail_figure(history[history["Tsp_Pcode"] == default_tsp].copy(), default_row["township"])
-    init_mix = _build_mix_figure(full_mix, default_tsp, meta["window_start"], meta["latest_end"])
-    options = _township_options(snapshot)
-
-    flagged = snapshot["flagged"].sum()
-    event_alerts = ((snapshot["flag_local_event"] == 1) | (snapshot["flag_global_event"] == 1)).sum()
-    fatal_alerts = ((snapshot["flag_local_fatal"] == 1) | (snapshot["flag_global_fatal"] == 1)).sum()
-    both_alerts = (snapshot["map_category"] == "Both surges").sum()
+    init_map = _empty_fig("Preparing the latest alert window…", height=760)
+    init_trend = _empty_fig("Loading township trend…", height=450)
+    init_mix = _empty_fig("Loading current event mix…", height=420)
+    init_rank = html.Div("Loading the current flagged townships…", className="table-empty")
 
     legend = html.Div([
         html.Span("No unusual change", className=_chip_class("No unusual change")),
@@ -844,15 +873,16 @@ def layout():
                     className="page-subtitle",
                 ),
                 html.Div([
+                    html.Div("Prototype · work in progress", className="hero-pill hero-pill--prototype"),
                     html.Div("Aim: transparent township alerting", className="hero-pill"),
                     html.Div(f"Window: latest available {WINDOW_DAYS} days", className="hero-pill"),
-                    html.Div(f"Combat scope: {meta['combat_label']}", className="hero-pill"),
+                    html.Div("Combat scope: Ground-based attack, Air attack, Drone attack, and Massacres", className="hero-pill"),
                 ], className="hero-pill-row hero-pill-row--tight"),
             ], className="page-header-left"),
             html.Div([
                 html.Div([
                     html.Span("Alert Window", className="hero-status-key"),
-                    html.Span(window_label, className="hero-status-value-inline"),
+                    html.Span("Calculating latest 30-day window…", id="an-window-value", className="hero-status-value-inline"),
                 ], className="hero-status-pill"),
                 html.Div([
                     html.Span("Last checked with ACLED", className="hero-status-key"),
@@ -878,10 +908,11 @@ def layout():
                     html.Label("Inspect township", className="filter-label"),
                     dcc.Dropdown(
                         id="an-township",
-                        options=options,
-                        value=default_tsp,
+                        options=[],
+                        value=None,
                         clearable=False,
                         searchable=True,
+                        placeholder="Loading townships…",
                     ),
                 ], className="filter-group filter-group--wide"),
                 ], className="filter-controls"),
@@ -898,7 +929,7 @@ def layout():
             html.Div([
                 html.Div("Current window", className="alert-method-title"),
                 html.Div(
-                    f"The alert window is {window_label}. It ends with the latest event date currently represented in the processed data, not today's date.",
+                    "The exact current alert window appears above once loaded. It ends with the latest event date currently represented in the processed data, not today's date.",
                     className="alert-method-copy",
                 ),
             ], className="alert-method-block"),
@@ -936,9 +967,9 @@ def layout():
                     ], className="map-stage-copy"),
                 ], className="dash-card-head map-stage-head"),
                 dcc.Loading(
-                    dcc.Graph(
-                        id="an-map",
-                        figure=init_map,
+                        dcc.Graph(
+                            id="an-map",
+                            figure=init_map,
                         className="map-graph",
                         config={**_chart_config("township_alert_map", show_modebar=True), "displayModeBar": True},
                     ),
@@ -957,22 +988,22 @@ def layout():
                 html.Div([
                     html.Div([
                         html.Div("Flagged Townships", className="kpi-label"),
-                        html.Div(_fmt(flagged), id="an-kpi-flagged", className="kpi-value"),
+                        html.Div("—", id="an-kpi-flagged", className="kpi-value"),
                         html.Div("non-normal in the current alert window", className="kpi-sub"),
                     ], className="kpi-card kpi-accent-teal"),
                     html.Div([
                         html.Div("Activity Alerts", className="kpi-label"),
-                        html.Div(_fmt(event_alerts), id="an-kpi-activity", className="kpi-value"),
+                        html.Div("—", id="an-kpi-activity", className="kpi-value"),
                         html.Div("activity unusually high against township history", className="kpi-sub"),
                     ], className="kpi-card kpi-accent-blue"),
                     html.Div([
                         html.Div("Fatality Alerts", className="kpi-label"),
-                        html.Div(_fmt(fatal_alerts), id="an-kpi-fatal", className="kpi-value"),
+                        html.Div("—", id="an-kpi-fatal", className="kpi-value"),
                         html.Div("fatality estimates unusually high against history", className="kpi-sub"),
                     ], className="kpi-card kpi-accent-red"),
                     html.Div([
                         html.Div("Both Surges", className="kpi-label"),
-                        html.Div(_fmt(both_alerts), id="an-kpi-both", className="kpi-value"),
+                        html.Div("—", id="an-kpi-both", className="kpi-value"),
                         html.Div("activity and fatalities high together", className="kpi-sub"),
                     ], className="kpi-card kpi-accent-purple"),
                 ], className="kpis-row kpis-row--4 kpis-compact"),
@@ -991,7 +1022,18 @@ def layout():
 
         html.Div([
             html.Div([
-                html.Div(id="an-detail-copy", children=_detail_children(default_row, thresholds=meta["thresholds"], window_label=window_label), className="dash-card-body"),
+                html.Div(
+                    id="an-detail-copy",
+                    children=[
+                        html.Div("Inspect selected township", className="overview-note-kicker"),
+                        html.Div("Preparing township explanation…", className="card-title"),
+                        html.Div(
+                            "The selected township summary, thresholds, and comparison against recent and long-term baselines will appear here once the alert window is ready.",
+                            className="card-subtitle",
+                        ),
+                    ],
+                    className="dash-card-body",
+                ),
             ], className="dash-card alert-detail-card"),
 
             html.Div([
@@ -1028,6 +1070,7 @@ def layout():
 
 
 @callback(
+    Output("an-window-value", "children"),
     Output("an-map", "figure"),
     Output("an-kpi-flagged", "children"),
     Output("an-kpi-activity", "children"),
@@ -1062,6 +1105,7 @@ def update_alert_snapshot(region, click_data, current_tsp):
     both_alerts = (snapshot["map_category"] == "Both surges").sum()
 
     return (
+        meta["window_label"],
         fig,
         _fmt(flagged),
         _fmt(event_alerts),
@@ -1079,6 +1123,7 @@ def update_alert_snapshot(region, click_data, current_tsp):
     Output("an-mix", "figure"),
     Input("an-township", "value"),
     Input("an-region", "value"),
+    prevent_initial_call=True,
 )
 def update_alert_detail(township_code, region):
     snapshot, history, full_mix, _, meta = _filter_snapshot(region)

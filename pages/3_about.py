@@ -19,8 +19,11 @@ def layout():
         html.Div([
             html.Div([
                 html.H4("About", className="page-title"),
-                html.Div("Methods, sources, recoding choices, and contact information.",
+                html.Div("Purpose, methods, project status, and contact information.",
                          className="page-subtitle"),
+                html.Div([
+                    html.Div("Prototype · work in progress", className="hero-pill hero-pill--prototype"),
+                ], className="hero-pill-row hero-pill-row--tight"),
             ], className="page-header-left"),
         ], className="page-header"),
 

@@ -441,6 +441,11 @@ body::before {
   background: rgba(255,255,255,.85);
   border: 1px solid rgba(148, 163, 184, .25);
 }
+.hero-pill--prototype {
+  color: #7a4b10;
+  border-color: rgba(185, 112, 24, 0.22);
+  background: rgba(255, 247, 229, 0.96);
+}
 .hero-pill--strong {
   color: #1d4ed8;
   border-color: rgba(59, 130, 246, .25);
@@ -1664,7 +1669,7 @@ body::before {
 }
 .metric-toggle {
   display: inline-flex;
-  gap: 12px;
+  gap: 18px;
   align-items: center;
 }
 .metric-toggle--quiet {
@@ -1677,7 +1682,7 @@ body::before {
 .metric-toggle .form-check-inline {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 8px !important;
+  gap: 11px !important;
   padding-left: 0 !important;
   margin: 0 !important;
 }
@@ -1701,6 +1706,7 @@ body::before {
   cursor: pointer;
   padding-left: 0 !important;
   margin: 0 !important;
+  line-height: 1 !important;
   float: none !important;
   vertical-align: middle;
 }
@@ -1878,6 +1884,51 @@ body::before {
 }
 .js-plotly-plot .modebar-btn path {
   fill: #5c7184 !important;
+}
+
+/* ── App loading ─────────────────────────────────────────────── */
+._dash-loading {
+  position: fixed !important;
+  inset: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background:
+    radial-gradient(circle at top right, rgba(38,79,119,0.09), transparent 28%),
+    linear-gradient(180deg, rgba(247,243,236,0.96), rgba(236,241,246,0.94)) !important;
+  color: transparent !important;
+  font-size: 0 !important;
+  z-index: 4000 !important;
+}
+._dash-loading::after {
+  content: "";
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 2px solid rgba(38,79,119,0.16);
+  border-top-color: #2c5f8a;
+  animation: shell-spin .8s linear infinite;
+  box-shadow: 0 0 0 8px rgba(255,255,255,0.34);
+}
+#page-content[data-dash-is-loading="true"] {
+  opacity: 0.88;
+}
+#page-content[data-dash-is-loading="true"]::after {
+  content: "";
+  position: fixed;
+  top: 16px;
+  right: 18px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 2px solid rgba(38,79,119,0.14);
+  border-top-color: #2c5f8a;
+  animation: shell-spin .8s linear infinite;
+  z-index: 1300;
+}
+@keyframes shell-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* ── Top nav ─────────────────────────────────────────────────── */

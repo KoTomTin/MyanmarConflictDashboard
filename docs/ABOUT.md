@@ -1,63 +1,76 @@
-## About This Dashboard
+## About This Project
 
-The **Myanmar Conflict Dashboard (MCD)** is an interactive tool for exploring patterns of armed conflict, political violence, and civic unrest across Myanmar since the February 2021 military coup. It is designed to support researchers, journalists, humanitarian workers, and general users who need a clearer geographic, temporal, and actor-level view of the conflict.
+The **Myanmar Conflict Dashboard** is a public-facing analytical dashboard for exploring reported conflict patterns across Myanmar since February 2021.
 
-## Data Source
+Its aim is to support **researchers, journalists, humanitarian workers, and general users who need a clearer geographic, temporal, and actor-level view of the conflict**.
 
-All conflict event data in the dashboard is sourced from the **Armed Conflict Location & Event Data Project (ACLED)**.
+This project is intended to improve public understanding of the conflict record. It is **not** designed to support military operations, partisan messaging, or advocacy for any side in the conflict.
+
+## Project Status
+
+This dashboard should currently be read as a **prototype and work in progress**.
+
+The methods, interface, and analytical modules are still being refined. Some indicators may change as the project develops, as the underlying data are updated, and as the interpretation layers are improved.
+
+## Academic Context
+
+This dashboard is an **unfunded academic project** developed as part of a **master's dissertation**.
+
+It is an independent piece of research and public communication work. It is not an institutional product of ACLED, and it is not affiliated with any armed group, political party, state institution, or advocacy campaign.
+
+## Data and Method
+
+The underlying event record comes from the **Armed Conflict Location & Event Data Project (ACLED)**.
 
 > Armed Conflict Location & Event Data Project (ACLED). Conflict data for Myanmar (2021-present). Retrieved via the ACLED API. Available at: https://acleddata.com. Copyright ACLED.
 
-ACLED is a non-partisan conflict data project that codes political violence, protest, and crisis events from open-source reporting. It is widely used by humanitarian agencies, researchers, and policy teams.
+ACLED is a widely used conflict-data project that codes political violence, protest, and related crisis events from open-source reporting.
 
-**Coverage:** February 2021 to present
+The dashboard uses ACLED as its core source, but some fields are reorganized for analytical clarity. In particular:
 
-**Geography:** Myanmar township level
+- the dashboard works at **township level**
+- some actor names are standardized for readability
+- some event categories are analytically regrouped for dashboard use
+- civilian-targeting events with five or more reported fatalities are recoded here as **Massacres** for dashboard analysis
 
-Our team has reviewed and recoded parts of the data using local field knowledge. In particular, civilian-targeting events with five or more reported fatalities are recoded as **Massacres** for dashboard use. Dashboard totals may therefore differ from official ACLED outputs.
+Because of these analytical choices, some dashboard figures and labels may differ from the default ACLED presentation.
 
-## What The Dashboard Shows
+## What The Dashboard Covers
 
-### Overview Page
+The dashboard currently provides:
 
-The Overview page lets users filter by date, region, and conflict type. It includes:
+- an **Overview** page for national spatial and temporal patterns
+- an **Actor Analysis** page for one actor's geographic footprint and engagement pattern
+- a **Township Alerts** page for transparent anomaly-style flagging against each township's own history
 
-- township-level choropleth maps
-- event and fatality counts
-- monthly trend charts
-- conflict-type breakdowns
+The alerting page is designed to support transparent public interpretation of unusual changes. It should not be read as a real-time warning system or an operational early-warning product.
 
-### Actor Analysis Page
+## Independence and Neutrality
 
-The Actor Analysis page lets users focus on a single actor. It includes:
+This dashboard does not endorse, support, or represent any conflict party.
 
-- geographic footprint by township
-- actor-side engagement trends based on dashboard recoding
-- associated actors from the same-side event records
+Its purpose is descriptive and analytical: to help users examine reported patterns in the data more clearly and more critically.
 
-## Key Terms
+## Funding and Conflicts of Interest
 
-| Term | Meaning |
-| --- | --- |
-| Ground-based attack | Battles, shelling, and armed clashes on the ground |
-| Air attack | Airstrikes by military aircraft |
-| Drone attack | Attacks using unmanned aerial vehicles |
-| Massacres | Civilian-targeting events with 5+ reported fatalities, recoded for dashboard analysis |
-| Violence against civilians | Attacks, killings, or abductions targeting non-combatants |
-| Primary-side / Secondary-side records | Dashboard analytical grouping based on participant-side coding in an event; not a native ACLED aggressor or victim variable |
-| Myanmar Military Regime | Umbrella label used for SAC, Tatmadaw, police, and aligned regime actors |
-| ERO | Ethnic Resistance Organisation |
-| People's Defense Force | Post-coup resistance forces grouped under a common dashboard label |
+This is an **unfunded project**.
 
-## Limitations
+To the best of the author's knowledge, there are **no financial conflicts of interest** related to the production of this dashboard.
 
-- ACLED captures reported events only, so under-reporting is likely in hard-to-access areas.
-- Fatality figures are reported estimates and can change as reporting improves.
-- Fatalities are not generally attributable to specific actors from ACLED alone.
-- Some actor labels are standardized for clarity and may not match every local naming convention.
-- The dashboard's **Massacres** category is a local analytical recode, not a native ACLED field.
-- Actor-side metrics in the dashboard should not be read as definitive proof of aggression or victimhood in a given event.
+## Important Limitations
 
-## Contact
+- ACLED captures **reported** events, not every event that occurred.
+- Reporting is uneven across time and space, and some areas are harder to document than others.
+- Fatality figures are **reported estimates** and may be revised as information changes.
+- Fatalities generally should **not** be attributed to specific actors from ACLED alone.
+- Some dashboard categories and actor labels are standardized or analytically recoded for interpretive use.
+- Township-level patterns show **reported activity**, not territorial control.
+- The dashboard is better suited to public explanation and research support than to immediate-response decision-making.
 
-For questions, corrections, or feedback: **thomas@burma.ac**
+## Feedback
+
+Feedback is welcome, especially on data interpretation, interface clarity, and analytical transparency.
+
+For questions, corrections, or comments, please contact:
+
+**thomas@burma.ac**
