@@ -472,8 +472,10 @@ def _build_map(snapshot: pd.DataFrame, geojson: dict, window_label: str, selecte
         hovertemplate=(
             "<b>%{customdata[0]}</b><br>"
             "Alert: %{customdata[2]}<br>"
-            f"{WINDOW_DAYS}-day activity: %{customdata[3]}<br>"
-            f"{WINDOW_DAYS}-day fatalities: %{customdata[4]}<extra></extra>"
+            + f"{WINDOW_DAYS}-day activity: "
+            + "%{customdata[3]}<br>"
+            + f"{WINDOW_DAYS}-day fatalities: "
+            + "%{customdata[4]}<extra></extra>"
         ),
     ))
 
