@@ -46,3 +46,20 @@ jobs:
           git diff --cached --quiet || git commit -m "data: auto-update ACLED data $(date -u +%Y-%m-%d)"
           git pull --rebase origin main
           git push
+
+      # Some hosts do not reliably redeploy on bot-pushed data commits.
+      # If DEPLOY_HOOK_URL is configured as a repository secret (for example a
+      # Render deploy hook), explicitly trigger a redeploy after the fresh data
+      # has been pushed to main.
+      - name: Trigger deployment hook
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          DEPLOY_HOOK_URL: ${{ secrets.DEPLOY_HOOK_URL }}
+        run: |
+          HOOK_URL="${RENDER_DEPLOY_HOOK_URL:-$DEPLOY_HOOK_URL}"
+          if [ -z "$HOOK_URL" ]; then
+            echo "RENDER_DEPLOY_HOOK_URL / DEPLOY_HOOK_URL not set; skipping explicit redeploy trigger."
+            exit 0
+          fi
+          curl --fail --silent --show-error --max-time 30 "$HOOK_URL"
+          echo "Triggered deployment hook."

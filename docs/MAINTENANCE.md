@@ -28,10 +28,12 @@ Also update these when their content changes:
 
 1. Run `python pipeline/pipeline.py --update-only` for normal refreshes.
 2. Confirm `data/processed/last_updated.txt` changed as expected.
-3. Confirm `data/processed/acled_sync_state.json` advanced as expected.
-4. Spot-check record counts and latest event date.
-5. Update `docs/PROJECT_STATUS.md` if the coverage window changed materially.
-6. Add a short entry to `CHANGELOG.md` for meaningful operational changes.
+3. Confirm `data/processed/last_checked.json` records the latest Yangon-time check.
+4. If production is hosted on a platform like Render, configure a deploy hook secret (`RENDER_DEPLOY_HOOK_URL` or `DEPLOY_HOOK_URL`) so data-only bot commits also trigger a redeploy.
+5. Confirm `data/processed/acled_sync_state.json` advanced as expected.
+6. Spot-check record counts and latest event date.
+7. Update `docs/PROJECT_STATUS.md` if the coverage window changed materially.
+8. Add a short entry to `CHANGELOG.md` for meaningful operational changes.
 
 ## App Change Workflow
 
