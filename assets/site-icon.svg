@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Myanmar Conflict Dashboard icon">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#274c72"/>
+      <stop offset="100%" stop-color="#1f3650"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#bg)"/>
+  <path d="M30 10c5 1 10 7 10 14 0 4-2 8-5 11 2 3 3 6 3 10 0 6-4 11-10 12-5-1-8-5-8-11 0-4 2-8 5-11-2-3-4-7-4-11 0-7 4-13 9-14z" fill="#edf4fb" opacity=".95"/>
+  <circle cx="33" cy="24" r="2.8" fill="#9cc7ea"/>
+  <circle cx="28" cy="34" r="2.8" fill="#9cc7ea"/>
+  <circle cx="35" cy="43" r="2.8" fill="#9cc7ea"/>
+</svg>

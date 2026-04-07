@@ -18,6 +18,7 @@ from dash import dcc, html, callback, Output, Input, State
 from components.colors import KEY_EVENT_COLORS
 from components.loaders import load_acled_main, load_geojson, load_last_checked
 from components.map_utils import apply_tight_geos, ensure_full_geoindex, filter_geo_by_property
+from components.page_bits import data_disclaimer
 
 
 COMBAT_EVENTS = (
@@ -26,12 +27,18 @@ COMBAT_EVENTS = (
     "Drone attack",
     "Massacres",
 )
+NON_ARMED_ACTORS = {
+    "Labor Group (Myanmar)",
+    "Prisoners (Myanmar)",
+}
 
 WINDOW_DAYS = 30
 LOCAL_LOOKBACK = 6
 THRESH_MULT = 2.5
 MAD_SCALE = 1.4826
 PCT_FOR_EMERGENCE = 0.95
+WINDOW_SCOPE_LABEL = f"latest available {WINDOW_DAYS}-day window"
+WINDOW_TOTAL_LABEL = f"current {WINDOW_DAYS}-day total"
 
 ALERT_COLORS = {
     "No unusual change": "#d7dde5",
@@ -252,10 +259,41 @@ def _build_flag_description(row: pd.Series) -> str:
     if fatal_scope:
         parts.append(f"Reported fatality estimates are unusually high compared with {fatal_scope}.")
     if event_scope:
-        parts.append(f"Armed conflict activity is unusually high compared with {event_scope}.")
+        parts.append(f"Combat activity is unusually high compared with {event_scope}.")
     if not parts:
-        return "No unusual change flagged in the latest alert window."
+        return f"No unusual change flagged in the {WINDOW_SCOPE_LABEL}."
     return " ".join(parts)
+
+
+def _valid_primary_actor(name: str) -> bool:
+    if name is None:
+        return False
+    name = str(name).strip()
+    if not name or name.lower() in {"nan", "none"}:
+        return False
+    lower = name.lower()
+    if "unidentified" in lower:
+        return False
+    if lower.startswith("civilians"):
+        return False
+    if name in NON_ARMED_ACTORS:
+        return False
+    return True
+
+
+def _short_actor_label(name: str, limit: int = 34) -> str:
+    text = str(name).strip()
+    if len(text) <= limit:
+        return text
+    return text[: limit - 1].rstrip() + "…"
+
+
+def _hex_rgba(hex_color: str, alpha: float = 0.24) -> str:
+    h = str(hex_color).lstrip("#")
+    if len(h) != 6:
+        return f"rgba(79,122,163,{alpha})"
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    return f"rgba({r},{g},{b},{alpha})"
 
 
 def _threshold_value(base_med, base_mad, *, scope: str, metric: str, thresholds: dict) -> float:
@@ -296,9 +334,8 @@ def _build_alert_frames():
 
     latest_event_date = main["event_date"].max()
 
-    full_mix = main[["Tsp_Pcode", "admin1", "event_date", "key_event", "fatalities"]].copy()
-
     combat = main[main["key_event"].isin(COMBAT_EVENTS)].copy()
+    combat_context = combat[["Tsp_Pcode", "admin1", "event_date", "key_event", "primary_actor", "fatalities"]].copy()
     combat_daily = (
         combat.groupby(["Tsp_Pcode", "admin1", "event_date"], observed=True)
         .agg(events_1d=("event_id_cnty", "size"), fatalities_1d=("fatalities", "sum"))
@@ -414,7 +451,7 @@ def _build_alert_frames():
         "window_days": WINDOW_DAYS,
         "local_blocks": LOCAL_LOOKBACK,
     }
-    return current, windows, full_mix, geojson, meta
+    return current, windows, combat_context, geojson, meta
 
 
 def _get_defaults():
@@ -460,13 +497,13 @@ def _chip_class(category: str) -> str:
 
 
 def _filter_snapshot(region: str | None):
-    current, history, full_mix, geojson, meta = _build_alert_frames()
+    current, history, combat_context, geojson, meta = _build_alert_frames()
     if region:
         current = current[current["admin1"] == region].copy()
         history = history[history["admin1"] == region].copy()
-        full_mix = full_mix[full_mix["admin1"] == region].copy()
+        combat_context = combat_context[combat_context["admin1"] == region].copy()
         geojson = filter_geo_by_property(geojson, "ST", region)
-    return current, history, full_mix, geojson, meta
+    return current, history, combat_context, geojson, meta
 
 
 def _build_map(snapshot: pd.DataFrame, geojson: dict, window_label: str, selected_tsp: str | None):
@@ -486,7 +523,7 @@ def _build_map(snapshot: pd.DataFrame, geojson: dict, window_label: str, selecte
     df["map_category"] = df["map_category"].replace("", np.nan).fillna("No unusual change")
     df["current_event_window"] = pd.to_numeric(df["current_event_window"], errors="coerce").fillna(0).astype(int)
     df["current_fatalities_window"] = pd.to_numeric(df["current_fatalities_window"], errors="coerce").fillna(0).astype(int)
-    df["flag_description"] = df["flag_description"].replace("", np.nan).fillna("No unusual change flagged in the latest alert window.")
+    df["flag_description"] = df["flag_description"].replace("", np.nan).fillna(f"No unusual change flagged in the {WINDOW_SCOPE_LABEL}.")
 
     customdata = np.stack([
         df["township"],
@@ -647,7 +684,7 @@ def _build_detail_figure(history: pd.DataFrame, township_name: str):
     ), row=2, col=1)
 
     fig.update_layout(
-        height=450,
+        height=410,
         margin=dict(l=44, r=18, t=24, b=36),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
@@ -674,50 +711,161 @@ def _build_detail_figure(history: pd.DataFrame, township_name: str):
     return fig
 
 
-def _build_mix_figure(full_mix: pd.DataFrame, township_code: str, window_start: pd.Timestamp, window_end: pd.Timestamp):
-    mix = (
-        full_mix[
-            (full_mix["Tsp_Pcode"] == township_code)
-            & (full_mix["event_date"] >= window_start)
-            & (full_mix["event_date"] <= window_end)
-        ]
-        .groupby("key_event", observed=True)
+def _build_mix_figure(combat_context: pd.DataFrame, township_code: str, window_start: pd.Timestamp, window_end: pd.Timestamp):
+    scoped = combat_context[
+        (combat_context["Tsp_Pcode"] == township_code)
+        & (combat_context["event_date"] >= window_start)
+        & (combat_context["event_date"] <= window_end)
+    ].copy()
+
+    flow = scoped[scoped["primary_actor"].apply(_valid_primary_actor)].copy()
+    if flow.empty:
+        fig = go.Figure()
+        fig.add_annotation(
+            text=f"No named offending-side armed actors are available for combat events in the {WINDOW_SCOPE_LABEL}.",
+            x=0.5, y=0.5, showarrow=False,
+            font=dict(size=12, family=PLOTLY_FONT, color="#6b7c89"),
+        )
+        fig.update_layout(
+            height=470,
+            margin=dict(l=0, r=0, t=16, b=0),
+            xaxis_visible=False,
+            yaxis_visible=False,
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+        )
+        return fig
+
+    actor_counts = (
+        flow.groupby("primary_actor", observed=True)
+        .size()
+        .sort_values(ascending=False)
+    )
+    top_actors = actor_counts.head(6).index.tolist()
+    flow["actor_group"] = np.where(
+        flow["primary_actor"].isin(top_actors),
+        flow["primary_actor"].astype(str),
+        "Other armed actors",
+    )
+
+    links = (
+        flow.groupby(["key_event", "actor_group"], observed=True)
         .size()
         .rename("events")
         .reset_index()
     )
-    if mix.empty:
-        fig = go.Figure()
-        fig.add_annotation(
-            text="No event mix available for this township in the latest alert window.",
-            x=0.5, y=0.5, showarrow=False,
-            font=dict(size=12, family=PLOTLY_FONT, color="#6b7c89"),
-        )
-        fig.update_layout(height=420, margin=dict(l=0, r=0, t=16, b=0), xaxis_visible=False, yaxis_visible=False,
-                          paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-        return fig
+    if links.empty:
+        return _empty_fig("No combat pathways available for this township.", height=470)
 
-    mix["color"] = mix["key_event"].map(KEY_EVENT_COLORS).fillna("#9ca3af")
-    mix = mix.sort_values("events", ascending=True)
+    event_totals = (
+        links.groupby("key_event", observed=True)["events"]
+        .sum()
+        .sort_values(ascending=False)
+    )
 
-    fig = go.Figure(go.Bar(
-        x=mix["events"],
-        y=mix["key_event"],
-        orientation="h",
-        marker=dict(color=mix["color"]),
-        text=mix["events"].map(_fmt),
-        textposition="outside",
-        cliponaxis=False,
-        hovertemplate="%{y}: %{x} events<extra></extra>",
+    actor_nodes = [a for a in top_actors if a in links["actor_group"].tolist()]
+    if "Other armed actors" in links["actor_group"].tolist():
+        actor_nodes.append("Other armed actors")
+    event_nodes = [evt for evt in event_totals.index.tolist() if evt in COMBAT_EVENTS]
+
+    actor_idx = {actor: i for i, actor in enumerate(actor_nodes)}
+    event_idx = {evt: len(actor_nodes) + i for i, evt in enumerate(event_nodes)}
+
+    links = links[
+        links["key_event"].isin(event_nodes)
+        & links["actor_group"].isin(actor_nodes)
+    ].copy()
+    links["source"] = links["actor_group"].map(actor_idx)
+    links["target"] = links["key_event"].map(event_idx)
+    links["link_color"] = links["key_event"].map(lambda evt: _hex_rgba(KEY_EVENT_COLORS.get(evt, "#5f6f82"), 0.34))
+
+    node_colors = [
+        "#5b83aa" if actor != "Other armed actors" else "#94a3b8" for actor in actor_nodes
+    ] + [
+        KEY_EVENT_COLORS.get(evt, "#9ca3af") for evt in event_nodes
+    ]
+
+    actor_labels = [
+        f"{_short_actor_label(actor, 28)} · {_fmt(actor_counts.get(actor, 0))}" if actor != "Other armed actors"
+        else f"{actor} · {_fmt(actor_counts[~actor_counts.index.isin(top_actors)].sum())}"
+        for actor in actor_nodes
+    ]
+    event_labels = [f"{evt} · {_fmt(event_totals.get(evt, 0))}" for evt in event_nodes]
+    labels = actor_labels + event_labels
+
+    left_y = np.linspace(0.14, 0.86, len(actor_nodes)).tolist() if len(actor_nodes) > 1 else [0.5]
+    right_y = np.linspace(0.18, 0.82, len(event_nodes)).tolist() if len(event_nodes) > 1 else [0.5]
+    node_x = ([0.22] * len(actor_nodes)) + ([0.80] * len(event_nodes))
+    node_y = left_y + right_y
+
+    annotations = []
+
+    for label, y in zip(actor_labels, left_y):
+        annotations.append(dict(
+            text=f"<b>{label}</b>",
+            x=0.10,
+            y=max(0.05, min(0.95, 1 - (y + 0.045))),
+            xref="paper",
+            yref="paper",
+            xanchor="left",
+            yanchor="middle",
+            showarrow=False,
+            align="left",
+            bgcolor="rgba(255,251,246,0.94)",
+            bordercolor="rgba(64, 88, 112, 0.14)",
+            borderwidth=1,
+            borderpad=4,
+            font=dict(size=11, family=PLOTLY_FONT, color="#1f3247"),
+        ))
+
+    for label, y in zip(event_labels, right_y):
+        annotations.append(dict(
+            text=f"<b>{label}</b>",
+            x=0.90,
+            y=max(0.05, min(0.95, 1 - (y + 0.045))),
+            xref="paper",
+            yref="paper",
+            xanchor="right",
+            yanchor="middle",
+            showarrow=False,
+            align="right",
+            bgcolor="rgba(255,251,246,0.94)",
+            bordercolor="rgba(64, 88, 112, 0.14)",
+            borderwidth=1,
+            borderpad=4,
+            font=dict(size=11, family=PLOTLY_FONT, color="#1f3247"),
+        ))
+
+    fig = go.Figure(go.Sankey(
+        arrangement="fixed",
+        textfont=dict(color="rgba(0,0,0,0)", size=1),
+        node=dict(
+            pad=22,
+            thickness=20,
+            line=dict(color="rgba(255,255,255,0.92)", width=0.8),
+            label=[""] * len(labels),
+            color=node_colors,
+            x=node_x,
+            y=node_y,
+            customdata=np.array(labels, dtype=object),
+            hovertemplate="%{customdata}<extra></extra>",
+        ),
+        link=dict(
+            source=links["source"],
+            target=links["target"],
+            value=links["events"],
+            color=links["link_color"],
+            customdata=np.stack([links["key_event"], links["actor_group"]], axis=-1),
+            hovertemplate="%{customdata[0]} → %{customdata[1]}<br>%{value} combat events<extra></extra>",
+        ),
     ))
     fig.update_layout(
-        height=420,
-        margin=dict(l=170, r=24, t=20, b=28),
+        height=470,
+        margin=dict(l=16, r=16, t=12, b=10),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT),
-        xaxis=dict(showgrid=True, gridcolor=PLOTLY_GRID, zeroline=False, tickfont=dict(size=10), title=f"Events in latest {WINDOW_DAYS}-day window"),
-        yaxis=dict(showgrid=False, tickfont=dict(size=11)),
+        font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=11),
+        annotations=annotations,
         hoverlabel=dict(
             bgcolor=PLOTLY_HOVER_BG,
             bordercolor=PLOTLY_HOVER_BORDER,
@@ -734,7 +882,7 @@ def _metric_reason_block(
     thresholds: dict,
 ):
     if metric == "event":
-        title = "Armed conflict activity"
+        title = "Combat activity"
         current = row["current_event_window"]
         recent_base = row["local_med_event"]
         long_base = row["glob_med_event"]
@@ -778,7 +926,7 @@ def _metric_reason_block(
     long_compare = _relative_to_baseline_text(current, long_base, "long-term baseline")
 
     summary = (
-        f"Current {WINDOW_DAYS}-day total is {_fmt_metric(current)}. That is {recent_compare} "
+        f"{WINDOW_TOTAL_LABEL.capitalize()} is {_fmt_metric(current)}. That is {recent_compare} "
         f"and {long_compare}. {comparison}{emergence_note}"
     )
 
@@ -852,9 +1000,9 @@ def layout():
     checked_str = defaults["checked_str"]
     checked_note = defaults["checked_note"]
     region_options = [{"label": r, "value": r} for r in defaults["regions"]]
-    init_map = _empty_fig("Preparing the latest alert window…", height=760)
-    init_trend = _empty_fig("Loading township trend…", height=450)
-    init_mix = _empty_fig("Loading current event mix…", height=420)
+    init_map = _empty_fig(f"Preparing the {WINDOW_SCOPE_LABEL}…", height=760)
+    init_trend = _empty_fig("Loading township trend…", height=410)
+    init_mix = _empty_fig("Loading combat context…", height=470)
     init_rank = html.Div("Loading the current flagged townships…", className="table-empty")
 
     legend = html.Div([
@@ -867,11 +1015,17 @@ def layout():
     return html.Div([
         html.Div([
             html.Div([
-                html.H4("Township Alerts", className="page-title"),
+                html.H1("Township Alerts", className="page-title"),
                 html.Div(
-                    "Show, as transparently as possible, where recent armed conflict activity or reported fatalities are unusually high relative to each township's own history.",
+                    "Combat-focused township alerts showing where recent combat activity or reported fatalities are unusually high relative to each township's own history.",
                     className="page-subtitle",
                 ),
+                html.Div([
+                    html.Span("Also see", className="page-link-label"),
+                    html.A("Overview", href="/"),
+                    html.A("Actor Analysis", href="/actor"),
+                    html.A("About", href="/about"),
+                ], className="page-link-row"),
                 html.Div([
                     html.Div("Prototype · work in progress", className="hero-pill hero-pill--prototype"),
                     html.Div("Aim: transparent township alerting", className="hero-pill"),
@@ -881,8 +1035,8 @@ def layout():
             ], className="page-header-left"),
             html.Div([
                 html.Div([
-                    html.Span("Alert Window", className="hero-status-key"),
-                    html.Span("Calculating latest 30-day window…", id="an-window-value", className="hero-status-value-inline"),
+                    html.Span(f"Latest {WINDOW_DAYS}-day alert window", className="hero-status-key"),
+                    html.Span(f"Calculating {WINDOW_SCOPE_LABEL}…", id="an-window-value", className="hero-status-value-inline"),
                 ], className="hero-status-pill"),
                 html.Div([
                     html.Span("Last checked with ACLED", className="hero-status-key"),
@@ -918,10 +1072,17 @@ def layout():
                 ], className="filter-controls"),
         ], className="filter-card"),
 
-        html.Div([
             html.Div([
-                html.Div("Why 30 days?", className="alert-method-title"),
-                html.Div(
+                html.Div([
+                    html.Div("What counts as activity?", className="alert-method-title"),
+                    html.Div(
+                        "Alert activity is combat-only: Ground-based attack, Air attack, Drone attack, and Massacres. Protests, arrests, displacement, looting/property destruction, and other non-combat dashboard categories are excluded from alert scoring.",
+                        className="alert-method-copy",
+                    ),
+                ], className="alert-method-block"),
+                html.Div([
+                    html.Div("Why 30 days?", className="alert-method-title"),
+                    html.Div(
                     f"This page now works from event-level dates, not monthly buckets. The current window uses the latest available {WINDOW_DAYS} days so the signal is more responsive while still smoothing daily noise.",
                     className="alert-method-copy",
                 ),
@@ -929,7 +1090,7 @@ def layout():
             html.Div([
                 html.Div("Current window", className="alert-method-title"),
                 html.Div(
-                    "The exact current alert window appears above once loaded. It ends with the latest event date currently represented in the processed data, not today's date.",
+                    f"The exact {WINDOW_SCOPE_LABEL} appears above once loaded. It ends with the latest event date currently represented in the processed data, not today's date.",
                     className="alert-method-copy",
                 ),
             ], className="alert-method-block"),
@@ -950,19 +1111,19 @@ def layout():
             html.Div([
                 html.Div("How a flag is triggered", className="alert-method-title"),
                 html.Div(
-                    f"A township is flagged when the current {WINDOW_DAYS}-day total rises above a township-specific threshold. "
+                    f"A township is flagged when the {WINDOW_TOTAL_LABEL} rises above a township-specific threshold. "
                     "Most thresholds are baseline plus 2.5 times the township's median absolute deviation; near-zero histories use emergence thresholds instead.",
                     className="alert-method-copy",
                 ),
             ], className="alert-method-block"),
-        ], className="dash-card alert-method-card alert-method-grid"),
+                ], className="dash-card alert-method-card alert-method-grid"),
 
         html.Div([
             html.Div([
                 html.Div([
                     html.Div([
-                        html.Div("Township Alert Map", className="card-title"),
-                        html.Div("Click a township to inspect why it is flagged in the latest alert window.",
+                        html.H2("Township Alert Map", className="card-title"),
+                        html.Div(f"Click a township to inspect why it is flagged in the {WINDOW_SCOPE_LABEL}.",
                                  className="card-subtitle"),
                     ], className="map-stage-copy"),
                 ], className="dash-card-head map-stage-head"),
@@ -977,8 +1138,8 @@ def layout():
                     color="#2563eb",
                 ),
                 html.Div([
-                    html.Div("How to read the map", className="highest-label"),
-                    html.Div("Grey townships look normal in the latest alert window. Colored townships are unusually high relative to their own history. Click a township to see the exact comparison against its recent and long-term baselines.",
+                        html.Div("How to read the map", className="highest-label"),
+                    html.Div(f"Grey townships look normal in the {WINDOW_SCOPE_LABEL}. Colored townships are unusually high relative to their own history. Click a township to see the exact comparison against its recent and long-term baselines.",
                              className="highest-region"),
                 ], className="highest-events"),
                 html.Div(legend, className="dash-card-body"),
@@ -989,7 +1150,7 @@ def layout():
                     html.Div([
                         html.Div("Flagged Townships", className="kpi-label"),
                         html.Div("—", id="an-kpi-flagged", className="kpi-value"),
-                        html.Div("non-normal in the current alert window", className="kpi-sub"),
+                        html.Div(f"non-normal in the {WINDOW_SCOPE_LABEL}", className="kpi-sub"),
                     ], className="kpi-card kpi-accent-teal"),
                     html.Div([
                         html.Div("Activity Alerts", className="kpi-label"),
@@ -1028,7 +1189,7 @@ def layout():
                         html.Div("Inspect selected township", className="overview-note-kicker"),
                         html.Div("Preparing township explanation…", className="card-title"),
                         html.Div(
-                            "The selected township summary, thresholds, and comparison against recent and long-term baselines will appear here once the alert window is ready.",
+                            f"The selected township summary, thresholds, and comparison against recent and long-term baselines will appear here once the {WINDOW_SCOPE_LABEL} is ready.",
                             className="card-subtitle",
                         ),
                     ],
@@ -1039,7 +1200,7 @@ def layout():
             html.Div([
                 html.Div([
                     html.Div([
-                        html.Div("Township Trend", className="card-title"),
+                        html.H2("Township Trend", className="card-title"),
                         html.Div(
                             f"Solid lines show rolling {WINDOW_DAYS}-day totals. Dashed lines show the recent baseline. Dotted lines show the long-term baseline.",
                             className="card-subtitle",
@@ -1049,23 +1210,55 @@ def layout():
                         dcc.Graph(id="an-trend", figure=init_trend, config=_chart_config("township_alert_trend")),
                         type="dot", color="#2563eb"
                     ),
-                ], className="dash-card"),
+                    html.Div([
+                        html.Div([
+                            html.Span(className="trend-key-swatch trend-key-swatch--blue trend-key-swatch--solid"),
+                            html.Span("Blue = combat activity"),
+                        ], className="trend-key-item"),
+                        html.Div([
+                            html.Span(className="trend-key-swatch trend-key-swatch--red trend-key-swatch--solid"),
+                            html.Span("Red = reported fatalities"),
+                        ], className="trend-key-item"),
+                        html.Div([
+                            html.Span(className="trend-key-swatch trend-key-swatch--solid"),
+                            html.Span(f"Solid = {WINDOW_TOTAL_LABEL}"),
+                        ], className="trend-key-item"),
+                        html.Div([
+                            html.Span(className="trend-key-swatch trend-key-swatch--dash"),
+                            html.Span("Dashed = recent baseline"),
+                        ], className="trend-key-item"),
+                        html.Div([
+                            html.Span(className="trend-key-swatch trend-key-swatch--dot"),
+                            html.Span("Dotted = long-term baseline"),
+                        ], className="trend-key-item"),
+                    ], className="trend-key"),
+                ], className="dash-card alert-detail-panel"),
 
                 html.Div([
                     html.Div([
-                        html.Div("Current Event Mix", className="card-title"),
+                        html.H2("Combat Pathways", className="card-title"),
                         html.Div(
-                            "Composition of all dashboard event types recorded in this township during the latest alert window.",
+                            f"Links connect offending-side armed actors to combat event types recorded in the same combat events during the {WINDOW_SCOPE_LABEL}.",
                             className="card-subtitle",
                         ),
                     ], className="dash-card-head"),
+                    html.Div([
+                        html.Div("Offending-side armed actors", className="flow-side-heading flow-side-heading--left"),
+                        html.Div("Combat event types", className="flow-side-heading flow-side-heading--right"),
+                    ], className="flow-side-headings"),
                     dcc.Loading(
                         dcc.Graph(id="an-mix", figure=init_mix, config=_chart_config("township_alert_mix")),
                         type="dot", color="#2563eb"
                     ),
-                ], className="dash-card"),
+                ], className="dash-card alert-detail-panel"),
             ], className="alerts-detail-grid"),
+            html.Div(
+                "Dashboard event categories are reviewed and recoded by our team using local contextual knowledge where possible. Offending-side actor links summarize recorded combat events for descriptive analysis and do not by themselves establish command responsibility or territorial control.",
+                className="alert-shared-footnote",
+            ),
         ], className="alerts-inspector-section"),
+
+        data_disclaimer(),
     ], className="page-wrap")
 
 
@@ -1126,7 +1319,7 @@ def update_alert_snapshot(region, click_data, current_tsp):
     prevent_initial_call=True,
 )
 def update_alert_detail(township_code, region):
-    snapshot, history, full_mix, _, meta = _filter_snapshot(region)
+    snapshot, history, combat_context, _, meta = _filter_snapshot(region)
     if township_code not in snapshot["Tsp_Pcode"].astype(str).tolist():
         township_code = snapshot.iloc[0]["Tsp_Pcode"]
 
@@ -1135,5 +1328,5 @@ def update_alert_detail(township_code, region):
     return (
         _detail_children(row, thresholds=meta["thresholds"], window_label=meta["window_label"]),
         _build_detail_figure(hist, row["township"]),
-        _build_mix_figure(full_mix, township_code, meta["window_start"], meta["latest_end"]),
+        _build_mix_figure(combat_context, township_code, meta["window_start"], meta["latest_end"]),
     )

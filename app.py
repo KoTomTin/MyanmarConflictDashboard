@@ -1,9 +1,13 @@
 import importlib
+import json
 import traceback
+import html as std_html
 import dash
 from dash import html, dcc, Output, Input, callback
 import dash_bootstrap_components as dbc
-from flask import request as flask_request
+from flask import request as flask_request, Response
+
+from components.loaders import load_last_updated
 
 _ov = importlib.import_module("pages.1_overview")
 _ac = importlib.import_module("pages.2_actor")
@@ -24,14 +28,255 @@ NAV_ITEMS = [
     {"path": "/about", "label": "About"},
 ]
 
-app = dash.Dash(
+SITE_URL = "https://myanmarconflictdashboard.com"
+SITE_NAME = "Myanmar Conflict Dashboard"
+DEFAULT_DESCRIPTION = (
+    "Township-level dashboard for exploring Myanmar conflict patterns, event trends, "
+    "actor analysis, and transparent township alerts since February 2021."
+)
+PAGE_SEO = {
+    "/": {
+        "title": "Myanmar Conflict Dashboard | Township map, trends, and alerts",
+        "description": (
+            "Explore reported conflict patterns across Myanmar with township-level maps, "
+            "event trends, actor analysis, and transparent alerting."
+        ),
+        "keywords": [
+            "Myanmar conflict dashboard",
+            "Myanmar conflict map",
+            "Myanmar township conflict",
+            "Myanmar conflict alerts",
+            "Myanmar actor analysis",
+        ],
+    },
+    "/actor": {
+        "title": "Actor Analysis | Myanmar Conflict Dashboard",
+        "description": (
+            "Track one actor's geographic footprint, associated actors, and engagement pattern "
+            "across Myanmar conflict events."
+        ),
+        "keywords": [
+            "Myanmar actor analysis",
+            "Myanmar conflict actors",
+            "Myanmar armed conflict actor map",
+        ],
+    },
+    "/alerts": {
+        "title": "Township Alerts | Myanmar Conflict Dashboard",
+        "description": (
+            "See which Myanmar townships show unusually high recent armed conflict activity or "
+            "reported fatalities compared with their own history."
+        ),
+        "keywords": [
+            "Myanmar township alerts",
+            "Myanmar conflict alerts",
+            "Myanmar armed conflict alerts",
+            "Myanmar fatality surge",
+        ],
+    },
+    "/about": {
+        "title": "About | Myanmar Conflict Dashboard",
+        "description": (
+            "Read about the purpose, methods, limitations, and academic context of the Myanmar Conflict Dashboard."
+        ),
+        "keywords": [
+            "Myanmar conflict dashboard methodology",
+            "Myanmar conflict dashboard about",
+        ],
+    },
+}
+
+
+def _normalize_path(path: str | None) -> str:
+    path = path or "/"
+    return path if path in PAGE_MAP else "/"
+
+
+def _absolute_url(path: str) -> str:
+    path = _normalize_path(path)
+    return SITE_URL if path == "/" else f"{SITE_URL.rstrip('/')}{path}"
+
+
+def _seo_for_path(path: str | None) -> dict:
+    path = _normalize_path(path)
+    meta = PAGE_SEO.get(path, PAGE_SEO["/"])
+    return {
+        "path": path,
+        "title": meta["title"],
+        "description": meta["description"],
+        "canonical": _absolute_url(path),
+        "keywords": meta.get("keywords", []),
+    }
+
+
+def _structured_data_json(path: str | None) -> str:
+    meta = _seo_for_path(path)
+    if meta["path"] == "/":
+        page_type = "CollectionPage"
+    elif meta["path"] == "/about":
+        page_type = "AboutPage"
+    else:
+        page_type = "WebPage"
+    modified = load_last_updated() or None
+
+    breadcrumbs = [
+        {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Myanmar Conflict Dashboard",
+            "item": SITE_URL,
+        }
+    ]
+    if meta["path"] != "/":
+        label = next((item["label"] for item in NAV_ITEMS if item["path"] == meta["path"]), meta["title"])
+        breadcrumbs.append(
+            {
+                "@type": "ListItem",
+                "position": 2,
+                "name": label,
+                "item": meta["canonical"],
+            }
+        )
+
+    payload = [
+        {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": SITE_NAME,
+            "url": SITE_URL,
+            "description": DEFAULT_DESCRIPTION,
+            "inLanguage": "en",
+            "keywords": PAGE_SEO["/"]["keywords"],
+        },
+        {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": breadcrumbs,
+        },
+        {
+            "@context": "https://schema.org",
+            "@type": page_type,
+            "name": meta["title"],
+            "url": meta["canonical"],
+            "description": meta["description"],
+            "isPartOf": {
+                "@type": "WebSite",
+                "name": SITE_NAME,
+                "url": SITE_URL,
+            },
+            "inLanguage": "en",
+            "keywords": meta.get("keywords", []),
+            **({"dateModified": modified} if modified else {}),
+        },
+    ]
+    return json.dumps(payload, ensure_ascii=False)
+
+
+class SEODash(dash.Dash):
+    def interpolate_index(self, **kwargs):
+        try:
+            path = flask_request.path or "/"
+        except Exception:
+            path = "/"
+
+        meta = _seo_for_path(path)
+        title = std_html.escape(meta["title"])
+        description = std_html.escape(meta["description"], quote=True)
+        canonical = std_html.escape(meta["canonical"], quote=True)
+        structured = _structured_data_json(path)
+
+        return f"""<!DOCTYPE html>
+<html lang="en">
+    <head>
+        {kwargs.get("metas", "")}
+        <meta name="description" content="{description}" />
+        <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
+        <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
+        <link rel="canonical" href="{canonical}" />
+        <link rel="icon" type="image/svg+xml" href="/assets/site-icon.svg" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="{std_html.escape(SITE_NAME, quote=True)}" />
+        <meta property="og:title" content="{title}" />
+        <meta property="og:description" content="{description}" />
+        <meta property="og:url" content="{canonical}" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content="{title}" />
+        <meta name="twitter:description" content="{description}" />
+        <script type="application/ld+json">{structured}</script>
+        <title>{title}</title>
+        {kwargs.get("favicon", "")}
+        {kwargs.get("css", "")}
+    </head>
+    <body>
+        <noscript>
+            <div style="font-family:Arial,sans-serif;max-width:840px;margin:24px auto;padding:0 16px;color:#24384d;">
+                <h1>{std_html.escape(SITE_NAME)}</h1>
+                <p>{std_html.escape(meta["description"])}</p>
+                <p>The main sections are Overview, Actor Analysis, Township Alerts, and About.</p>
+            </div>
+        </noscript>
+        {kwargs.get("app_entry", "")}
+        <footer>
+            {kwargs.get("config", "")}
+            {kwargs.get("scripts", "")}
+            {kwargs.get("renderer", "")}
+        </footer>
+    </body>
+</html>"""
+
+
+app = SEODash(
     __name__,
     external_stylesheets=[dbc.themes.FLATLY],
     suppress_callback_exceptions=True,
     title="Myanmar Conflict Dashboard",
     update_title=None,
+    meta_tags=[
+        {"name": "viewport", "content": "width=device-width, initial-scale=1"},
+        {"name": "theme-color", "content": "#284f77"},
+    ],
 )
 server = app.server
+
+
+@server.route("/robots.txt")
+def robots_txt():
+    content = "\n".join([
+        "User-agent: *",
+        "Allow: /",
+        f"Sitemap: {SITE_URL}/sitemap.xml",
+        "",
+    ])
+    return Response(content, mimetype="text/plain")
+
+
+@server.route("/sitemap.xml")
+def sitemap_xml():
+    lastmod = load_last_updated()
+    meta = {
+        "/": {"changefreq": "daily", "priority": "1.0"},
+        "/actor": {"changefreq": "daily", "priority": "0.9"},
+        "/alerts": {"changefreq": "daily", "priority": "0.95"},
+        "/about": {"changefreq": "monthly", "priority": "0.7"},
+    }
+    body = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ]
+    for item in NAV_ITEMS:
+        url = _absolute_url(item["path"])
+        hints = meta.get(item["path"], {})
+        body.append("  <url>")
+        body.append(f"    <loc>{std_html.escape(url)}</loc>")
+        if lastmod:
+            body.append(f"    <lastmod>{std_html.escape(lastmod)}</lastmod>")
+        if hints.get("changefreq"):
+            body.append(f"    <changefreq>{hints['changefreq']}</changefreq>")
+        if hints.get("priority"):
+            body.append(f"    <priority>{hints['priority']}</priority>")
+        body.append("  </url>")
+    body.append("</urlset>")
+    return Response("\n".join(body), mimetype="application/xml")
 
 
 def topnav():
@@ -74,6 +319,7 @@ def serve_layout():
 
     return dbc.Container([
         dcc.Location(id="url", refresh=False),
+        html.Div(id="seo-sync", style={"display": "none"}),
         topnav(),
         html.Main(
             html.Div(page_content, id="page-content"),
@@ -105,6 +351,49 @@ def render_page(pathname):
         print(f"[render_page] ERROR for {pathname!r}: {e}")
         traceback.print_exc()
         return html.Div(f"Error: {e}", style={"color": "red", "padding": "20px"})
+
+
+_SEO_CLIENT_MAP = json.dumps({path: _seo_for_path(path) for path in PAGE_MAP.keys()})
+
+
+app.clientside_callback(
+    f"""
+    function(pathname) {{
+        var seoMap = {_SEO_CLIENT_MAP};
+        var current = seoMap[pathname] || seoMap["/"];
+        if (!current) {{
+            return "";
+        }}
+
+        document.title = current.title;
+
+        var desc = document.querySelector('meta[name="description"]');
+        if (desc) desc.setAttribute("content", current.description);
+
+        var ogTitle = document.querySelector('meta[property="og:title"]');
+        if (ogTitle) ogTitle.setAttribute("content", current.title);
+
+        var ogDesc = document.querySelector('meta[property="og:description"]');
+        if (ogDesc) ogDesc.setAttribute("content", current.description);
+
+        var ogUrl = document.querySelector('meta[property="og:url"]');
+        if (ogUrl) ogUrl.setAttribute("content", current.canonical);
+
+        var twTitle = document.querySelector('meta[name="twitter:title"]');
+        if (twTitle) twTitle.setAttribute("content", current.title);
+
+        var twDesc = document.querySelector('meta[name="twitter:description"]');
+        if (twDesc) twDesc.setAttribute("content", current.description);
+
+        var canonical = document.querySelector('link[rel="canonical"]');
+        if (canonical) canonical.setAttribute("href", current.canonical);
+
+        return "";
+    }}
+    """,
+    Output("seo-sync", "children"),
+    Input("url", "pathname"),
+)
 
 
 # ── Highlight active nav link ─────────────────────────────────────────────────

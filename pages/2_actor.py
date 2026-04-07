@@ -16,9 +16,14 @@ from components.loaders   import (load_acled_main, load_actor_level,
                                    load_ally_pairs, load_geojson, load_last_checked)
 from components.colors    import SEQUENTIAL_BLUES_ZERO_GREY
 from components.map_utils import apply_tight_geos, add_neighbor_labels, filter_geo_by_property
+from components.page_bits import data_disclaimer
 
 
 DEFAULT_ACTOR = "Myanmar Military Regime"
+NON_ARMED_ACTORS = {
+    "Labor Group (Myanmar)",
+    "Prisoners (Myanmar)",
+}
 
 # (date, hover title, short pill, line color, description)
 MILESTONES = [
@@ -93,8 +98,17 @@ def _is_generic_civilian(name: str) -> bool:
     return bool(re.match(r"^civilians?\s*\(", name.strip(), re.IGNORECASE))
 
 
+def _is_non_armed_actor(name: str) -> bool:
+    return str(name).strip() in NON_ARMED_ACTORS
+
+
 def _is_excluded_actor(name: str) -> bool:
-    return _is_generic_civilian(name) or "unidentified" in name.lower()
+    name = str(name).strip()
+    return (
+        _is_generic_civilian(name)
+        or _is_non_armed_actor(name)
+        or "unidentified" in name.lower()
+    )
 
 
 def _geo_pcodes(geo: dict) -> list[str]:
@@ -509,7 +523,7 @@ def _build_trend(al: pd.DataFrame, start_date: str | None, end_date: str | None)
     )
 
     color_map = {"offend": "#b85d57", "being_offended": "#3f698d"}
-    label_map = {"offend": "Offending", "being_offended": "Defending"}
+    label_map = {"offend": "Offending side", "being_offended": "Targeted side"}
 
     fig = go.Figure()
     for role in trend["type2"].unique():
@@ -721,9 +735,15 @@ def layout():
         # ── page header ────────────────────────────────────────────────────────
         html.Div([
             html.Div([
-                html.H4("Actor Analysis", className="page-title"),
-                html.Div("Follow one actor's footprint, associated actors, and engagement pattern over time.",
+                html.H1("Actor Analysis", className="page-title"),
+                html.Div("Actor-level view of Myanmar conflict events, geographic footprint, associated actors, and engagement trends over time.",
                          className="page-subtitle"),
+                html.Div([
+                    html.Span("Also see", className="page-link-label"),
+                    html.A("Overview", href="/"),
+                    html.A("Township Alerts", href="/alerts"),
+                    html.A("About", href="/about"),
+                ], className="page-link-row"),
                 html.Div([
                     html.Div("Prototype · work in progress", className="hero-pill hero-pill--prototype"),
                     html.Div([
@@ -731,7 +751,7 @@ def layout():
                         html.Span(DEFAULT_ACTOR, id="ac-actor-banner-name",
                                   className="hero-status-value-inline"),
                     ], className="hero-status-pill"),
-                    html.Div("Armed conflict only", className="hero-pill"),
+                    html.Div("Combat-only view", className="hero-pill"),
                 ], className="hero-pill-row hero-pill-row--tight"),
             ], className="page-header-left"),
             html.Div([
@@ -819,7 +839,7 @@ def layout():
 
                     html.Div([
                         html.Div([
-                            html.Div("Geographic Footprint", className="card-title"),
+                            html.H2("Geographic Footprint", className="card-title"),
                             html.Div("Point at a township. Blue indicates higher reported activity.",
                                      className="card-subtitle"),
                         ], className="map-stage-copy"),
@@ -863,20 +883,20 @@ def layout():
                               html.Div(_fmt(n_townships),  id="ac-kpi-townships", className="kpi-value"),
                               html.Div(f"of {total_townships} in Myanmar",         className="kpi-sub")],
                              className="kpi-card kpi-accent-teal"),
-                    html.Div([html.Div("Offensive Events",          className="kpi-label"),
+                    html.Div([html.Div("Offending-side Events",     className="kpi-label"),
                               html.Div(_fmt(n_offenses),   id="ac-kpi-offenses",   className="kpi-value"),
-                              html.Div("as attacker",         className="kpi-sub")],
+                              html.Div("actor on offending side", className="kpi-sub")],
                              className="kpi-card kpi-accent-orange"),
-                    html.Div([html.Div("Defensive Events",           className="kpi-label"),
+                    html.Div([html.Div("Targeted-side Events",       className="kpi-label"),
                               html.Div(_fmt(n_defenses),   id="ac-kpi-defenses",   className="kpi-value"),
-                              html.Div("as targeted",         className="kpi-sub")],
+                              html.Div("actor on targeted side", className="kpi-sub")],
                              className="kpi-card kpi-accent-red"),
                 ], className="kpis-row kpis-row--3 kpis-compact"),
 
                 html.Div([
                     html.Div([
-                        html.Div("Associated Actors", className="card-title"),
-                        html.Div("Co-involved in the same armed conflict events",
+                        html.H2("Associated Actors", className="card-title"),
+                        html.Div("Co-involved in the same combat events",
                                  className="card-subtitle"),
                     ], className="dash-card-head"),
                     dcc.Loading(
@@ -887,12 +907,12 @@ def layout():
 
                 html.Div([
                     html.Div([
-                        html.Div("Monthly Engagement Trend", className="card-title"),
+                        html.H2("Monthly Engagement Trend", className="card-title"),
                         html.Div([
-                            html.Span("Offensive", style={"color": "#ef4444", "fontWeight": "600"}),
-                            html.Span(" = actor initiated the attack  ·  "),
-                            html.Span("Defending", style={"color": "#3b82f6", "fontWeight": "600"}),
-                            html.Span(" = actor was targeted. Recoded from ACLED by our team."),
+                            html.Span("Offending side", style={"color": "#ef4444", "fontWeight": "600"}),
+                            html.Span(" = actor recorded on the offending side in our recode  ·  "),
+                            html.Span("Targeted side", style={"color": "#3b82f6", "fontWeight": "600"}),
+                            html.Span(" = actor recorded on the opposing side in our recode."),
                         ], className="card-subtitle"),
                     ], className="dash-card-head"),
                     dcc.Loading(
@@ -907,14 +927,7 @@ def layout():
         ], className="page-body"),
 
         # ── data disclaimer ────────────────────────────────────────────────────
-        html.Div([
-            "Source: ",
-            html.A("ACLED", href="https://acleddata.com", target="_blank",
-                   style={"color": "inherit", "textDecoration": "underline"}),
-            " (Armed Conflict Location & Event Data Project). Our team has reviewed "
-            "and recoded events using local field knowledge. Displayed figures may "
-            "differ from official sources or on-the-ground reports.",
-        ], className="data-disclaimer"),
+        data_disclaimer(),
 
     ], className="page-wrap")
 
@@ -1051,6 +1064,8 @@ def update_actor(applied, mode):
     end_date     = applied.get("end_date")
     region       = applied.get("region")
     actor_name   = applied.get("actor_name") or DEFAULT_ACTOR
+    if _is_excluded_actor(actor_name):
+        actor_name = DEFAULT_ACTOR
     preset_label = applied.get("preset_label")
     mode         = mode or "time_range"
 

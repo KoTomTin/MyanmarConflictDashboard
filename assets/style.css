@@ -302,6 +302,48 @@ body::before {
   font-family: var(--font);
   max-width: 58ch;
 }
+.page-link-row {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: #627689;
+  max-width: 76ch;
+}
+.page-link-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8392a0;
+  margin-right: 2px;
+}
+.page-link-row a {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(66, 86, 108, 0.14);
+  background: rgba(255, 251, 246, 0.78);
+  color: #284f77;
+  text-decoration: none;
+  font-weight: 700;
+  box-shadow: 0 6px 14px rgba(39, 53, 68, 0.04);
+  transition:
+    background var(--transition),
+    border-color var(--transition),
+    color var(--transition),
+    transform var(--transition);
+}
+.page-link-row a:hover {
+  color: #1f4263;
+  background: rgba(236, 244, 252, 0.96);
+  border-color: rgba(38, 79, 119, 0.2);
+  transform: translateY(-1px);
+}
 .page-subtitle--armed {
   font-size: 0.72rem;
   font-weight: 700;
@@ -1339,7 +1381,7 @@ body::before {
 }
 .alert-method-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 10px;
   padding: 12px 14px;
 }
@@ -1377,9 +1419,25 @@ body::before {
 }
 .alerts-detail-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
   gap: 12px;
-  align-items: start;
+  align-items: stretch;
+}
+.alert-detail-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.alert-detail-panel .dash-card-head {
+  flex: 0 0 auto;
+}
+.alert-shared-footnote {
+  margin: 10px 16px 14px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(64, 88, 112, 0.10);
+  font-size: 0.72rem;
+  line-height: 1.55;
+  color: #617383;
 }
 .alert-detail-card {
   border-color: rgba(64, 88, 112, 0.12);
@@ -1434,6 +1492,81 @@ body::before {
   font-size: 0.74rem;
   font-weight: 800;
   color: #1f3247;
+}
+.analysis-footnote {
+  margin: 0 16px 14px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(64, 88, 112, 0.10);
+  font-size: 0.72rem;
+  line-height: 1.55;
+  color: #617383;
+}
+.flow-side-headings {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 4px 18px 0;
+}
+.flow-side-heading {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 251, 246, 0.94);
+  border: 1px solid rgba(64, 88, 112, 0.12);
+  font-size: 0.73rem;
+  font-weight: 800;
+  color: #28445d;
+  letter-spacing: 0.01em;
+}
+.flow-side-heading--left {
+  justify-content: flex-start;
+}
+.flow-side-heading--right {
+  justify-content: flex-end;
+  margin-left: auto;
+}
+.trend-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  align-items: center;
+  margin: 2px 16px 14px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(64, 88, 112, 0.10);
+}
+.trend-key-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  color: #516577;
+  line-height: 1.35;
+}
+.trend-key-swatch {
+  display: inline-block;
+  width: 28px;
+  height: 0;
+  border-top: 3px solid #5b83aa;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.trend-key-swatch--blue {
+  border-top-color: #2563eb;
+}
+.trend-key-swatch--red {
+  border-top-color: #dc2626;
+}
+.trend-key-swatch--solid {
+  border-top-style: solid;
+}
+.trend-key-swatch--dash {
+  border-top-style: dashed;
+}
+.trend-key-swatch--dot {
+  border-top-style: dotted;
 }
 
 .alert-legend {
@@ -2111,6 +2244,16 @@ body::before {
   .filter-group--datecompact, .filter-group--with-help { min-width: 100%; flex: unset; }
   .date-card-group { flex-direction: column; }
   .page-wrap { padding: 10px 10px 24px; }
+  .page-link-row {
+    gap: 6px;
+  }
+  .page-link-label {
+    width: 100%;
+    margin-bottom: 2px;
+  }
+  .page-link-row a {
+    padding: 5px 9px;
+  }
   .snap-cards { grid-template-columns: repeat(2, 1fr); }
   .mode-toggle-cards { flex-direction: column; }
   .map-stage-controls {

@@ -24,6 +24,7 @@ from components.loaders   import (load_acled_main, load_geojson, load_last_check
 from components.colors    import (KEY_EVENT_COLORS, KEY_EVENT_ORDER,
                                    SEQUENTIAL_BLUES_ZERO_GREY)
 from components.map_utils import apply_tight_geos, add_neighbor_labels, filter_geo_by_property
+from components.page_bits import data_disclaimer
 
 
 # ── Constants ──────────────────────────────────────────────────────────────────
@@ -822,11 +823,17 @@ def layout():
         # ── hero ───────────────────────────────────────────────────────────────
         html.Div([
             html.Div([
-                html.H4("Overview", className="page-title"),
+                html.H1("Overview", className="page-title"),
                 html.Div(
-                    "See where reported conflict is concentrated, how much is recorded, and how the selected period changes over time.",
+                    "Township-level Myanmar conflict dashboard for exploring reported events, fatality estimates, spatial concentration, and change over time.",
                     className="page-subtitle",
                 ),
+                html.Div([
+                    html.Span("Also see", className="page-link-label"),
+                    html.A("Actor Analysis", href="/actor"),
+                    html.A("Township Alerts", href="/alerts"),
+                    html.A("About", href="/about"),
+                ], className="page-link-row"),
                 html.Div([
                     html.Div("Prototype · work in progress", className="hero-pill hero-pill--prototype"),
                 ], className="hero-pill-row hero-pill-row--tight"),
@@ -903,7 +910,7 @@ def layout():
             html.Div([
                 html.Div([
                     html.Div([
-                        html.Div("Conflict Geography", className="card-title"),
+                        html.H2("Conflict Geography", className="card-title"),
                         html.Div(
                             "Distribution of reported events or reported fatality estimates across Myanmar townships",
                             className="card-subtitle",
@@ -968,7 +975,7 @@ def layout():
 
                 html.Div([
                     html.Div([
-                        html.Div("Event Trend", className="card-title"),
+                        html.H2("Event Trend", className="card-title"),
                         html.Div(
                             "Use the timeline to see when reported events rose, fell, or shifted around major turning points",
                             className="card-subtitle",
@@ -986,7 +993,7 @@ def layout():
 
                 html.Div([
                     html.Div([
-                        html.Div("Event Types", className="card-title"),
+                        html.H2("Event Types", className="card-title"),
                         html.Div(
                             "Compare the composition of the selected period, not just the total volume",
                             className="card-subtitle",
@@ -1005,13 +1012,7 @@ def layout():
         ], className="overview-feature-grid"),
 
         # ── data disclaimer ────────────────────────────────────────────────────
-        html.Div([
-            "Source: ",
-            html.A("ACLED", href="https://acleddata.com", target="_blank",
-                   style={"color": "inherit", "textDecoration": "underline"}),
-            " (Armed Conflict Location & Event Data Project). ACLED records reported events, not every event that occurred. "
-            "Fatalities are reported estimates and may be revised. Our team has reviewed and analytically recoded parts of the data using local field knowledge, so some dashboard categories may differ from official ACLED outputs.",
-        ], className="data-disclaimer"),
+        data_disclaimer(),
 
     ], className="page-wrap")
 
