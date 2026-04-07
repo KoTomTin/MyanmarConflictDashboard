@@ -63,3 +63,32 @@ jobs:
           fi
           curl --fail --silent --show-error --max-time 30 "$HOOK_URL"
           echo "Triggered deployment hook."
+
+      # Hetzner / self-managed deployment path.
+      # Recommended: store a fixed server-side redeploy command in
+      # HETZNER_DEPLOY_COMMAND and invoke it over SSH. This is safer than
+      # downloading and running a remote script inline on every deploy.
+      - name: Trigger Hetzner redeploy over SSH
+        env:
+          HETZNER_DEPLOY_HOST: ${{ secrets.HETZNER_DEPLOY_HOST }}
+          HETZNER_DEPLOY_USER: ${{ secrets.HETZNER_DEPLOY_USER }}
+          HETZNER_DEPLOY_KEY: ${{ secrets.HETZNER_DEPLOY_KEY }}
+          HETZNER_DEPLOY_PORT: ${{ secrets.HETZNER_DEPLOY_PORT }}
+          HETZNER_DEPLOY_COMMAND: ${{ secrets.HETZNER_DEPLOY_COMMAND }}
+        run: |
+          if [ -z "$HETZNER_DEPLOY_HOST" ] || [ -z "$HETZNER_DEPLOY_USER" ] || [ -z "$HETZNER_DEPLOY_KEY" ] || [ -z "$HETZNER_DEPLOY_COMMAND" ]; then
+            echo "Hetzner SSH redeploy secrets not fully configured; skipping SSH redeploy."
+            exit 0
+          fi
+
+          PORT="${HETZNER_DEPLOY_PORT:-22}"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$HETZNER_DEPLOY_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$PORT" "$HETZNER_DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -p "$PORT" \
+            "$HETZNER_DEPLOY_USER@$HETZNER_DEPLOY_HOST" \
+            "$HETZNER_DEPLOY_COMMAND"
+
+          echo "Triggered Hetzner redeploy over SSH."

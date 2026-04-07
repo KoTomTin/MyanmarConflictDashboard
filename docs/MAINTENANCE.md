@@ -29,11 +29,19 @@ Also update these when their content changes:
 1. Run `python pipeline/pipeline.py --update-only` for normal refreshes.
 2. Confirm `data/processed/last_updated.txt` changed as expected.
 3. Confirm `data/processed/last_checked.json` records the latest Yangon-time check.
-4. If production is hosted on a platform like Render, configure a deploy hook secret (`RENDER_DEPLOY_HOOK_URL` or `DEPLOY_HOOK_URL`) so data-only bot commits also trigger a redeploy.
-5. Confirm `data/processed/acled_sync_state.json` advanced as expected.
-6. Spot-check record counts and latest event date.
-7. Update `docs/PROJECT_STATUS.md` if the coverage window changed materially.
-8. Add a short entry to `CHANGELOG.md` for meaningful operational changes.
+4. If production is hosted separately from GitHub (for example Render or a self-managed Hetzner box), configure a redeploy trigger so data-only bot commits also refresh the live site.
+5. For deploy hooks, set `RENDER_DEPLOY_HOOK_URL` or `DEPLOY_HOOK_URL`.
+6. For Hetzner / self-managed SSH deploys, set:
+   - `HETZNER_DEPLOY_HOST`
+   - `HETZNER_DEPLOY_USER`
+   - `HETZNER_DEPLOY_KEY`
+   - `HETZNER_DEPLOY_COMMAND`
+   - optional `HETZNER_DEPLOY_PORT`
+   Recommended: keep a fixed redeploy script on the server and call that command over SSH, rather than downloading and executing a remote script on every run.
+7. Confirm `data/processed/acled_sync_state.json` advanced as expected.
+8. Spot-check record counts and latest event date.
+9. Update `docs/PROJECT_STATUS.md` if the coverage window changed materially.
+10. Add a short entry to `CHANGELOG.md` for meaningful operational changes.
 
 ## App Change Workflow
 
