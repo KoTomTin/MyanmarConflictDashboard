@@ -53,7 +53,7 @@ def _get_defaults() -> dict:
     df = load_acled_main()
     checked = load_last_checked()
     checked_str = checked.get("display") or checked.get("date_display") or "Not yet recorded"
-    checked_note = checked.get("cadence_note") or "ACLED check every 6 hours"
+    checked_note = checked.get("cadence_note") or "Weekly ACLED check · Tuesday evening"
     timezone_label = checked.get("timezone_label") or "Yangon time"
     if timezone_label and timezone_label.lower() not in checked_note.lower():
         checked_note = f"{checked_note} · {timezone_label}"

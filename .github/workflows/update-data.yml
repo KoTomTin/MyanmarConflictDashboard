@@ -1,11 +1,11 @@
 name: Update ACLED Data
 
-# Poll several times per day. The pipeline is idempotent and records the latest
-# successful check, even when the data coverage date itself does not move
-# forward on that run.
+# Run weekly with a Tuesday-evening buffer for Myanmar/Asia-Pacific updates.
+# The pipeline is idempotent and records the latest successful check, even when
+# the data coverage date itself does not move forward on that run.
 on:
   schedule:
-    - cron: '15 */6 * * *'
+    - cron: '15 14 * * 2'
   workflow_dispatch:
 
 concurrency:
