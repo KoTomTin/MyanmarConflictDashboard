@@ -1,11 +1,12 @@
 name: Update ACLED Data
 
-# Run weekly with a Tuesday-evening buffer for Myanmar/Asia-Pacific updates.
+# Run weekly on Thursday evening to give ACLED's weekly publication cadence
+# time to settle before the manual production redeploy.
 # The pipeline is idempotent and records the latest successful check, even when
 # the data coverage date itself does not move forward on that run.
 on:
   schedule:
-    - cron: '15 14 * * 2'
+    - cron: '15 14 * * 4'
   workflow_dispatch:
 
 concurrency:

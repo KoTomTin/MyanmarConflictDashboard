@@ -730,7 +730,7 @@ def write_last_checked(checked_at_utc: datetime):
         "date_display": checked_yangon.strftime("%d %b %Y"),
         "time_display": checked_yangon.strftime("%H:%M"),
         "timezone_label": "Yangon time",
-        "cadence_note": "Checked against ACLED weekly on Tuesday evening",
+        "cadence_note": "Scheduled ACLED check: Thursday evening",
         "recorded_time": True,
     }
     LAST_CHECKED.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
