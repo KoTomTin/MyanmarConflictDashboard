@@ -458,7 +458,7 @@ def _get_defaults():
     current, _, _, _, meta = _build_alert_frames()
     checked = load_last_checked()
     checked_str = checked.get("display") or checked.get("date_display") or "Not yet recorded"
-    checked_note = checked.get("cadence_note") or "Weekly ACLED check · Tuesday evening"
+    checked_note = checked.get("cadence_note") or "Checked against ACLED weekly on Tuesday evening"
     timezone_label = checked.get("timezone_label") or "Yangon time"
     if timezone_label and timezone_label.lower() not in checked_note.lower():
         checked_note = f"{checked_note} · {timezone_label}"
@@ -477,7 +477,7 @@ def _get_defaults():
 def _get_layout_defaults():
     checked = load_last_checked()
     checked_str = checked.get("display") or checked.get("date_display") or "Not yet recorded"
-    checked_note = checked.get("cadence_note") or "Weekly ACLED check · Tuesday evening"
+    checked_note = checked.get("cadence_note") or "Checked against ACLED weekly on Tuesday evening"
     timezone_label = checked.get("timezone_label") or "Yangon time"
     if timezone_label and timezone_label.lower() not in checked_note.lower():
         checked_note = f"{checked_note} · {timezone_label}"
