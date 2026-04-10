@@ -44,21 +44,34 @@ The pipeline applies the following main transformations:
 
 ## Key Event Logic
 
-The dashboard groups raw ACLED event data into higher-level analytical categories including:
+The dashboard groups raw ACLED event data into higher-level analytical categories:
 
-- Ground-based attack
-- Air attack
-- Drone attack
-- Massacres
-- Violence against civilians
-- Protests
-- Arrests
-- Looting/property destruction
-- Displacement
-- Others
-  In the current dashboard export, this is a broad residual category dominated by strategic developments not shown separately above, especially changes to group activity, disrupted weapons use, headquarters/base establishment, agreements, and non-violent transfers of territory. Smaller numbers of riot records also appear here.
+| Dashboard label | ACLED source | Notes |
+|---|---|---|
+| Ground-based attack | `event_type` = Battles OR (Explosions/Remote violence, non-air sub-types) | Bundles armed clashes, artillery/shelling, IEDs, landmines, grenades, and suicide bombs. Also captures airstrikes that occurred during ground battles — see ACLED merging rule below. |
+| Air attack | `sub_event_type` = Air/drone strike, `inter1` = State forces, "drone" absent from notes | Heuristic split — not an official ACLED category |
+| Drone attack | `sub_event_type` = Air/drone strike, `inter1` ≠ State forces OR "drone" appears in notes | Heuristic split — not an official ACLED category |
+| Massacres | `civilian_targeting` = Yes AND `fatalities` ≥ 5 | Dashboard-defined threshold; overrides whatever key_event ACLED assigned |
+| Violence against civilians | ACLED event type, not reclassified as Massacre | ACLED "civilian targeting" flag = civilian was *main or only* target; incidental civilian harm in battles does NOT set this flag |
+| Protests | ACLED event type | Direct mapping |
+| Arrests | `sub_event_type` = Arrests | From Strategic developments |
+| Looting/property destruction | `sub_event_type` = Looting/property destruction | From Strategic developments |
+| Displacement | `sub_event_type` = Other AND "displacement" in notes | Heuristic; a small residual |
+| Others | Anything not matched above | Dominated by strategic developments: agreements, base establishment, non-violent territory transfers, group-activity changes |
 
-The air versus drone split is based on the `Air/drone strike` subtype plus contextual checks in the notes and actor classification.
+### ACLED event-merging rule and Air attack undercounting
+
+Per the ACLED codebook, when multiple violence types occur at the same location and date, they are merged into a single event coded at the **hierarchically highest type**. Battles ranks above Explosions/Remote violence. This means airstrikes that accompany ground battles are absorbed into the Battles record and appear in this dashboard as **Ground-based attack**, not as Air attack or Drone attack.
+
+The practical implication: **Air attack and Drone attack counts are understated relative to total aerial activity**. They capture standalone strikes only. This limitation is inherited from ACLED's coding structure, not from our pipeline.
+
+### Massacres threshold
+
+The threshold of `civilian_targeting = "Yes"` AND `fatalities >= 5` is a dashboard-defined operational cut. It is not an ACLED category. The civilian targeting flag, per the ACLED codebook, is set only when civilians were "the main or only target" of the event — incidental civilian deaths during battles or bombardments do not trigger it.
+
+### Actor classification and the Air/Drone split
+
+ACLED classifies actors into eight inter-types: State Forces, Rebel Groups, Political Militias, Identity Militias, Rioters, Protesters, Civilians, and External/Other Forces. The pipeline uses `inter1` (actor type of the primary actor) to distinguish Air attack (state forces) from Drone attack (other actors or explicit drone mentions in notes). This is a practical heuristic — the distinction between regime air assets and non-state drones is supported by the Myanmar conflict record but is not directly coded in ACLED.
 
 ## Geographic Matching
 
@@ -90,11 +103,30 @@ To reduce the size of the initial map callback, the app prefers a simplified web
 
 Neighboring-country border context is drawn from a separate clipped Natural Earth-derived file, `data/shapes/neighbor_borders.geojson`, rather than Plotly's built-in world-outline layer. This keeps the surrounding borders source-controlled and avoids unrelated distant border segments appearing in the Myanmar map view.
 
+## Fatality Figures
+
+ACLED records fatalities as the most conservative estimate across conflicting source reports. Vague language is standardized: "several" or "many" → 3 or 10; "dozens" → 12; "hundreds" → 100. ACLED has **no minimum fatality requirement** for event inclusion — zero-fatality events are recorded alongside mass-casualty events. As a result:
+
+- All event counts on this dashboard include zero-fatality events.
+- All fatality totals are **conservative lower bounds**, not confirmed ground-truth figures.
+- Fatality figures are subject to retroactive revision as ACLED updates source coverage.
+
+## ACLED Actor Fields and Dashboard Side Assignment
+
+ACLED records two actor slots (`Actor1`, `Actor2`) and two associated-actor slots (`assoc_actor_1`, `assoc_actor_2`). The codebook notes that `Actor1` and `Actor2` do not, by themselves, identify an aggressor or victim — they reflect who participated, organized from most to least active.
+
+The dashboard's "offending side" and "targeted side" groupings are derived from ACLED's `inter1/inter2` actor-type codes and contextual recoding in the pipeline. They are analytical approximations, not definitive role assignments from ACLED.
+
+"Associated actors" in the Actor Analysis page corresponds directly to ACLED's `assoc_actor_1/2` field — actors who appeared on the same side of the same event as the primary actor. Co-appearance does not imply formal alliance, command relationship, or pre-coordination.
+
 ## Limits And Biases
 
-- ACLED reflects reported events, not every event that happened.
-- Fatality values are reported estimates, can be revised over time, and are generally not attributable to a specific actor from ACLED alone.
-- Local actor naming can vary across reports and may not map perfectly onto standardized labels.
-- Drone detection is heuristic and depends partly on event notes.
-- Township choropleths show the distribution of reported events or reported fatality estimates, not territorial control or complete ground-truth conflict intensity.
-- Dashboard actor-side groupings should not be interpreted as definitive proof of who initiated violence or who suffered all harm in an event.
+- ACLED reflects **reported** events, not every event that happened. Coverage gaps are unevenly distributed across time and geography.
+- All fatality figures are **conservative lower-bound estimates**. They can be revised upward as ACLED updates source coverage.
+- Fatalities are **not attributable to a specific actor** from ACLED data alone.
+- **Air attack and Drone attack counts are understated** because ACLED's event-merging rule absorbs airstrikes that occur during ground battles into the Battles record (our Ground-based attack category).
+- **Drone classification is a heuristic**. The pipeline flags `Air/drone strike` events as drone attacks when the notes contain "drone" or when the primary actor is not state forces. This approximation may misclassify some events.
+- **Massacres is a dashboard-defined category** (civilian targeting flag + ≥5 fatalities), not a standard ACLED label. Comparisons with other ACLED-based analyses should account for this.
+- Local actor naming varies across source reports. Our actor labels are standardized for readability and may not match all variant spellings in the raw data.
+- Township choropleths show reported event or fatality density, not territorial control or ground-truth conflict intensity.
+- Dashboard actor-side groupings should not be interpreted as definitive proof of who initiated violence or who bore all harm in an event.

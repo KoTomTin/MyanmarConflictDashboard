@@ -31,7 +31,10 @@ The dashboard uses ACLED as its core source, but some fields are reorganized for
 - the dashboard works at **township level**
 - some actor names are standardized for readability
 - some event categories are analytically regrouped for dashboard use
-- civilian-targeting events with five or more reported fatalities are recoded here as **Massacres** for dashboard analysis
+- **Air attack** and **Drone attack** are split from ACLED's single `Air/drone strike` sub-event type using actor classification and event notes as a heuristic — this is not an official ACLED distinction
+- **Ground-based attack** covers battles, artillery, IEDs, and other non-aerial armed combat — it also includes airstrikes that accompanied ground battles, because ACLED merges those into the ground event record rather than coding them separately
+- civilian-targeting events with five or more reported fatalities are recoded here as **Massacres** for dashboard analysis — this is a dashboard-defined threshold, not a standard ACLED category
+- "associated actors" in the Actor Analysis page are actors who appeared on the same side of the same ACLED-recorded event — co-appearance does not imply a formal alliance or command relationship
 
 Because of these analytical choices, some dashboard figures and labels may differ from the default ACLED presentation.
 
@@ -61,8 +64,9 @@ To the best of the author's knowledge, there are **no financial conflicts of int
 
 - ACLED captures **reported** events, not every event that occurred.
 - Reporting is uneven across time and space, and some areas are harder to document than others.
-- Fatality figures are **reported estimates** and may be revised as information changes.
-- Fatalities generally should **not** be attributed to specific actors from ACLED alone.
+- Fatality figures are **conservative lower-bound estimates** — ACLED records the lowest credible figure when sources conflict, and uses standardized approximations for vague language ("dozens", "hundreds", etc.). They may be revised upward over time and should not be attributed to specific actors.
+- **Air attack and Drone attack counts are understated**: airstrikes that accompany ground battles are absorbed into the ground event by ACLED's coding rules and appear in this dashboard under Ground-based attack instead.
+- **Massacres** is a dashboard-defined threshold (civilian targeting + ≥5 fatalities), not a standard ACLED category.
 - Some dashboard categories and actor labels are standardized or analytically recoded for interpretive use.
 - Township-level patterns show **reported activity**, not territorial control.
 - The dashboard is better suited to public explanation and research support than to immediate-response decision-making.
