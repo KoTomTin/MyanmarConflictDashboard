@@ -1041,12 +1041,6 @@ def layout():
                     className="page-subtitle",
                 ),
                 html.Div([
-                    html.Span("Also see", className="page-link-label"),
-                    html.A("Overview", href="/"),
-                    html.A("Actor Analysis", href="/actor"),
-                    html.A("About", href="/about"),
-                ], className="page-link-row"),
-                html.Div([
                     html.Div("Prototype · work in progress", className="hero-pill hero-pill--prototype"),
                     html.Div("Aim: transparent township alerting", className="hero-pill"),
                     html.Div(f"Window: latest available {WINDOW_DAYS} days", className="hero-pill"),
@@ -1059,7 +1053,7 @@ def layout():
                     html.Span(f"Calculating {WINDOW_SCOPE_LABEL}…", id="an-window-value", className="hero-status-value-inline"),
                 ], className="hero-status-pill"),
                 html.Div([
-                    html.Span("Last checked with ACLED", className="hero-status-key"),
+                    html.Span("Last checked", className="hero-status-key"),
                     html.Span(checked_str, className="hero-status-value-inline"),
                 ], className="hero-status-pill"),
                 html.Div(checked_note, className="hero-status-note hero-status-note--inline"),

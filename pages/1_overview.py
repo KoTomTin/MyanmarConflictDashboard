@@ -259,9 +259,9 @@ def _build_filter_chips(start_month, end_month, region, key_events,
         ("Type", type_str),
     ]
     if mode == "animated":
-        chips.append(("View", "Animated by quarter"))
+        chips.append(("View", "Quarterly playback"))
     else:
-        chips.append(("View", "Cumulative"))
+        chips.append(("View", "Total period"))
 
     return html.Div(
         [html.Span("Now showing", className="filter-chip filter-chip--label")] +
@@ -857,22 +857,16 @@ def layout():
                     className="page-subtitle",
                 ),
                 html.Div([
-                    html.Span("Also see", className="page-link-label"),
-                    html.A("Actor Analysis", href="/actor"),
-                    html.A("Township Alerts", href="/alerts"),
-                    html.A("About", href="/about"),
-                ], className="page-link-row"),
-                html.Div([
                     html.Div("Prototype · work in progress", className="hero-pill hero-pill--prototype"),
                 ], className="hero-pill-row hero-pill-row--tight"),
             ], className="page-header-left"),
             html.Div([
                 html.Div([
-                    html.Span("Data Through", className="hero-status-key"),
+                    html.Span("Events up to", className="hero-status-key"),
                     html.Span(latest_str, className="hero-status-value-inline"),
                 ], className="hero-status-pill"),
                 html.Div([
-                    html.Span("Last checked with ACLED", className="hero-status-key"),
+                    html.Span("Last checked", className="hero-status-key"),
                     html.Span(checked_str, className="hero-status-value-inline"),
                 ], className="hero-status-pill"),
                 html.Div(checked_note, className="hero-status-note hero-status-note--inline"),
@@ -882,8 +876,13 @@ def layout():
         # ── filter card ────────────────────────────────────────────────────────
         html.Div([
             html.Div([
+                html.Span([
+                    html.Span("⚙", className="filter-cue-icon"),
+                    " Filters",
+                ], className="filter-cue-label"),
                 html.Button("Last 7 days",    id="ov-btn-7d",  n_clicks=0, className="quick-btn"),
                 html.Button("Last 30 days",   id="ov-btn-30d", n_clicks=0, className="quick-btn"),
+                html.Button("Last 1 year",    id="ov-btn-1y",  n_clicks=0, className="quick-btn"),
                 html.Button("Since Feb 2021", id="ov-btn-all", n_clicks=0, className="quick-btn"),
 
                 html.Div([
@@ -956,21 +955,23 @@ def layout():
                             className="metric-toggle metric-toggle--quiet",
                         ),
                         html.Button(
-                            "Cumulative",
+                            "Total period",
                             id="ov-mode-total-btn",
                             n_clicks=0,
                             type="button",
-                            **{"aria-label": "Show cumulative period total",
-                               "aria-pressed": "true"},
+                            **{"aria-label": "Show one map for the full date range",
+                               "aria-pressed": "true",
+                               "title": "One map covering the full selected date range"},
                             className="view-toggle-btn view-toggle-btn--active",
                         ),
                         html.Button(
-                            "Animated",
+                            "Quarterly playback",
                             id="ov-mode-anim-btn",
                             n_clicks=0,
                             type="button",
-                            **{"aria-label": "Animate quarter by quarter",
-                               "aria-pressed": "false"},
+                            **{"aria-label": "Step through each quarter",
+                               "aria-pressed": "false",
+                               "title": "Animated quarter-by-quarter playback — use the play button on the map"},
                             className="view-toggle-btn",
                         ),
                     ], className="map-stage-controls", role="group",
@@ -1081,15 +1082,18 @@ def switch_mode(n_total, n_anim):
     Output("ov-to-date",         "date"),
     Input("ov-btn-7d",           "n_clicks"),
     Input("ov-btn-30d",          "n_clicks"),
+    Input("ov-btn-1y",           "n_clicks"),
     Input("ov-btn-all",          "n_clicks"),
     prevent_initial_call=True,
 )
-def set_quick_dates(n7, n30, nall):
+def set_quick_dates(n7, n30, n1y, nall):
     max_dt = load_acled_main()["event_date"].max()
     if ctx.triggered_id == "ov-btn-7d":
         start_dt = max_dt - pd.Timedelta(days=7)
     elif ctx.triggered_id == "ov-btn-30d":
         start_dt = max_dt - pd.Timedelta(days=30)
+    elif ctx.triggered_id == "ov-btn-1y":
+        start_dt = max_dt - pd.Timedelta(days=365)
     else:
         start_dt = pd.Timestamp("2021-02-01")
     start_date = start_dt.strftime("%Y-%m-%d")

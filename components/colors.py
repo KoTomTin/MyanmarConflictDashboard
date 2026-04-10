@@ -39,8 +39,11 @@ ALERT_CATEGORY_COLORS = {
 # ── Sequential scales ─────────────────────────────────────────
 # Zero stop is a slightly bluer grey (#dde3ea) so empty townships read as
 # "measured zero" rather than "missing" against the cream page background.
+# Zero stop uses the warm page-background cream (#f0ece3) so townships with
+# zero activity visually dissolve into the page — clearly distinct from the
+# lightest blue (which still means "a small number was recorded").
 SEQUENTIAL_BLUES_ZERO_GREY = [
-    (0.00, "#dde3ea"),
+    (0.00, "#f0ece3"),
     (0.01, "#deebf7"),
     (0.20, "#c6dbef"),
     (0.40, "#9ecae1"),
@@ -49,9 +52,8 @@ SEQUENTIAL_BLUES_ZERO_GREY = [
     (1.00, "#08519c"),
 ]
 
-# Reds with explicit zero → cool grey (actor footprint)
 SEQUENTIAL_REDS_ZERO_GREY = [
-    (0.00, "#dde3ea"),
+    (0.00, "#f0ece3"),
     (0.01, "#fee0d2"),
     (0.20, "#fcbba1"),
     (0.40, "#fc9272"),

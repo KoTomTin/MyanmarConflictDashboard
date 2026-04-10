@@ -142,14 +142,14 @@ body::before {
   font-family: var(--font-display);
 }
 .brand-name {
-  font-size: 0.66rem;
+  font-size: 0.75rem;
   color: #6B7280;
   line-height: 1.35;
   font-family: var(--font);
 }
 .brand-tagline {
-  font-size: 0.58rem;
-  color: #8b97a4;
+  font-size: 0.72rem;
+  color: var(--text-muted);
   line-height: 1.4;
   margin-top: 4px;
   font-style: italic;
@@ -250,7 +250,7 @@ body::before {
   border-top: 1px solid var(--sidebar-divider);
 }
 .sidebar-meta {
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   color: #83909b;
   line-height: 1.65;
   font-family: var(--font);
@@ -570,7 +570,7 @@ body::before {
 }
 .hero-status-note--inline {
   padding: 0 0 0 2px;
-  font-size: 0.66rem;
+  font-size: 0.75rem;
   white-space: nowrap;
 }
 
@@ -610,7 +610,7 @@ body::before {
   padding: 10px 12px;
 }
 .snap-label {
-  font-size: 0.62rem;
+  font-size: 0.73rem;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -743,7 +743,7 @@ body::before {
 .filter-strip-help {
   min-height: 18px;
   margin-top: 3px;
-  font-size: 0.66rem;
+  font-size: 0.75rem;
   line-height: 1.4;
   color: #64748B;
 }
@@ -787,11 +787,28 @@ body::before {
 }
 
 .filter-label {
-  font-size: 0.70rem;
+  font-size: 0.73rem;
   font-weight: 700;
   color: var(--text-muted);
   letter-spacing: 0.01em;
   font-family: var(--font);
+}
+.filter-cue-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.73rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-family: var(--font);
+  margin-right: 6px;
+  user-select: none;
+}
+.filter-cue-icon {
+  font-size: 0.80rem;
+  opacity: 0.7;
 }
 .filter-drawer-actions {
   display: flex;
@@ -887,14 +904,14 @@ body::before {
   box-shadow: 0 0 0 3px rgba(38,79,119,0.10);
 }
 .date-card-header {
-  font-size: 0.64rem;
+  font-size: 0.74rem;
   font-weight: 700;
   color: #496174;
   letter-spacing: 0.01em;
   margin-bottom: 2px;
 }
 .date-card--compact .date-card-header {
-  font-size: 0.56rem;
+  font-size: 0.72rem;
   margin-bottom: 1px;
 }
 
@@ -1205,7 +1222,7 @@ body::before {
 
 /* Sparkline trend label */
 .sparkline-label {
-  font-size: 0.60rem;
+  font-size: 0.73rem;
   color: var(--text-muted);
   text-align: center;
   padding: 3px 0 8px;
@@ -1219,13 +1236,13 @@ body::before {
   padding: 7px 10px;
   border-radius: 10px;
 }
-.kpis-compact .kpi-label { font-size: 0.62rem; }
+.kpis-compact .kpi-label { font-size: 0.73rem; }
 .kpis-compact .kpi-value {
   font-size: 1.15rem;
   letter-spacing: -0.01em;
 }
 .kpis-compact .kpi-sub {
-  font-size: 0.60rem;
+  font-size: 0.73rem;
   margin-top: 0;
   margin-bottom: 0;
 }
@@ -1493,7 +1510,7 @@ body::before {
   border: 1px solid rgba(64, 88, 112, 0.10);
 }
 .alert-mini-stat-key {
-  font-size: 0.66rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: #6a7c8b;
 }
@@ -1896,7 +1913,7 @@ body::before {
   box-shadow: 0 0 0 3px rgba(37,99,235,.20) !important;
 }
 .rc-slider-mark-text {
-  font-size: 9px !important;
+  font-size: 11px !important;
   color: var(--text-muted) !important;
   font-family: var(--font) !important;
 }
@@ -2394,7 +2411,7 @@ button.view-toggle-btn.view-toggle-btn--active {
 /* Tagline contrast bump — was #8b97a4 0.58rem (failed AA). */
 .brand-tagline {
   color: #6a7785;
-  font-size: 0.66rem;
+  font-size: 0.75rem;
 }
 
 /* Skeleton loader — shimmering placeholder for chart cards while data loads. */
