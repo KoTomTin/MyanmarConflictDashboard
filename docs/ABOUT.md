@@ -24,7 +24,7 @@ The underlying event record comes from the **Armed Conflict Location & Event Dat
 
 > Armed Conflict Location & Event Data Project (ACLED). Conflict data for Myanmar (2021-present). Retrieved via the ACLED API. Available at: https://acleddata.com. Copyright ACLED.
 
-ACLED is a widely used conflict-data project that codes political violence, protest, and related crisis events from open-source reporting.
+ACLED is a widely used conflict-data project that codes political violence, protest, and related crisis events from open-source reporting. For the full definition of every event type, actor type, and field used in ACLED data, see the [ACLED Codebook](https://acleddata.com/methodology/acled-codebook).
 
 The dashboard uses ACLED as its core source, but some fields are reorganized for analytical clarity. In particular:
 
