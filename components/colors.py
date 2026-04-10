@@ -26,10 +26,21 @@ ACTOR_TYPE_COLORS = {
     "Pyu Saw Htee":            "#d97706",
 }
 
+# ── Alert / status colors ─────────────────────────────────────
+# Used in both Plotly map fills (Python) and CSS chip classes (vars in :root).
+# Keep these in sync with --alert-* CSS variables in assets/style.css.
+ALERT_CATEGORY_COLORS = {
+    "No unusual change": "#d7dde5",
+    "Activity surge":    "#2b6cb0",
+    "Fatality surge":    "#dc2626",
+    "Both surges":       "#7c3aed",
+}
+
 # ── Sequential scales ─────────────────────────────────────────
-# Blues with explicit zero → grey (for choropleths of counts)
+# Zero stop is a slightly bluer grey (#dde3ea) so empty townships read as
+# "measured zero" rather than "missing" against the cream page background.
 SEQUENTIAL_BLUES_ZERO_GREY = [
-    (0.00, "#d9d9d9"),
+    (0.00, "#dde3ea"),
     (0.01, "#deebf7"),
     (0.20, "#c6dbef"),
     (0.40, "#9ecae1"),
@@ -38,9 +49,9 @@ SEQUENTIAL_BLUES_ZERO_GREY = [
     (1.00, "#08519c"),
 ]
 
-# Reds with explicit zero → grey (actor footprint)
+# Reds with explicit zero → cool grey (actor footprint)
 SEQUENTIAL_REDS_ZERO_GREY = [
-    (0.00, "#d9d9d9"),
+    (0.00, "#dde3ea"),
     (0.01, "#fee0d2"),
     (0.20, "#fcbba1"),
     (0.40, "#fc9272"),

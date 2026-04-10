@@ -94,7 +94,7 @@ def _fmt(n) -> str:
 def _empty_fig(msg="No data for this selection", height=500):
     fig = go.Figure()
     fig.add_annotation(text=msg, x=0.5, y=0.5, showarrow=False,
-                       font=dict(size=13, color="#7a8895", family=PLOTLY_FONT), xref="paper", yref="paper")
+                       font=dict(size=13, color="#5a6c7e", family=PLOTLY_FONT), xref="paper", yref="paper")
     fig.update_layout(
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         height=height, margin=dict(l=0, r=0, t=0, b=0),
@@ -120,6 +120,10 @@ def _geo_pcodes(geo: dict) -> list[str]:
 def _tsp_text(geo: dict) -> list[str]:
     return [f["properties"].get("TS", f["properties"]["TS_PCODE"])
             for f in geo["features"]]
+
+
+def _tsp_states(geo: dict) -> list[str]:
+    return [f["properties"].get("ST", "") for f in geo["features"]]
 
 
 def _month_to_quarter(month_str: str) -> str:
@@ -174,16 +178,22 @@ def _window_days(start_date: str | None, end_date: str | None) -> int | None:
 
 
 def _filter_overview_events(acled_df, start_date, end_date, region, key_events):
-    df = acled_df.copy()
+    """Filter the main ACLED frame using a single boolean mask — no copy.
+
+    Returns a view; downstream callers must not mutate the result. This is
+    called inside hot callbacks, so the previous .copy() approach was costing
+    ~90k row clones per filter change.
+    """
+    mask = pd.Series(True, index=acled_df.index)
     if start_date:
-        df = df[df["event_date"] >= pd.to_datetime(start_date)]
+        mask &= acled_df["event_date"] >= pd.to_datetime(start_date)
     if end_date:
-        df = df[df["event_date"] <= pd.to_datetime(end_date)]
+        mask &= acled_df["event_date"] <= pd.to_datetime(end_date)
     if region:
-        df = df[df["admin1"] == region]
+        mask &= acled_df["admin1"] == region
     if key_events:
-        df = df[df["key_event"].isin(key_events)]
-    return df
+        mask &= acled_df["key_event"].isin(key_events)
+    return acled_df.loc[mask]
 
 
 def _is_generic_civilian(name: str) -> bool:
@@ -293,15 +303,16 @@ def _q95(series: pd.Series) -> int:
 
 # ── Store builder ──────────────────────────────────────────────────────────────
 
-def _build_store(acled_df, geo, start_date, end_date, region, key_events,
+def _build_store(df, geo, start_date, end_date, region, key_events,
                  mode: str) -> dict | None:
-    df = _filter_overview_events(acled_df, start_date, end_date, region, key_events)
+    """Build the choropleth payload from an ALREADY-FILTERED dataframe."""
     if df.empty:
         return None
 
     active_geo = filter_geo_by_property(geo, "ST", region) if region else geo
     pcodes     = _geo_pcodes(active_geo)
     text       = _tsp_text(active_geo)
+    states     = _tsp_states(active_geo)
     n          = len(pcodes)
     pcode_idx  = {p: i for i, p in enumerate(pcodes)}
     start_month = pd.to_datetime(start_date).strftime("%Y-%m") if start_date else None
@@ -341,7 +352,7 @@ def _build_store(acled_df, geo, start_date, end_date, region, key_events,
             "max_val_fat": _q95(qagg["fatalities"]),
             "start_month": start_month,
             "end_month": end_month,
-            "pcodes": pcodes, "text": text, "region": region,
+            "pcodes": pcodes, "text": text, "states": states, "region": region,
         }
     else:
         total = agg.groupby("Tsp_Pcode").agg(
@@ -361,7 +372,7 @@ def _build_store(acled_df, geo, start_date, end_date, region, key_events,
             "max_val_fat": _q95(pd.Series(z_fat)),
             "start_month": start_month,
             "end_month": end_month,
-            "pcodes": pcodes, "text": text, "region": region,
+            "pcodes": pcodes, "text": text, "states": states, "region": region,
         }
 
 
@@ -386,11 +397,17 @@ def _build_animated_choropleth(store: dict, geo: dict,
         locations=store["pcodes"],
         z=initial_z,
         text=store["text"],
+        customdata=store.get("states", [""] * len(store["pcodes"])),
         featureidkey="properties.TS_PCODE",
         colorscale=SEQUENTIAL_BLUES_ZERO_GREY,
         zmin=0, zmax=mv,
         marker_line_width=0.3, marker_line_color="#ffffff",
-        hovertemplate=f"<b>%{{text}}</b><br>{hover_lbl}: %{{z:,}}<extra></extra>",
+        hovertemplate=(
+            f"<b>%{{text}}</b><br>"
+            f"<span style='color:#5a6c7e'>%{{customdata}}</span><br>"
+            f"{hover_lbl}: <b>%{{z:,}}</b>"
+            f"<extra></extra>"
+        ),
         colorbar=dict(
             title=dict(
                 text=cb_title,
@@ -515,11 +532,17 @@ def _build_choropleth(
         geojson=active_geo,
         locations=store["pcodes"],
         z=z, text=store["text"],
+        customdata=store.get("states", [""] * len(store["pcodes"])),
         featureidkey="properties.TS_PCODE",
         colorscale=SEQUENTIAL_BLUES_ZERO_GREY,
         zmin=0, zmax=mv,
         marker_line_width=0.3, marker_line_color="#ffffff",
-        hovertemplate=f"<b>%{{text}}</b><br>{hover_lbl}: %{{z:,}}<extra></extra>",
+        hovertemplate=(
+            f"<b>%{{text}}</b><br>"
+            f"<span style='color:#5a6c7e'>%{{customdata}}</span><br>"
+            f"{hover_lbl}: <b>%{{z:,}}</b>"
+            f"<extra></extra>"
+        ),
         colorbar=dict(
             title=dict(
                 text=cb_title,
@@ -565,8 +588,8 @@ def _build_choropleth(
 
 # ── Trend chart ────────────────────────────────────────────────────────────────
 
-def _build_trend(acled_df, start_date, end_date, region, key_events) -> go.Figure:
-    df = _filter_overview_events(acled_df, start_date, end_date, region, key_events)
+def _build_trend(df, start_date, end_date, region, key_events) -> go.Figure:
+    """Trend chart from an ALREADY-FILTERED dataframe."""
     if df.empty:
         return _empty_fig(height=320)
 
@@ -631,13 +654,13 @@ def _build_trend(acled_df, start_date, end_date, region, key_events) -> go.Figur
                     opacity=0.5,
                 )
                 fig.add_annotation(
-                    x=mdt, y=1.075 if i % 2 == 0 else 1.035, xref="x", yref="paper",
+                    x=mdt, y=1.11 if i % 2 == 0 else 1.04, xref="x", yref="paper",
                     text=f"<b>{short_name}</b>",
                     showarrow=False,
-                    font=dict(size=7.4, color=milestone_color, family=PLOTLY_FONT),
+                    font=dict(size=10, color=milestone_color, family=PLOTLY_FONT),
                     xanchor="center", yanchor="bottom",
                     bgcolor=PLOTLY_HOVER_BG,
-                    bordercolor=milestone_color, borderwidth=1, borderpad=1,
+                    bordercolor=milestone_color, borderwidth=1, borderpad=3,
                 )
                 fig.add_trace(go.Scatter(
                     x=[mdt], y=[0.5], yaxis="y2",
@@ -647,7 +670,7 @@ def _build_trend(acled_df, start_date, end_date, region, key_events) -> go.Figur
                     showlegend=False, name="",
                     hovertemplate=(
                         f"<b>{title}</b><br>"
-                        f"<span style='color:#6b7280'>{desc}</span>"
+                        f"<span style='color:#5a6c7e'>{desc}</span>"
                         f"<extra></extra>"
                     ),
                 ))
@@ -655,7 +678,7 @@ def _build_trend(acled_df, start_date, end_date, region, key_events) -> go.Figur
     fig.update_layout(
         height=320,
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=4, r=4, t=40, b=4),
+        margin=dict(l=4, r=4, t=58, b=4),
         yaxis2=dict(overlaying="y", range=[0, 1], visible=False, fixedrange=True),
         showlegend=False,
         font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT),
@@ -682,6 +705,11 @@ def _build_trend(acled_df, start_date, end_date, region, key_events) -> go.Figur
 # ── Key Activity Types bar chart ──────────────────────────────────────────────
 
 def _build_activity_bar(acled_df, start_date, end_date, region, key_events) -> go.Figure:
+    """Bar chart of event composition.
+
+    Note: this intentionally re-filters WITHOUT the key_events filter so the
+    full type-mix is always visible — the selected type is just highlighted.
+    """
     df = _filter_overview_events(acled_df, start_date, end_date, region, None)
     if df.empty:
         return _empty_fig("No data", height=420)
@@ -754,8 +782,8 @@ def _build_activity_bar(acled_df, start_date, end_date, region, key_events) -> g
 
 # ── Highest Events helper ─────────────────────────────────────────────────────
 
-def _highest_events(acled_df, start_date, end_date, region, key_events):
-    df = _filter_overview_events(acled_df, start_date, end_date, region, key_events)
+def _highest_events(df, acled_df):
+    """Top township by event count, computed from ALREADY-FILTERED df."""
     if df.empty:
         return "—", "—"
     by_tsp = (
@@ -927,15 +955,26 @@ def layout():
                             inline=True,
                             className="metric-toggle metric-toggle--quiet",
                         ),
-                        html.Div([
-                            html.Div("Cumulative", className="view-toggle-label"),
-                        ], id="ov-mode-total-btn", n_clicks=0,
-                           className="view-toggle-btn view-toggle-btn--active"),
-                        html.Div([
-                            html.Div("Animated", className="view-toggle-label"),
-                        ], id="ov-mode-anim-btn", n_clicks=0,
-                           className="view-toggle-btn"),
-                    ], className="map-stage-controls"),
+                        html.Button(
+                            "Cumulative",
+                            id="ov-mode-total-btn",
+                            n_clicks=0,
+                            type="button",
+                            **{"aria-label": "Show cumulative period total",
+                               "aria-pressed": "true"},
+                            className="view-toggle-btn view-toggle-btn--active",
+                        ),
+                        html.Button(
+                            "Animated",
+                            id="ov-mode-anim-btn",
+                            n_clicks=0,
+                            type="button",
+                            **{"aria-label": "Animate quarter by quarter",
+                               "aria-pressed": "false"},
+                            className="view-toggle-btn",
+                        ),
+                    ], className="map-stage-controls", role="group",
+                       **{"aria-label": "Map view mode"}),
                 ], className="dash-card-head map-stage-head"),
 
                 dcc.Loading(
@@ -1149,6 +1188,8 @@ def update_charts(applied, mode, metric):
     acled = load_acled_main()
     geo   = load_geojson()
 
+    # Filter ONCE — pass the resulting view to every builder. Previously this
+    # function ran the same filter four times (one per chart) on a 90k-row frame.
     ac = _filter_overview_events(acled, start_date, end_date, region, key_events)
     n_conflicts  = _fmt(len(ac))
     n_fatalities = _fmt(int(ac["fatalities"].sum()))
@@ -1156,7 +1197,7 @@ def update_charts(applied, mode, metric):
     filter_summary = _build_filter_chips(start_month, end_month, region, key_events,
                                          mode, preset_label,
                                          start_date=start_date, end_date=end_date)
-    store = _build_store(acled, geo, start_date, end_date, region, key_events, mode)
+    store = _build_store(ac, geo, start_date, end_date, region, key_events, mode)
 
     if store is None:
         empty = _empty_fig("No data for this selection", height=820)
@@ -1174,8 +1215,8 @@ def update_charts(applied, mode, metric):
             end_date=end_date,
         )
 
-    fig_trend = _build_trend(acled, start_date, end_date, region, key_events)
+    fig_trend = _build_trend(ac, start_date, end_date, region, key_events)
     fig_bar   = _build_activity_bar(acled, start_date, end_date, region, key_events)
-    h_region, h_count = _highest_events(acled, start_date, end_date, region, key_events)
+    h_region, h_count = _highest_events(ac, acled)
 
     return fig_map, n_conflicts, n_fatalities, filter_summary, fig_trend, fig_bar, h_region, h_count

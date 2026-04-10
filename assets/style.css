@@ -25,13 +25,22 @@
   /* Text */
   --text-primary:   #18293b;
   --text-secondary: #31475b;
-  --text-muted:     #6b7c89;
+  --text-muted:     #54677a;   /* WCAG AA on cream (~5.1:1) */
 
   /* Accent */
   --accent:        #264f77;
   --accent-hover:  #1f4263;
   --accent-blue:   #315f8f;
   --accent-red:    #b84756;
+  /* Status colors — single source of truth for alert chips */
+  --alert-no-change-bg:   rgba(229, 231, 235, 0.72);
+  --alert-no-change-fg:   #4b5563;
+  --alert-activity-bg:    rgba(219, 234, 254, 0.92);
+  --alert-activity-fg:    #1d4ed8;
+  --alert-fatality-bg:    rgba(254, 226, 226, 0.92);
+  --alert-fatality-fg:    #b91c1c;
+  --alert-both-bg:        rgba(237, 233, 254, 0.94);
+  --alert-both-fg:        #6d28d9;
   --accent-teal:   #1c7b82;
   --accent-orange: #a36a3c;
   --accent-purple: #6e63a7;
@@ -1587,20 +1596,20 @@ body::before {
   color: #334155;
 }
 .alert-chip--no-unusual-change {
-  background: rgba(229, 231, 235, 0.72);
-  color: #4b5563;
+  background: var(--alert-no-change-bg);
+  color: var(--alert-no-change-fg);
 }
 .alert-chip--activity-surge {
-  background: rgba(219, 234, 254, 0.92);
-  color: #1d4ed8;
+  background: var(--alert-activity-bg);
+  color: var(--alert-activity-fg);
 }
 .alert-chip--fatality-surge {
-  background: rgba(254, 226, 226, 0.92);
-  color: #b91c1c;
+  background: var(--alert-fatality-bg);
+  color: var(--alert-fatality-fg);
 }
 .alert-chip--both-surges {
-  background: rgba(237, 233, 254, 0.94);
-  color: #6d28d9;
+  background: var(--alert-both-bg);
+  color: var(--alert-both-fg);
 }
 
 .alert-list {
@@ -2323,3 +2332,160 @@ body::before {
   /* Date picker: single month on mobile */
   .DateRangePicker_picker { transform: scale(0.92); transform-origin: top left; }
 }
+
+/* ============================================================
+   Accessibility — focus, skip-link, contrast, motion
+   Appended in v4.1 redesign pass.
+   ============================================================ */
+
+/* Skip-link: hidden until keyboard-focused, then jumps to first chart card. */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 12px;
+  z-index: 9999;
+  background: #18293b;
+  color: #ffffff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-decoration: none;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+  transition: top 0.18s ease;
+}
+.skip-link:focus {
+  top: 12px;
+  outline: 3px solid #ffd166;
+  outline-offset: 2px;
+}
+
+/* Visible focus ring on every interactive element. */
+:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+button:focus-visible,
+.view-toggle-btn:focus-visible,
+.quick-btn:focus-visible,
+.btn-reset:focus-visible,
+.mob-nav-link:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Reset native button styling on the view-toggle so the existing
+   .view-toggle-btn rules still apply now that it's a real <button>. */
+button.view-toggle-btn {
+  font-family: inherit;
+  cursor: pointer;
+  background: rgba(255, 251, 246, 0.85);
+  border: 1px solid rgba(64, 88, 112, 0.18);
+  color: #355066;
+}
+button.view-toggle-btn.view-toggle-btn--active {
+  background: linear-gradient(180deg, rgba(37, 82, 119, 0.16), rgba(37, 82, 119, 0.10));
+  color: #1f3754;
+  font-weight: 700;
+  border-color: rgba(38, 79, 119, 0.32);
+}
+
+/* Tagline contrast bump — was #8b97a4 0.58rem (failed AA). */
+.brand-tagline {
+  color: #6a7785;
+  font-size: 0.66rem;
+}
+
+/* Skeleton loader — shimmering placeholder for chart cards while data loads. */
+@keyframes mcd-shimmer {
+  0%   { background-position: -480px 0; }
+  100% { background-position: 480px 0; }
+}
+.mcd-skeleton {
+  display: block;
+  width: 100%;
+  border-radius: 12px;
+  background: linear-gradient(
+    90deg,
+    rgba(214, 220, 230, 0.55) 0%,
+    rgba(236, 240, 247, 0.85) 50%,
+    rgba(214, 220, 230, 0.55) 100%
+  );
+  background-size: 960px 100%;
+  animation: mcd-shimmer 1.4s ease-in-out infinite;
+}
+.mcd-skeleton--map     { height: 760px; }
+.mcd-skeleton--chart   { height: 320px; }
+.mcd-skeleton--bar     { height: 420px; }
+
+/* Visually hidden — for screen-reader-only descriptions of charts. */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Reduce motion preference — disable shimmer + Plotly animation easing. */
+@media (prefers-reduced-motion: reduce) {
+  .mcd-skeleton {
+    animation: none;
+    background: rgba(220, 226, 236, 0.7);
+  }
+  .skip-link {
+    transition: none;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Alerts threshold banner. */
+.alert-thresholds-banner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 10px 14px;
+  margin: 8px 0 14px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 251, 246, 0.96), rgba(247, 242, 234, 0.92));
+  border: 1px solid rgba(64, 88, 112, 0.14);
+  box-shadow: var(--shadow-sm);
+  font-size: 0.78rem;
+  color: #3d5266;
+  align-items: center;
+}
+.alert-thresholds-banner strong {
+  color: #1f3754;
+  font-weight: 800;
+}
+.alert-thresholds-banner code {
+  background: rgba(37, 82, 119, 0.08);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.74rem;
+  color: #234b70;
+}
+
+/* Actor co-appearance disclaimer. */
+.actor-coapp-note {
+  font-size: 0.74rem;
+  color: #5a6c7e;
+  background: rgba(255, 247, 229, 0.7);
+  border: 1px solid rgba(185, 112, 24, 0.22);
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin: 8px 0 12px;
+  line-height: 1.5;
+}
+.actor-coapp-note strong { color: #7a4b10; }
+

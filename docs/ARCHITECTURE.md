@@ -20,7 +20,8 @@ The application is a multi-page Dash app served from `app.py`. It uses a custom 
 
 - `components/loaders.py`: cached Parquet and GeoJSON loaders
 - `components/map_utils.py`: geo bounds, filtering, and choropleth framing helpers
-- `components/colors.py`: centralized palettes and color scales
+- `components/colors.py`: centralized palettes and color scales (also exposes `ALERT_CATEGORY_COLORS`, the single source of truth shared with the `--alert-*` CSS variables in `assets/style.css`)
+- `components/plot_theme.py`: shared Plotly font, color, and layout constants for the editorial cream-and-slate look. Pages are migrating to it incrementally
 
 ## Data Flow
 
@@ -52,8 +53,17 @@ The runtime loader prefers the simplified web file so choropleth callbacks do no
 
 Files in `research/` should not be treated as application runtime dependencies.
 
+## Server-Level Behavior
+
+- `Flask-Compress` (brotli + gzip) is wired in `app.py` and applies to HTML, JSON, JS, CSS, SVG, and plain text. This is where the perceived "fast" feel of repeated callbacks comes from — Plotly figure JSON compresses 70–85%.
+- `_dash-component-suites/*` is served with `Cache-Control: public, max-age=31536000, immutable`. Dash bundles are content-hashed so this is safe.
+- `/assets/*` is served with `Cache-Control: public, max-age=86400`.
+- `/healthz` returns `200 ok` for uptime monitors.
+- `app.run(debug=False)` by default. Set `MCD_DEBUG=1` to enable the dev reloader.
+
 ## Deliberate Constraints
 
 - The repo is Dash-only. There is no Streamlit runtime to maintain.
 - The methodology currently lives as project documentation in `docs/METHODOLOGY.md`, not as a routed app page.
 - Duplicate full-project snapshots should not be kept in the workspace root.
+- `dbc.themes.FLATLY` is intentionally retained even though it adds CSS weight: pages reference Bootstrap utility classes (`d-flex`, `me-`, `mt-`, etc.) in 100+ places. Removing it is a behavior-change refactor and should not be bundled with theming work.

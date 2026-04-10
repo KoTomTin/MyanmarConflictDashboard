@@ -15,7 +15,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from dash import dcc, html, callback, Output, Input, State
 
-from components.colors import KEY_EVENT_COLORS
+from components.colors import KEY_EVENT_COLORS, ALERT_CATEGORY_COLORS
 from components.loaders import load_acled_main, load_geojson, load_last_checked
 from components.map_utils import apply_tight_geos, ensure_full_geoindex, filter_geo_by_property
 from components.page_bits import data_disclaimer
@@ -40,12 +40,7 @@ PCT_FOR_EMERGENCE = 0.95
 WINDOW_SCOPE_LABEL = f"latest available {WINDOW_DAYS}-day window"
 WINDOW_TOTAL_LABEL = f"current {WINDOW_DAYS}-day total"
 
-ALERT_COLORS = {
-    "No unusual change": "#d7dde5",
-    "Activity surge": "#2b6cb0",
-    "Fatality surge": "#dc2626",
-    "Both surges": "#7c3aed",
-}
+ALERT_COLORS = ALERT_CATEGORY_COLORS
 ALERT_CODES = {
     "No unusual change": 0,
     "Activity surge": 1,
@@ -95,7 +90,7 @@ def _empty_fig(message: str | None = None, *, height: int) -> go.Figure:
             xref="paper",
             yref="paper",
             showarrow=False,
-            font=dict(size=13, family=PLOTLY_FONT, color="#708192"),
+            font=dict(size=13, family=PLOTLY_FONT, color="#5a6c7e"),
         )
     fig.update_layout(
         height=height,
@@ -696,7 +691,7 @@ def _build_detail_figure(history: pd.DataFrame, township_name: str):
             font=dict(family=PLOTLY_FONT, color="#24384d"),
         ),
     )
-    fig.update_annotations(font=dict(size=11, family=PLOTLY_FONT, color="#5b6d80"), yshift=10)
+    fig.update_annotations(font=dict(size=11, family=PLOTLY_FONT, color="#5a6c7e"), yshift=10)
     fig.update_xaxes(
         showgrid=False,
         tickformat="%b\n%Y",
@@ -724,7 +719,7 @@ def _build_mix_figure(combat_context: pd.DataFrame, township_code: str, window_s
         fig.add_annotation(
             text=f"No named offending-side armed actors are available for combat events in the {WINDOW_SCOPE_LABEL}.",
             x=0.5, y=0.5, showarrow=False,
-            font=dict(size=12, family=PLOTLY_FONT, color="#6b7c89"),
+            font=dict(size=12, family=PLOTLY_FONT, color="#5a6c7e"),
         )
         fig.update_layout(
             height=470,
@@ -793,54 +788,79 @@ def _build_mix_figure(combat_context: pd.DataFrame, township_code: str, window_s
     event_labels = [f"{evt} · {_fmt(event_totals.get(evt, 0))}" for evt in event_nodes]
     labels = actor_labels + event_labels
 
-    left_y = np.linspace(0.14, 0.86, len(actor_nodes)).tolist() if len(actor_nodes) > 1 else [0.5]
-    right_y = np.linspace(0.18, 0.82, len(event_nodes)).tolist() if len(event_nodes) > 1 else [0.5]
-    node_x = ([0.22] * len(actor_nodes)) + ([0.80] * len(event_nodes))
-    node_y = left_y + right_y
+    # Compute outflow per actor and inflow per event so we can place each
+    # node + label at its TRUE flow-weighted vertical center.
+    actor_flow = {a: 0 for a in actor_nodes}
+    event_flow = {e: 0 for e in event_nodes}
+    for _, row in links.iterrows():
+        actor_flow[row["actor_group"]] += row["events"]
+        event_flow[row["key_event"]] += row["events"]
 
+    SANKEY_HEIGHT = 470
+    TOP_MARGIN = 12
+    BOTTOM_MARGIN = 10
+    NODE_PAD_PX = 22
+
+    def _column_centers(weights: list[float]) -> list[float]:
+        """Centers in node-y coords (Plotly Sankey: 0=top, 1=bottom)."""
+        n = len(weights)
+        if n == 0:
+            return []
+        if n == 1:
+            return [0.5]
+        avail = SANKEY_HEIGHT - TOP_MARGIN - BOTTOM_MARGIN
+        pad_frac = NODE_PAD_PX / avail
+        bar_total = max(0.05, 1.0 - pad_frac * (n - 1))
+        total_w = sum(weights) or 1
+        heights = [w / total_w * bar_total for w in weights]
+        centers = []
+        cum = 0.0
+        for i, h in enumerate(heights):
+            centers.append(cum + h / 2)
+            cum += h + (pad_frac if i < n - 1 else 0)
+        return centers
+
+    actor_centers = _column_centers([actor_flow[a] for a in actor_nodes])
+    event_centers = _column_centers([event_flow[e] for e in event_nodes])
+
+    node_x = ([0.001] * len(actor_nodes)) + ([0.999] * len(event_nodes))
+    node_y = actor_centers + event_centers
+
+    # Hand-placed annotations in the left/right gutters at the SAME y as
+    # each node center — guaranteed to line up regardless of flow size.
     annotations = []
-
-    for label, y in zip(actor_labels, left_y):
+    for label, yc in zip(actor_labels, actor_centers):
         annotations.append(dict(
             text=f"<b>{label}</b>",
-            x=0.10,
-            y=max(0.05, min(0.95, 1 - (y + 0.045))),
-            xref="paper",
-            yref="paper",
-            xanchor="left",
-            yanchor="middle",
-            showarrow=False,
-            align="left",
+            x=-0.012,
+            y=1 - yc,
+            xref="paper", yref="paper",
+            xanchor="right", yanchor="middle",
+            showarrow=False, align="right",
             bgcolor="rgba(255,251,246,0.94)",
             bordercolor="rgba(64, 88, 112, 0.14)",
-            borderwidth=1,
-            borderpad=4,
+            borderwidth=1, borderpad=4,
             font=dict(size=11, family=PLOTLY_FONT, color="#1f3247"),
         ))
-
-    for label, y in zip(event_labels, right_y):
+    for label, yc in zip(event_labels, event_centers):
         annotations.append(dict(
             text=f"<b>{label}</b>",
-            x=0.90,
-            y=max(0.05, min(0.95, 1 - (y + 0.045))),
-            xref="paper",
-            yref="paper",
-            xanchor="right",
-            yanchor="middle",
-            showarrow=False,
-            align="right",
+            x=1.012,
+            y=1 - yc,
+            xref="paper", yref="paper",
+            xanchor="left", yanchor="middle",
+            showarrow=False, align="left",
             bgcolor="rgba(255,251,246,0.94)",
             bordercolor="rgba(64, 88, 112, 0.14)",
-            borderwidth=1,
-            borderpad=4,
+            borderwidth=1, borderpad=4,
             font=dict(size=11, family=PLOTLY_FONT, color="#1f3247"),
         ))
 
     fig = go.Figure(go.Sankey(
         arrangement="fixed",
-        textfont=dict(color="rgba(0,0,0,0)", size=1),
+        textfont=dict(color="rgba(0,0,0,0)", size=1),  # hide native labels
         node=dict(
-            pad=22,
+            pad=NODE_PAD_PX,
             thickness=20,
             line=dict(color="rgba(255,255,255,0.92)", width=0.8),
             label=[""] * len(labels),
@@ -860,8 +880,8 @@ def _build_mix_figure(combat_context: pd.DataFrame, township_code: str, window_s
         ),
     ))
     fig.update_layout(
-        height=470,
-        margin=dict(l=16, r=16, t=12, b=10),
+        height=SANKEY_HEIGHT,
+        margin=dict(l=210, r=210, t=TOP_MARGIN, b=BOTTOM_MARGIN),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=11),

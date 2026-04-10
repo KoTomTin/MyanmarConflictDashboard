@@ -1,12 +1,15 @@
 # Project Status
 
-Last reviewed: `2026-04-02`
+Last reviewed: `2026-04-10`
 
 ## Current Facts
 
 - Runtime framework: Dash
-- Deployment entrypoint: `app.py`
-- Public runtime pages: `Overview`, `Actor Analysis`, `About`
+- Deployment entrypoint: `app.py` (debug off by default; `MCD_DEBUG=1` re-enables the dev reloader)
+- Public runtime pages: `Overview`, `Actor Analysis`, `Township Alerts`, `About`
+- Operational endpoint: `/healthz` (returns `200 ok`) for uptime monitors
+- Server-side compression: `Flask-Compress` (brotli + gzip) on all JSON/HTML/CSS/JS/SVG
+- Static asset cache: `_dash-component-suites/*` `immutable` for one year, `assets/*` for one day
 - Current processed data coverage: `2021-02-01` to `2026-03-27`
 - Last recorded pipeline update: `2026-04-02`
 - Current processed dataset sizes:
@@ -28,6 +31,8 @@ Last reviewed: `2026-04-02`
 - The About page is markdown-backed through `docs/ABOUT.md`.
 - Methodology is maintained as documentation in `docs/METHODOLOGY.md` rather than a live app route.
 - Research PDFs and interview notes are treated as local artifacts, not core runtime files.
+- `dbc.themes.FLATLY` is kept even though it adds CSS payload — page templates reference Bootstrap utility classes (`d-flex`, `me-`, `mt-`, etc.) in 100+ places. Removing it is a behavior-change refactor.
+- Alert chip colors live in two mirrored locations on purpose: `--alert-*` CSS variables in `assets/style.css` (for HTML chips) and `ALERT_CATEGORY_COLORS` in `components/colors.py` (for Plotly choropleth fills). The two must be kept in sync.
 
 ## Update Triggers
 

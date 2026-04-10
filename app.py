@@ -1,11 +1,13 @@
 import importlib
 import json
+import os
 import traceback
 import html as std_html
 import dash
 from dash import html, dcc, Output, Input, callback
 import dash_bootstrap_components as dbc
 from flask import request as flask_request, Response
+from flask_compress import Compress
 
 from components.loaders import load_last_updated
 
@@ -238,6 +240,34 @@ app = SEODash(
 )
 server = app.server
 
+# Gzip / brotli compression for all responses (Plotly figure JSON compresses
+# ~80%, Dash bundles ~70%). Single biggest perceived-latency win on the wire.
+server.config["COMPRESS_MIMETYPES"] = [
+    "text/html", "text/css", "text/xml", "text/plain",
+    "application/json", "application/javascript",
+    "image/svg+xml",
+]
+server.config["COMPRESS_LEVEL"] = 6
+server.config["COMPRESS_MIN_SIZE"] = 500
+Compress(server)
+
+# Cache static assets (CSS, JS, fonts, icons) for a year — they're hashed by Dash.
+@server.after_request
+def _cache_headers(resp):
+    path = (flask_request.path or "")
+    # Dash bundles in /_dash-component-suites/ are content-hashed, safe to cache
+    # for a year. /assets/ is hashed by Dash via ?m=mtime.
+    if path.startswith("/_dash-component-suites/"):
+        resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    elif path.startswith("/assets/"):
+        resp.headers["Cache-Control"] = "public, max-age=86400"
+    return resp
+
+
+@server.route("/healthz")
+def healthz():
+    return Response("ok", mimetype="text/plain")
+
 
 @server.route("/robots.txt")
 def robots_txt():
@@ -320,9 +350,11 @@ def serve_layout():
     return dbc.Container([
         dcc.Location(id="url", refresh=False),
         html.Div(id="seo-sync", style={"display": "none"}),
+        html.A("Skip to main content", href="#main-content", className="skip-link"),
         topnav(),
         html.Main(
             html.Div(page_content, id="page-content"),
+            id="main-content",
             className="main",
         ),
     ], fluid=True)
@@ -412,4 +444,7 @@ def highlight_active_nav(pathname):
 
 
 if __name__ == "__main__":
-    app.run(debug=True, dev_tools_ui=False, port=8050)
+    # debug=False so the auto-reloader and unminified bundles don't slow things
+    # down. Set MCD_DEBUG=1 in the environment if you need the dev reloader.
+    debug = os.environ.get("MCD_DEBUG") == "1"
+    app.run(debug=debug, dev_tools_ui=False, port=8050)

@@ -29,6 +29,16 @@ The Myanmar Conflict Dashboard is a Dash/Plotly application for exploring townsh
 3. Start the app with `python app.py`.
 4. Open `http://localhost:8050`.
 
+The server runs with `debug=False` by default so the dev reloader does not slow
+down local sessions and Dash serves minified bundles. Set `MCD_DEBUG=1` in the
+environment to opt back into the auto-reloader. A lightweight `/healthz`
+endpoint is available for uptime probes.
+
+Responses are gzip/brotli-compressed via `Flask-Compress`, and Dash bundles in
+`/_dash-component-suites/` are served with one-year `immutable` cache headers
+so repeat visits do not re-download Plotly. If you redeploy behind a CDN, no
+extra configuration is needed — the headers are emitted from `app.py`.
+
 ## Refresh Data
 
 - Full rebuild: `python pipeline/pipeline.py`
