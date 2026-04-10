@@ -44,17 +44,17 @@ MILESTONES = [
 ]
 
 EVENT_DEFINITIONS = {
-    "Ground-based attack":          "ground clashes, explosions and shelling between armed groups",
-    "Air attack":                   "airstrikes by military aircraft",
-    "Drone attack":                 "aerial strikes carried out by unmanned drone aircraft",
-    "Massacre":                     "attack on civilians resulting in 5 or more fatalities",
-    "Massacres":                    "attack on civilians resulting in 5 or more fatalities",
-    "Violence against civilians":   "targeted killings, abductions or sexual violence against civilians",
-    "Arrests":                      "detention or arrest of civilians or combatants by any actor",
-    "Looting/property destruction": "theft, arson or deliberate destruction of civilian property",
-    "Protests":                     "peaceful or disruptive demonstrations, strikes and gatherings",
-    "Displacement":                 "forced displacement of civilians from their homes or villages",
-    "Others":                       "remaining activity outside the main dashboard groups, especially strategic developments such as changes to group activity, disrupted weapons use, base establishment, agreements, and non-violent transfers of territory",
+    "Ground-based attack":          "Armed clashes, artillery/shelling, IEDs, landmines, and other ground-level armed violence (ACLED: Battles + non-air Explosions/Remote violence). Also includes airstrikes that accompanied ground battles — ACLED merges those into the ground event.",
+    "Air attack":                   "Standalone airstrikes by state military aircraft with no concurrent ground engagement (ACLED sub-event: Air/drone strike, primary actor coded as state forces).",
+    "Drone attack":                 "Drone strikes — either the notes mention 'drone' or the primary actor is not state forces (ACLED sub-event: Air/drone strike). This split is a dashboard heuristic, not an official ACLED category.",
+    "Massacre":                     "Violence against civilians with five or more reported fatalities (dashboard-defined threshold; not a standard ACLED label).",
+    "Massacres":                    "Violence against civilians with five or more reported fatalities (dashboard-defined threshold; not a standard ACLED label).",
+    "Violence against civilians":   "ACLED event type covering targeted attacks, abductions, and sexual violence against unarmed non-combatants. Excludes events reclassified here as Massacres.",
+    "Protests":                     "In-person demonstrations, strikes, and public gatherings of three or more people (ACLED: Protests event type).",
+    "Arrests":                      "Detention or arrest of civilians or combatants by any armed actor (ACLED: Strategic developments, sub-event Arrests).",
+    "Looting/property destruction": "Theft, arson, or deliberate destruction of civilian property (ACLED: Strategic developments, sub-event Looting/property destruction).",
+    "Displacement":                 "Events where ACLED notes describe forced displacement of civilians. Identified by a keyword heuristic — a small residual category.",
+    "Others":                       "Residual category covering everything not shown separately. Dominated by ACLED Strategic developments: agreements, base establishment, non-violent territory transfers, changes to group activity, disrupted weapons use. Also includes a small number of riot records.",
 }
 
 PLOTLY_FONT = "Avenir Next, Segoe UI, Arial, sans-serif"
@@ -588,17 +588,148 @@ def _build_choropleth(
 
 # ── Trend chart ────────────────────────────────────────────────────────────────
 
-def _build_trend(df, start_date, end_date, region, key_events) -> go.Figure:
-    """Trend chart from an ALREADY-FILTERED dataframe."""
+def _build_multi_trend(df, start_date, end_date) -> go.Figure:
+    """Multi-event-type trend: one coloured line per key event category.
+
+    Uses the full (unfiltered-by-type) dataframe so all categories are always
+    visible. For the overlay view the user intentionally de-selects any single
+    type filter, so df should already cover all types.
+    """
+    if df.empty:
+        return _empty_fig(height=360)
+
+    use_daily = (_window_days(start_date, end_date) or 999) <= 45
+    start_ts = pd.to_datetime(start_date) if start_date else df["event_date"].min()
+    end_ts   = pd.to_datetime(end_date)   if end_date   else df["event_date"].max()
+
+    if use_daily:
+        idx = pd.date_range(start_ts, end_ts, freq="D")
+        hover_fmt, tick_fmt = "%d %b %Y", "%d %b"
+    else:
+        # Monthly bucket dates
+        idx = None
+        hover_fmt, tick_fmt = "%b %Y", "%b %Y"
+
+    fig = go.Figure()
+
+    active_types = [t for t in KEY_EVENT_ORDER
+                    if t in df["key_event"].values or
+                       df[df["key_event"] == t].shape[0] > 0]
+
+    for evt_type in KEY_EVENT_ORDER:
+        sub = df[df["key_event"] == evt_type]
+        if sub.empty:
+            continue
+        color = KEY_EVENT_COLORS.get(evt_type, "#94a3b8")
+
+        if use_daily:
+            series = (
+                sub.groupby(sub["event_date"].dt.normalize())["event_id_cnty"]
+                .nunique()
+                .reindex(idx, fill_value=0)
+            )
+            x_vals = idx
+            y_vals = series.values
+        else:
+            monthly = (
+                sub.assign(period_dt=sub["event_date"].dt.to_period("M").dt.to_timestamp())
+                .groupby("period_dt")["event_id_cnty"]
+                .nunique()
+                .reset_index(name="cnt")
+                .sort_values("period_dt")
+            )
+            x_vals = monthly["period_dt"]
+            y_vals = monthly["cnt"]
+
+        fig.add_trace(go.Scatter(
+            x=x_vals, y=y_vals,
+            mode="lines",
+            name=evt_type,
+            line=dict(color=color, width=2),
+            hovertemplate=f"<b>{evt_type}</b><br>%{{x|{hover_fmt}}}: %{{y:,}}<extra></extra>",
+        ))
+
+    # Milestone lines
+    x_min = pd.to_datetime(start_ts)
+    x_max = pd.to_datetime(end_ts)
+    for i, (date_str, title, short_name, milestone_color, desc) in enumerate(MILESTONES):
+        mdt = pd.Timestamp(date_str)
+        if x_min <= mdt <= (x_max + pd.Timedelta(days=90)):
+            fig.add_shape(
+                type="line", x0=mdt, x1=mdt, y0=0, y1=1,
+                xref="x", yref="paper",
+                line=dict(color=milestone_color, width=1.2, dash="dot"), opacity=0.45,
+            )
+            fig.add_annotation(
+                x=mdt, y=1.11 if i % 2 == 0 else 1.04, xref="x", yref="paper",
+                text=f"<b>{short_name}</b>",
+                showarrow=False,
+                font=dict(size=9, color=milestone_color, family=PLOTLY_FONT),
+                xanchor="center", yanchor="bottom",
+                bgcolor=PLOTLY_HOVER_BG,
+                bordercolor=milestone_color, borderwidth=1, borderpad=2,
+            )
+
+    fig.update_layout(
+        height=360,
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=4, r=4, t=62, b=4),
+        showlegend=True,
+        legend=dict(
+            orientation="h", yanchor="top", y=-0.18,
+            xanchor="left", x=0,
+            font=dict(size=10, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+            bgcolor="rgba(0,0,0,0)", borderwidth=0,
+        ),
+        font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT),
+        xaxis=dict(
+            showgrid=False, tickformat=tick_fmt, tickangle=-30,
+            tickfont=dict(size=10, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+            linecolor=PLOTLY_GRID,
+        ),
+        yaxis=dict(
+            showgrid=True, gridcolor=PLOTLY_GRID, zeroline=False,
+            tickfont=dict(size=10, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+            title=None, rangemode="tozero",
+        ),
+        hovermode="x unified",
+        hoverlabel=dict(
+            bgcolor=PLOTLY_HOVER_BG, bordercolor=PLOTLY_HOVER_BORDER,
+            font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=11),
+        ),
+    )
+    return fig
+
+
+def _build_trend(df, start_date, end_date, region, key_events,
+                 metric: str = "events") -> go.Figure:
+    """Trend chart from an ALREADY-FILTERED dataframe.
+
+    metric: "events" (default), "fatalities", or "multi" (multi-type overlay)
+    """
+    if metric == "multi":
+        # Pass the full scope df (all key_event types) for multi-type view.
+        # Caller should pass df filtered only by date/region, not by key_event.
+        return _build_multi_trend(df, start_date, end_date)
+
     if df.empty:
         return _empty_fig(height=320)
 
+    use_fatalities = (metric == "fatalities")
+
     if key_events and len(key_events) == 1:
-        label = key_events[0]
-        color = KEY_EVENT_COLORS.get(label, "#94a3b8")
+        evt_label = key_events[0]
+        base_color = KEY_EVENT_COLORS.get(evt_label, "#94a3b8")
     else:
-        label = "Total Events"
-        color = "#355c84"
+        evt_label = "Total Events"
+        base_color = "#355c84"
+
+    if use_fatalities:
+        label = evt_label.replace("Total Events", "Total") + " Fatalities"
+        color = "#b91c1c"
+    else:
+        label = evt_label
+        color = base_color
 
     start_ts = pd.to_datetime(start_date) if start_date else df["event_date"].min()
     end_ts = pd.to_datetime(end_date) if end_date else df["event_date"].max()
@@ -606,22 +737,30 @@ def _build_trend(df, start_date, end_date, region, key_events) -> go.Figure:
 
     if use_daily:
         idx = pd.date_range(start_ts, end_ts, freq="D")
-        series = (
-            df.groupby(df["event_date"].dt.normalize())["event_id_cnty"]
-            .nunique()
-            .reindex(idx, fill_value=0)
-        )
-        trend = pd.DataFrame({"dt": idx, "events": series.values})
+        g = df.groupby(df["event_date"].dt.normalize())
+        if use_fatalities:
+            series = g["fatalities"].sum().reindex(idx, fill_value=0)
+        else:
+            series = g["event_id_cnty"].nunique().reindex(idx, fill_value=0)
+        trend = pd.DataFrame({"dt": idx, "y": series.values})
         hover_fmt = "%d %b %Y"
         tick_fmt = "%d %b"
     else:
-        monthly = (
-            df.assign(period_dt=df["event_date"].dt.to_period("M").dt.to_timestamp())
-            .groupby("period_dt")["event_id_cnty"]
-            .nunique()
-            .reset_index(name="events")
-            .sort_values("period_dt")
-        )
+        grp = df.assign(period_dt=df["event_date"].dt.to_period("M").dt.to_timestamp())
+        if use_fatalities:
+            monthly = (
+                grp.groupby("period_dt")["fatalities"]
+                .sum()
+                .reset_index(name="y")
+                .sort_values("period_dt")
+            )
+        else:
+            monthly = (
+                grp.groupby("period_dt")["event_id_cnty"]
+                .nunique()
+                .reset_index(name="y")
+                .sort_values("period_dt")
+            )
         trend = monthly.rename(columns={"period_dt": "dt"})
         hover_fmt = "%b %Y"
         tick_fmt = "%b %Y"
@@ -631,7 +770,7 @@ def _build_trend(df, start_date, end_date, region, key_events) -> go.Figure:
 
     fig = go.Figure()
     fig.add_trace(go.Scatter(
-        x=trend["dt"], y=trend["events"],
+        x=trend["dt"], y=trend["y"],
         mode="lines+markers" if use_daily else "lines",
         name=label,
         showlegend=False,
@@ -921,12 +1060,36 @@ def layout():
                     dcc.Dropdown(id="ov-key-event",
                                  options=[{"label": k, "value": k} for k in key_evt_opts],
                                  multi=False, placeholder="Event Type · All", clearable=True),
+                    html.Button(
+                        "ⓘ definitions",
+                        id="ov-glossary-btn",
+                        n_clicks=0,
+                        className="glossary-toggle-btn",
+                        title="Show/hide event type definitions",
+                        **{"aria-expanded": "false", "aria-controls": "ov-event-glossary"},
+                    ),
                 ], className="filter-strip-item filter-strip-item--type"),
 
                 html.Button("Reset", id="ov-reset-btn",
                             n_clicks=0, className="btn-reset btn-reset--solo"),
             ], className="filter-strip-row"),
             html.Div(id="ov-key-event-note", className="filter-strip-help"),
+            # ── Event type glossary (collapsible) ──────────────────────────────
+            html.Div(
+                id="ov-event-glossary",
+                className="event-glossary",
+                style={"display": "none"},
+                children=[
+                    html.Div(className="event-glossary-grid", children=[
+                        html.Div([
+                            html.Span(name, className="eg-term"),
+                            html.Span(defn, className="eg-defn"),
+                        ], className="eg-item")
+                        for name, defn in EVENT_DEFINITIONS.items()
+                        if name not in ("Massacre",)   # skip duplicate key
+                    ]),
+                ],
+            ),
         ], id="ov-filter-card", className="filter-card filter-card--inline"),
 
         # ── filter summary ─────────────────────────────────────────────────────
@@ -1015,12 +1178,25 @@ def layout():
 
                 html.Div([
                     html.Div([
-                        html.H2("Event Trend", className="card-title"),
-                        html.Div(
-                            "Use the timeline to see when reported events rose, fell, or shifted around major turning points",
-                            className="card-subtitle",
+                        html.Div([
+                            html.H2("Event Trend", className="card-title"),
+                            html.Div(
+                                "Use the timeline to see when reported events rose, fell, or shifted around major turning points",
+                                className="card-subtitle",
+                            ),
+                        ]),
+                        dcc.RadioItems(
+                            id="ov-trend-metric",
+                            options=[
+                                {"label": "Events",     "value": "events"},
+                                {"label": "Fatalities", "value": "fatalities"},
+                                {"label": "By type",    "value": "multi"},
+                            ],
+                            value="events",
+                            inline=True,
+                            className="metric-toggle metric-toggle--quiet",
                         ),
-                    ], className="dash-card-head"),
+                    ], className="dash-card-head dash-card-head--split"),
                     dcc.Loading(
                         dcc.Graph(
                             id="ov-trend",
@@ -1139,6 +1315,18 @@ def update_incident_type_note(selected_event):
     return f"{selected_event}: {definition}."
 
 
+@callback(
+    Output("ov-event-glossary", "style"),
+    Output("ov-glossary-btn",   "className"),
+    Input("ov-glossary-btn",    "n_clicks"),
+    prevent_initial_call=True,
+)
+def toggle_event_glossary(n):
+    if n and n % 2 == 1:
+        return {"display": "block"}, "glossary-toggle-btn glossary-toggle-btn--open"
+    return {"display": "none"}, "glossary-toggle-btn"
+
+
 # 5. Reset button → clear all filters and restore date pickers to full range
 @callback(
     Output("ov-region",          "value"),
@@ -1170,9 +1358,10 @@ def reset_filters(n):
     Input("ov-applied-filters", "data"),
     Input("ov-mode",            "data"),
     Input("ov-metric",          "value"),
+    Input("ov-trend-metric",    "value"),
     prevent_initial_call=False,
 )
-def update_charts(applied, mode, metric):
+def update_charts(applied, mode, metric, trend_metric):
     if not applied:
         raise PreventUpdate
 
@@ -1186,8 +1375,9 @@ def update_charts(applied, mode, metric):
     if isinstance(key_events, str):
         key_events = [key_events]
 
-    mode   = mode   or "time_range"
-    metric = metric or "events"
+    mode         = mode         or "time_range"
+    metric       = metric       or "events"
+    trend_metric = trend_metric or "events"
 
     acled = load_acled_main()
     geo   = load_geojson()
@@ -1219,7 +1409,15 @@ def update_charts(applied, mode, metric):
             end_date=end_date,
         )
 
-    fig_trend = _build_trend(ac, start_date, end_date, region, key_events)
+    # For "By type" mode pass the all-type filtered frame (no key_events filter)
+    # so every event category can draw its own line.
+    if trend_metric == "multi":
+        ac_all_types = _filter_overview_events(acled, start_date, end_date, region, None)
+        fig_trend = _build_trend(ac_all_types, start_date, end_date, region,
+                                 None, metric="multi")
+    else:
+        fig_trend = _build_trend(ac, start_date, end_date, region, key_events,
+                                 metric=trend_metric)
     fig_bar   = _build_activity_bar(acled, start_date, end_date, region, key_events)
     h_region, h_count = _highest_events(ac, acled)
 

@@ -40,11 +40,26 @@ def apply_tight_geos(
     geojson: dict,
     *,
     height: int = 720,
-    pad_frac: float = 0.014,
+    pad_frac: float | None = None,
     show_colorbar: bool = True,
 ) -> go.Figure:
     min_lon, max_lon, min_lat, max_lat = _geo_bounds(geojson)
     dlon, dlat = max_lon - min_lon, max_lat - min_lat
+
+    # Auto pad: use larger breathing room for small regions (< 30% of Myanmar extent).
+    # Myanmar full extent is roughly 10° lon × 18° lat → area proxy ~180.
+    # Anything below ~54 (30%) gets a larger pad so it doesn't appear as a thin sliver.
+    if pad_frac is None:
+        area_proxy = dlon * dlat
+        # Full Myanmar ≈ 10 * 18 = 180; small region like Yangon ≈ 1.5 * 1.5 = 2.25
+        if area_proxy < 10:
+            pad_frac = 0.18   # city-scale or very small state
+        elif area_proxy < 40:
+            pad_frac = 0.10   # small state (Yangon, Kayah, Mon …)
+        elif area_proxy < 90:
+            pad_frac = 0.05   # medium state
+        else:
+            pad_frac = 0.014  # full country
     pad_lon, pad_lat = dlon * pad_frac, dlat * pad_frac
 
     fig.update_geos(

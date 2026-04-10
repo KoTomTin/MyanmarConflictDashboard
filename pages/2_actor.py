@@ -1115,9 +1115,17 @@ def update_actor(applied, mode):
     empty_map = _empty_fig(f"No data for '{actor_name}' in this period", height=700)
 
     if al.empty:
+        no_data_hint = html.Div([
+            html.Div("No events found for this selection.", className="actor-empty-title"),
+            html.Div(
+                f"'{actor_name}' has no recorded events matching the current filters. "
+                "Try expanding the date range, removing the region filter, or choosing a different actor.",
+                className="actor-empty-hint",
+            ),
+        ], className="actor-empty-state")
         return (
             empty_map, "—", "—", "—",
-            html.Div("No data.", className="table-empty"),
+            no_data_hint,
             _empty_fig(height=280), "—", "—", filter_summary, actor_name,
         )
 

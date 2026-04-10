@@ -1128,6 +1128,17 @@ body::before {
   padding: 11px 14px 8px;
   border-bottom: 1px solid rgba(78, 99, 120, 0.10);
 }
+.dash-card-head--split {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.dash-card-head--split .metric-toggle {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
 .panel-title, .card-title {
   font-size: 1.04rem;
   font-weight: 700;
@@ -1404,6 +1415,38 @@ body::before {
 }
 .alert-method-card {
   margin-bottom: 12px;
+}
+/* Accordion wrapper — the <details> element itself */
+.alert-method-accordion {
+  cursor: default;
+}
+.alert-method-accordion > summary.alert-method-summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 11px 14px;
+  font-size: 0.80rem;
+  font-weight: 700;
+  color: #2b4f6f;
+  cursor: pointer;
+  user-select: none;
+  border-radius: 12px;
+}
+.alert-method-accordion > summary.alert-method-summary::-webkit-details-marker { display: none; }
+.alert-method-accordion > summary.alert-method-summary::before {
+  content: "▶";
+  font-size: 0.60rem;
+  color: #7a95ac;
+  transition: transform 0.18s ease;
+  display: inline-block;
+}
+.alert-method-accordion[open] > summary.alert-method-summary::before {
+  transform: rotate(90deg);
+}
+.alert-method-accordion > summary.alert-method-summary:hover {
+  background: rgba(35, 75, 112, 0.05);
+  border-radius: 8px;
 }
 .alert-method-grid {
   display: grid;
@@ -2493,6 +2536,26 @@ button.view-toggle-btn.view-toggle-btn--active {
   color: #234b70;
 }
 
+/* Actor page empty state */
+.actor-empty-state {
+  padding: 18px 16px;
+  border-radius: 10px;
+  background: rgba(244, 240, 231, 0.55);
+  border: 1px dashed rgba(84, 103, 122, 0.25);
+  margin: 4px 0 8px;
+}
+.actor-empty-title {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #2b4f6f;
+  margin-bottom: 6px;
+}
+.actor-empty-hint {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
 /* Actor co-appearance disclaimer. */
 .actor-coapp-note {
   font-size: 0.74rem;
@@ -2505,4 +2568,73 @@ button.view-toggle-btn.view-toggle-btn--active {
   line-height: 1.5;
 }
 .actor-coapp-note strong { color: #7a4b10; }
+
+/* ── Event type glossary ────────────────────────────────────── */
+.glossary-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 2px 8px;
+  font-size: 0.73rem;
+  font-family: var(--font-ui, "Avenir Next", "Segoe UI", Arial, sans-serif);
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid rgba(84, 103, 122, 0.30);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+.glossary-toggle-btn:hover {
+  color: #234b70;
+  border-color: rgba(35, 75, 112, 0.45);
+  background: rgba(35, 75, 112, 0.05);
+}
+.glossary-toggle-btn--open {
+  color: #234b70;
+  border-color: rgba(35, 75, 112, 0.50);
+  background: rgba(35, 75, 112, 0.07);
+}
+
+.event-glossary {
+  margin: 6px 0 2px;
+  padding: 12px 14px 10px;
+  background: rgba(255, 251, 246, 0.80);
+  border: 1px solid rgba(84, 103, 122, 0.18);
+  border-radius: 10px;
+  animation: fadeIn 0.15s ease;
+}
+
+.event-glossary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 8px 16px;
+}
+
+.eg-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 10px;
+  background: rgba(244, 240, 231, 0.55);
+  border-radius: 7px;
+}
+
+.eg-term {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #234b70;
+  letter-spacing: 0.01em;
+}
+
+.eg-defn {
+  font-size: 0.73rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
 

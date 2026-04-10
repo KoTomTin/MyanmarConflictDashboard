@@ -1086,51 +1086,56 @@ def layout():
                 ], className="filter-controls"),
         ], className="filter-card"),
 
-            html.Div([
+            html.Details([
+                html.Summary([
+                    "How does this page work?",
+                ], className="alert-method-summary"),
                 html.Div([
-                    html.Div("What counts as activity?", className="alert-method-title"),
-                    html.Div(
-                        "Alert activity is combat-only: Ground-based attack, Air attack, Drone attack, and Massacres. Protests, arrests, displacement, looting/property destruction, and other non-combat dashboard categories are excluded from alert scoring.",
-                        className="alert-method-copy",
-                    ),
-                ], className="alert-method-block"),
-                html.Div([
-                    html.Div("Why 30 days?", className="alert-method-title"),
-                    html.Div(
-                    f"This page now works from event-level dates, not monthly buckets. The current window uses the latest available {WINDOW_DAYS} days so the signal is more responsive while still smoothing daily noise.",
-                    className="alert-method-copy",
-                ),
-            ], className="alert-method-block"),
-            html.Div([
-                html.Div("Current window", className="alert-method-title"),
-                html.Div(
-                    f"The exact {WINDOW_SCOPE_LABEL} appears above once loaded. It ends with the latest event date currently represented in the processed data, not today's date.",
-                    className="alert-method-copy",
-                ),
-            ], className="alert-method-block"),
-            html.Div([
-                html.Div("Recent baseline", className="alert-method-title"),
-                html.Div(
-                    f"The dashed baseline is the median of the previous {LOCAL_LOOKBACK} {WINDOW_DAYS}-day windows for the same township.",
-                    className="alert-method-copy",
-                ),
-            ], className="alert-method-block"),
-            html.Div([
-                html.Div("Long-term baseline", className="alert-method-title"),
-                html.Div(
-                    f"The dotted baseline is the median of all earlier {WINDOW_DAYS}-day windows for the same township.",
-                    className="alert-method-copy",
-                ),
-            ], className="alert-method-block"),
-            html.Div([
-                html.Div("How a flag is triggered", className="alert-method-title"),
-                html.Div(
-                    f"A township is flagged when the {WINDOW_TOTAL_LABEL} rises above a township-specific threshold. "
-                    "Most thresholds are baseline plus 2.5 times the township's median absolute deviation; near-zero histories use emergence thresholds instead.",
-                    className="alert-method-copy",
-                ),
-            ], className="alert-method-block"),
-                ], className="dash-card alert-method-card alert-method-grid"),
+                    html.Div([
+                        html.Div("What counts as activity?", className="alert-method-title"),
+                        html.Div(
+                            "Alert activity is combat-only: Ground-based attack, Air attack, Drone attack, and Massacres. Protests, arrests, displacement, looting/property destruction, and other non-combat dashboard categories are excluded from alert scoring.",
+                            className="alert-method-copy",
+                        ),
+                    ], className="alert-method-block"),
+                    html.Div([
+                        html.Div("Why 30 days?", className="alert-method-title"),
+                        html.Div(
+                            f"This page now works from event-level dates, not monthly buckets. The current window uses the latest available {WINDOW_DAYS} days so the signal is more responsive while still smoothing daily noise.",
+                            className="alert-method-copy",
+                        ),
+                    ], className="alert-method-block"),
+                    html.Div([
+                        html.Div("Current window", className="alert-method-title"),
+                        html.Div(
+                            f"The exact {WINDOW_SCOPE_LABEL} appears above once loaded. It ends with the latest event date currently represented in the processed data, not today's date.",
+                            className="alert-method-copy",
+                        ),
+                    ], className="alert-method-block"),
+                    html.Div([
+                        html.Div("Recent baseline", className="alert-method-title"),
+                        html.Div(
+                            f"The dashed baseline is the median of the previous {LOCAL_LOOKBACK} {WINDOW_DAYS}-day windows for the same township.",
+                            className="alert-method-copy",
+                        ),
+                    ], className="alert-method-block"),
+                    html.Div([
+                        html.Div("Long-term baseline", className="alert-method-title"),
+                        html.Div(
+                            f"The dotted baseline is the median of all earlier {WINDOW_DAYS}-day windows for the same township.",
+                            className="alert-method-copy",
+                        ),
+                    ], className="alert-method-block"),
+                    html.Div([
+                        html.Div("How a flag is triggered", className="alert-method-title"),
+                        html.Div(
+                            f"A township is flagged when the {WINDOW_TOTAL_LABEL} rises above a township-specific threshold. "
+                            "Most thresholds are baseline plus 2.5 times the township's median absolute deviation; near-zero histories use emergence thresholds instead.",
+                            className="alert-method-copy",
+                        ),
+                    ], className="alert-method-block"),
+                ], className="alert-method-grid"),
+            ], className="dash-card alert-method-card alert-method-accordion"),
 
         html.Div([
             html.Div([
