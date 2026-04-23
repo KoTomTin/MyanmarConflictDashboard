@@ -44,18 +44,31 @@ MILESTONES = [
 ]
 
 EVENT_DEFINITIONS = {
-    "Ground-based attack":          "Armed clashes, artillery/shelling, IEDs, landmines, and other ground-level armed violence (ACLED: Battles + non-air Explosions/Remote violence). Also includes airstrikes that accompanied ground battles — ACLED merges those into the ground event.",
-    "Air attack":                   "Standalone airstrikes by state military aircraft with no concurrent ground engagement (ACLED sub-event: Air/drone strike, primary actor coded as state forces).",
-    "Drone attack":                 "Drone strikes — either the notes mention 'drone' or the primary actor is not state forces (ACLED sub-event: Air/drone strike). This split is a dashboard heuristic, not an official ACLED category.",
-    "Massacre":                     "Violence against civilians with five or more reported fatalities (dashboard-defined threshold; not a standard ACLED label).",
-    "Massacres":                    "Violence against civilians with five or more reported fatalities (dashboard-defined threshold; not a standard ACLED label).",
-    "Violence against civilians":   "ACLED event type covering targeted attacks, abductions, and sexual violence against unarmed non-combatants. Excludes events reclassified here as Massacres.",
+    "Armed Clash":                  "Direct ground engagements between armed groups, including armed clashes, and territorial control events (ACLED Battles sub-events: Armed clash, Government regains territory, Non-state actor overtakes territory).",
+    "Shelling/Artillery":           "Indirect fire attacks using artillery, mortars, or missiles against a position or populated area (ACLED sub-event: Shelling/artillery/missile attack).",
+    "IED/Mine":                     "Attacks using improvised explosive devices, landmines, grenades, or suicide bombs — typically targeting roads, vehicles, or specific individuals (ACLED sub-events: Remote explosive/landmine/IED, Grenade, Suicide bomb, Landmine).",
+    "Air Strike":                   "Airstrikes carried out by state military aircraft. Identified by ACLED sub-event 'Air/drone strike' where the primary actor is coded as state forces and no drone keyword appears in the event notes.",
+    "Drone Strike":                 "Drone strikes — identified where ACLED codes the sub-event as 'Air/drone strike' and either the primary actor is non-state, or the event notes mention 'drone'. This split is a dashboard heuristic, not an official ACLED category.",
+    "Massacre":                     "Violence against civilians with five or more reported fatalities in a single event (dashboard-defined threshold; not a standard ACLED label).",
+    "Massacres":                    "Violence against civilians with five or more reported fatalities in a single event (dashboard-defined threshold; not a standard ACLED label).",
+    "Attack on Civilians":          "ACLED Violence against civilians events: targeted attacks, abductions, and sexual violence against unarmed non-combatants. Excludes events reclassified here as Massacres (5+ fatalities).",
     "Protests":                     "In-person demonstrations, strikes, and public gatherings of three or more people (ACLED: Protests event type).",
     "Arrests":                      "Detention or arrest of civilians or combatants by any armed actor (ACLED: Strategic developments, sub-event Arrests).",
     "Looting/property destruction": "Theft, arson, or deliberate destruction of civilian property (ACLED: Strategic developments, sub-event Looting/property destruction).",
     "Displacement":                 "Events where ACLED notes describe forced displacement of civilians. Identified by a keyword heuristic — a small residual category.",
     "Others":                       "Residual category covering everything not shown separately. Dominated by ACLED Strategic developments: agreements, base establishment, non-violent territory transfers, changes to group activity, disrupted weapons use. Also includes a small number of riot records.",
 }
+
+# Combat types shown in the "By type" trend toggle — fixed set on a comparable
+# armed-violence scale. Excludes Protests (political scale, different order of
+# magnitude) so the military escalation story stays readable.
+COMBAT_TREND_TYPES = [
+    "Armed Clash",
+    "Shelling/Artillery",
+    "IED/Mine",
+    "Air Strike",
+    "Drone Strike",
+]
 
 PLOTLY_FONT = "Avenir Next, Segoe UI, Arial, sans-serif"
 PLOTLY_DISPLAY = "Iowan Old Style, Palatino Linotype, Book Antiqua, Georgia, serif"
@@ -177,6 +190,24 @@ def _window_days(start_date: str | None, end_date: str | None) -> int | None:
         return None
 
 
+def _granularity(start_date: str | None, end_date: str | None) -> tuple[str, str, str]:
+    """Return (mode, hover_fmt, tick_fmt) for the selected date window.
+
+    Thresholds: ≤ 45 days → daily · 46–180 days → weekly · > 180 → monthly.
+    """
+    days = _window_days(start_date, end_date) or 999
+    if days <= 45:
+        return "daily",   "%d %b %Y", "%d %b"
+    if days <= 180:
+        return "weekly",  "%d %b %Y", "%d %b"
+    return "monthly", "%b %Y",    "%b %Y"
+
+
+def _granularity_label(start_date: str | None, end_date: str | None) -> str:
+    mode, _, _ = _granularity(start_date, end_date)
+    return {"daily": "Daily view", "weekly": "Weekly view", "monthly": "Monthly view"}[mode]
+
+
 def _filter_overview_events(acled_df, start_date, end_date, region, key_events):
     """Filter the main ACLED frame using a single boolean mask — no copy.
 
@@ -239,41 +270,27 @@ def _build_filter_chips(start_month, end_month, region, key_events,
                         preset_label: str | None = None,
                         start_date: str | None = None,
                         end_date: str | None = None):
-    def fmt_m(m):
-        try:
-            return pd.Timestamp(m + "-01").strftime("%b %Y")
-        except Exception:
-            return m or ""
-
+    """Return a single-sentence viewing summary instead of chips."""
     if key_events and len(key_events) == 1:
         type_str = key_events[0]
     elif key_events:
         type_str = f"{len(key_events)} event types"
     else:
-        type_str = "All event types"
+        type_str = "all event types"
 
-    time_str = preset_label or _format_selected_range(start_date, end_date, start_month, end_month)
-    chips = [
-        ("Date", time_str),
-        ("Region", region or "All Myanmar"),
-        ("Type", type_str),
+    region_str = region or "All Myanmar"
+    time_str   = preset_label or _format_selected_range(start_date, end_date, start_month, end_month)
+
+    parts = [
+        html.Span("Viewing ", className="vs-label"),
+        html.Span(type_str, className="vs-value"),
+        html.Span(" · ", className="vs-sep"),
+        html.Span(region_str, className="vs-value"),
+        html.Span(" · ", className="vs-sep"),
+        html.Span(time_str, className="vs-value"),
     ]
-    if mode == "animated":
-        chips.append(("View", "Quarterly playback"))
-    else:
-        chips.append(("View", "Total period"))
 
-    return html.Div(
-        [html.Span("Now showing", className="filter-chip filter-chip--label")] +
-        [
-            html.Span([
-                html.Span(f"{label}: ", className="filter-chip-key"),
-                html.Span(value, className="filter-chip-value"),
-            ], className="filter-chip")
-            for label, value in chips
-        ],
-        className="filter-chip-row",
-    )
+    return html.Div(html.Div(parts, className="viewing-sentence"), className="viewing-summary")
 
 
 def _chart_config(filename: str, *, show_modebar: bool = False) -> dict:
@@ -412,9 +429,9 @@ def _build_animated_choropleth(store: dict, geo: dict,
             title=dict(
                 text=cb_title,
                 side="top",
-                font=dict(size=11, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+                font=dict(size=13, color=PLOTLY_TEXT, family=PLOTLY_FONT),
             ),
-            tickfont=dict(size=10, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+            tickfont=dict(size=13, color=PLOTLY_TEXT, family=PLOTLY_FONT),
             orientation="h",
             thickness=10,
             len=0.34,
@@ -457,7 +474,7 @@ def _build_animated_choropleth(store: dict, geo: dict,
             "currentvalue": {
                 "visible": True, "prefix": "Quarter: ",
                 "xanchor": "center",
-                "font": {"size": 11, "color": PLOTLY_TEXT, "family": PLOTLY_FONT},
+                "font": {"size": 13, "color": PLOTLY_TEXT, "family": PLOTLY_FONT},
             },
             "transition": {"duration": 200},
             "bgcolor": "rgba(250,246,240,0.96)",
@@ -472,7 +489,7 @@ def _build_animated_choropleth(store: dict, geo: dict,
         "bgcolor": "rgba(255,251,246,0.96)",
         "bordercolor": PLOTLY_HOVER_BORDER,
         "borderwidth": 1,
-        "font": {"size": 11, "color": PLOTLY_TEXT, "family": PLOTLY_FONT},
+        "font": {"size": 13, "color": PLOTLY_TEXT, "family": PLOTLY_FONT},
         "buttons": [
             {
                 "args": [None, {"frame": {"duration": 600, "redraw": True},
@@ -505,7 +522,7 @@ def _build_animated_choropleth(store: dict, geo: dict,
         hoverlabel=dict(
             bgcolor=PLOTLY_HOVER_BG,
             bordercolor=PLOTLY_HOVER_BORDER,
-            font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=11),
+            font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=13),
         ),
         sliders=sliders,
         updatemenus=updatemenus,
@@ -547,9 +564,9 @@ def _build_choropleth(
             title=dict(
                 text=cb_title,
                 side="top",
-                font=dict(size=11, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+                font=dict(size=13, color=PLOTLY_TEXT, family=PLOTLY_FONT),
             ),
-            tickfont=dict(size=10, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+            tickfont=dict(size=13, color=PLOTLY_TEXT, family=PLOTLY_FONT),
             orientation="h",
             thickness=10,
             len=0.36,
@@ -580,7 +597,7 @@ def _build_choropleth(
         hoverlabel=dict(
             bgcolor=PLOTLY_HOVER_BG,
             bordercolor=PLOTLY_HOVER_BORDER,
-            font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=11),
+            font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=13),
         ),
     )
     return fig
@@ -588,115 +605,95 @@ def _build_choropleth(
 
 # ── Trend chart ────────────────────────────────────────────────────────────────
 
-def _build_multi_trend(df, start_date, end_date) -> go.Figure:
-    """Multi-event-type trend: one coloured line per key event category.
+def _build_multi_trend(df, start_date, end_date, top_n: int = 5) -> go.Figure:
+    """Trend chart — one line per event type (all 12 categories).
 
-    Uses the full (unfiltered-by-type) dataframe so all categories are always
-    visible. For the overlay view the user intentionally de-selects any single
-    type filter, so df should already cover all types.
+    Combat types visible by default; others hidden but togglable via the legend.
+    df should be unfiltered by type (date/region filter only applied).
     """
     if df.empty:
-        return _empty_fig(height=360)
+        return _empty_fig(height=340)
 
-    use_daily = (_window_days(start_date, end_date) or 999) <= 45
-    start_ts = pd.to_datetime(start_date) if start_date else df["event_date"].min()
-    end_ts   = pd.to_datetime(end_date)   if end_date   else df["event_date"].max()
+    start_ts  = pd.to_datetime(start_date) if start_date else df["event_date"].min()
+    end_ts    = pd.to_datetime(end_date)   if end_date   else df["event_date"].max()
+    mode, hover_fmt, tick_fmt = _granularity(start_date, end_date)
 
-    if use_daily:
-        idx = pd.date_range(start_ts, end_ts, freq="D")
-        hover_fmt, tick_fmt = "%d %b %Y", "%d %b"
-    else:
-        # Monthly bucket dates
-        idx = None
-        hover_fmt, tick_fmt = "%b %Y", "%b %Y"
+    present   = set(df["key_event"].unique())
+    all_types = [t for t in KEY_EVENT_ORDER if t in present]
 
     fig = go.Figure()
+    for evt_type in all_types:
+        sub     = df[df["key_event"] == evt_type]
+        color   = KEY_EVENT_COLORS.get(evt_type, "#94a3b8")
+        visible = True if evt_type in COMBAT_TREND_TYPES else "legendonly"
 
-    active_types = [t for t in KEY_EVENT_ORDER
-                    if t in df["key_event"].values or
-                       df[df["key_event"] == t].shape[0] > 0]
-
-    for evt_type in KEY_EVENT_ORDER:
-        sub = df[df["key_event"] == evt_type]
-        if sub.empty:
-            continue
-        color = KEY_EVENT_COLORS.get(evt_type, "#94a3b8")
-
-        if use_daily:
+        if mode == "daily":
+            idx    = pd.date_range(start_ts, end_ts, freq="D")
             series = (
                 sub.groupby(sub["event_date"].dt.normalize())["event_id_cnty"]
-                .nunique()
-                .reindex(idx, fill_value=0)
+                .nunique().reindex(idx, fill_value=0)
             )
-            x_vals = idx
-            y_vals = series.values
+            x_vals, y_vals = idx, series.values
+        elif mode == "weekly":
+            weekly = (
+                sub.assign(period_dt=sub["event_date"].dt.to_period("W").dt.to_timestamp())
+                .groupby("period_dt")["event_id_cnty"].nunique()
+                .reset_index(name="cnt").sort_values("period_dt")
+            )
+            x_vals, y_vals = weekly["period_dt"], weekly["cnt"]
         else:
             monthly = (
                 sub.assign(period_dt=sub["event_date"].dt.to_period("M").dt.to_timestamp())
-                .groupby("period_dt")["event_id_cnty"]
-                .nunique()
-                .reset_index(name="cnt")
-                .sort_values("period_dt")
+                .groupby("period_dt")["event_id_cnty"].nunique()
+                .reset_index(name="cnt").sort_values("period_dt")
             )
-            x_vals = monthly["period_dt"]
-            y_vals = monthly["cnt"]
+            x_vals, y_vals = monthly["period_dt"], monthly["cnt"]
 
         fig.add_trace(go.Scatter(
-            x=x_vals, y=y_vals,
-            mode="lines",
-            name=evt_type,
+            x=x_vals, y=y_vals, mode="lines", name=evt_type,
             line=dict(color=color, width=2),
-            hovertemplate=f"<b>{evt_type}</b><br>%{{x|{hover_fmt}}}: %{{y:,}}<extra></extra>",
+            visible=visible,
+            hovertemplate=f"<b>{evt_type}</b>: %{{y:,}}<extra></extra>",
         ))
 
     # Milestone lines
-    x_min = pd.to_datetime(start_ts)
-    x_max = pd.to_datetime(end_ts)
-    for i, (date_str, title, short_name, milestone_color, desc) in enumerate(MILESTONES):
+    x_min, x_max = pd.to_datetime(start_ts), pd.to_datetime(end_ts)
+    for i, (date_str, title, short_name, mc, desc) in enumerate(MILESTONES):
         mdt = pd.Timestamp(date_str)
         if x_min <= mdt <= (x_max + pd.Timedelta(days=90)):
-            fig.add_shape(
-                type="line", x0=mdt, x1=mdt, y0=0, y1=1,
-                xref="x", yref="paper",
-                line=dict(color=milestone_color, width=1.2, dash="dot"), opacity=0.45,
-            )
+            fig.add_shape(type="line", x0=mdt, x1=mdt, y0=0, y1=1,
+                          xref="x", yref="paper",
+                          line=dict(color=mc, width=1.2, dash="dot"), opacity=0.45)
             fig.add_annotation(
                 x=mdt, y=1.11 if i % 2 == 0 else 1.04, xref="x", yref="paper",
-                text=f"<b>{short_name}</b>",
-                showarrow=False,
-                font=dict(size=9, color=milestone_color, family=PLOTLY_FONT),
+                text=f"<b>{short_name}</b>", showarrow=False,
+                font=dict(size=13, color=mc, family=PLOTLY_FONT),
                 xanchor="center", yanchor="bottom",
-                bgcolor=PLOTLY_HOVER_BG,
-                bordercolor=milestone_color, borderwidth=1, borderpad=2,
+                bgcolor=PLOTLY_HOVER_BG, bordercolor=mc, borderwidth=1, borderpad=2,
             )
 
     fig.update_layout(
-        height=360,
+        height=340,
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=4, r=4, t=62, b=4),
+        margin=dict(l=4, r=4, t=56, b=4),
         showlegend=True,
         legend=dict(
-            orientation="h", yanchor="top", y=-0.18,
-            xanchor="left", x=0,
-            font=dict(size=10, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+            orientation="h", yanchor="top", y=-0.22, xanchor="left", x=0,
+            font=dict(size=12, color=PLOTLY_TEXT, family=PLOTLY_FONT),
             bgcolor="rgba(0,0,0,0)", borderwidth=0,
+            itemclick="toggle", itemdoubleclick="toggleothers",
+            tracegroupgap=0,
         ),
         font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT),
-        xaxis=dict(
-            showgrid=False, tickformat=tick_fmt, tickangle=-30,
-            tickfont=dict(size=10, color=PLOTLY_TEXT, family=PLOTLY_FONT),
-            linecolor=PLOTLY_GRID,
-        ),
-        yaxis=dict(
-            showgrid=True, gridcolor=PLOTLY_GRID, zeroline=False,
-            tickfont=dict(size=10, color=PLOTLY_TEXT, family=PLOTLY_FONT),
-            title=None, rangemode="tozero",
-        ),
+        xaxis=dict(showgrid=False, tickformat=tick_fmt, tickangle=-30,
+                   tickfont=dict(size=13, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+                   linecolor=PLOTLY_GRID),
+        yaxis=dict(showgrid=True, gridcolor=PLOTLY_GRID, zeroline=False,
+                   tickfont=dict(size=13, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+                   title=None, rangemode="tozero"),
         hovermode="x unified",
-        hoverlabel=dict(
-            bgcolor=PLOTLY_HOVER_BG, bordercolor=PLOTLY_HOVER_BORDER,
-            font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=11),
-        ),
+        hoverlabel=dict(bgcolor=PLOTLY_HOVER_BG, bordercolor=PLOTLY_HOVER_BORDER,
+                        font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=13)),
     )
     return fig
 
@@ -705,21 +702,22 @@ def _build_trend(df, start_date, end_date, region, key_events,
                  metric: str = "events") -> go.Figure:
     """Trend chart from an ALREADY-FILTERED dataframe.
 
-    metric: "events" (default), "fatalities", or "multi" (multi-type overlay)
+    metric: "events" (default), "fatalities", or "multi" (top-5 per-type lines)
     """
     if metric == "multi":
-        # Pass the full scope df (all key_event types) for multi-type view.
-        # Caller should pass df filtered only by date/region, not by key_event.
-        return _build_multi_trend(df, start_date, end_date)
+        return _build_multi_trend(df, start_date, end_date, top_n=5)
 
     if df.empty:
-        return _empty_fig(height=320)
+        return _empty_fig(height=300)
 
     use_fatalities = (metric == "fatalities")
 
     if key_events and len(key_events) == 1:
         evt_label = key_events[0]
         base_color = KEY_EVENT_COLORS.get(evt_label, "#94a3b8")
+    elif key_events:
+        evt_label = f"{len(key_events)} event types"
+        base_color = "#355c84"
     else:
         evt_label = "Total Events"
         base_color = "#355c84"
@@ -732,38 +730,29 @@ def _build_trend(df, start_date, end_date, region, key_events,
         color = base_color
 
     start_ts = pd.to_datetime(start_date) if start_date else df["event_date"].min()
-    end_ts = pd.to_datetime(end_date) if end_date else df["event_date"].max()
-    use_daily = (_window_days(start_date, end_date) or 999) <= 45
+    end_ts   = pd.to_datetime(end_date)   if end_date   else df["event_date"].max()
+    gmode, hover_fmt, tick_fmt = _granularity(start_date, end_date)
 
-    if use_daily:
+    if gmode == "daily":
         idx = pd.date_range(start_ts, end_ts, freq="D")
         g = df.groupby(df["event_date"].dt.normalize())
-        if use_fatalities:
-            series = g["fatalities"].sum().reindex(idx, fill_value=0)
-        else:
-            series = g["event_id_cnty"].nunique().reindex(idx, fill_value=0)
+        series = (g["fatalities"].sum() if use_fatalities
+                  else g["event_id_cnty"].nunique()).reindex(idx, fill_value=0)
         trend = pd.DataFrame({"dt": idx, "y": series.values})
-        hover_fmt = "%d %b %Y"
-        tick_fmt = "%d %b"
+    elif gmode == "weekly":
+        grp = df.assign(period_dt=df["event_date"].dt.to_period("W").dt.to_timestamp())
+        agg_fn = "sum" if use_fatalities else "nunique"
+        col = "fatalities" if use_fatalities else "event_id_cnty"
+        trend = (grp.groupby("period_dt")[col]
+                 .agg(agg_fn).reset_index(name="y")
+                 .sort_values("period_dt").rename(columns={"period_dt": "dt"}))
     else:
         grp = df.assign(period_dt=df["event_date"].dt.to_period("M").dt.to_timestamp())
-        if use_fatalities:
-            monthly = (
-                grp.groupby("period_dt")["fatalities"]
-                .sum()
-                .reset_index(name="y")
-                .sort_values("period_dt")
-            )
-        else:
-            monthly = (
-                grp.groupby("period_dt")["event_id_cnty"]
-                .nunique()
-                .reset_index(name="y")
-                .sort_values("period_dt")
-            )
-        trend = monthly.rename(columns={"period_dt": "dt"})
-        hover_fmt = "%b %Y"
-        tick_fmt = "%b %Y"
+        agg_fn = "sum" if use_fatalities else "nunique"
+        col = "fatalities" if use_fatalities else "event_id_cnty"
+        trend = (grp.groupby("period_dt")[col]
+                 .agg(agg_fn).reset_index(name="y")
+                 .sort_values("period_dt").rename(columns={"period_dt": "dt"}))
 
     x_min = trend["dt"].min()
     x_max = trend["dt"].max()
@@ -771,7 +760,7 @@ def _build_trend(df, start_date, end_date, region, key_events,
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         x=trend["dt"], y=trend["y"],
-        mode="lines+markers" if use_daily else "lines",
+        mode="lines+markers" if gmode == "daily" else "lines",
         name=label,
         showlegend=False,
         fill="tozeroy",
@@ -796,7 +785,7 @@ def _build_trend(df, start_date, end_date, region, key_events,
                     x=mdt, y=1.11 if i % 2 == 0 else 1.04, xref="x", yref="paper",
                     text=f"<b>{short_name}</b>",
                     showarrow=False,
-                    font=dict(size=10, color=milestone_color, family=PLOTLY_FONT),
+                    font=dict(size=13, color=milestone_color, family=PLOTLY_FONT),
                     xanchor="center", yanchor="bottom",
                     bgcolor=PLOTLY_HOVER_BG,
                     bordercolor=milestone_color, borderwidth=1, borderpad=3,
@@ -815,7 +804,7 @@ def _build_trend(df, start_date, end_date, region, key_events,
                 ))
 
     fig.update_layout(
-        height=320,
+        height=300,
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=4, r=4, t=58, b=4),
         yaxis2=dict(overlaying="y", range=[0, 1], visible=False, fixedrange=True),
@@ -825,96 +814,83 @@ def _build_trend(df, start_date, end_date, region, key_events,
             showgrid=False,
             tickformat=tick_fmt,
             tickangle=-30,
-            tickfont=dict(size=10, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+            tickfont=dict(size=13, color=PLOTLY_TEXT, family=PLOTLY_FONT),
             linecolor=PLOTLY_GRID,
         ),
         yaxis=dict(showgrid=True, gridcolor=PLOTLY_GRID, zeroline=False,
-                   tickfont=dict(size=10, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+                   tickfont=dict(size=13, color=PLOTLY_TEXT, family=PLOTLY_FONT),
                    title=None, rangemode="tozero"),
         hovermode="x unified",
         hoverlabel=dict(
             bgcolor=PLOTLY_HOVER_BG,
             bordercolor=PLOTLY_HOVER_BORDER,
-            font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=11),
+            font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=13),
         ),
     )
     return fig
 
 
-# ── Key Activity Types bar chart ──────────────────────────────────────────────
+# ── Fatalities by event type ───────────────────────────────────────────────────
 
-def _build_activity_bar(acled_df, start_date, end_date, region, key_events) -> go.Figure:
-    """Bar chart of event composition.
+def _build_fatality_breakdown(df) -> go.Figure:
+    """Horizontal bar: total reported fatalities per event type, coloured by type.
 
-    Note: this intentionally re-filters WITHOUT the key_events filter so the
-    full type-mix is always visible — the selected type is just highlighted.
+    Each bar is one event category. Length = total fatalities; colour matches the
+    type palette used in the trend chart. Hover shows event count and average
+    fatalities per event, revealing whether a type is lethal-per-incident vs
+    lethal-by-volume.
     """
-    df = _filter_overview_events(acled_df, start_date, end_date, region, None)
     if df.empty:
-        return _empty_fig("No data", height=420)
+        return _empty_fig("No data", height=300)
 
-    counts = (
-        df.groupby("key_event", observed=True)["event_id_cnty"]
-        .nunique()
-        .reindex(KEY_EVENT_ORDER).fillna(0)
+    by_type = (
+        df.groupby("key_event", observed=True)
+        .agg(fatalities=("fatalities", "sum"),
+             events=("event_id_cnty", "nunique"))
+        .reset_index()
     )
-    counts = counts[counts > 0].sort_values(ascending=False)
-    if counts.empty:
-        return _empty_fig("No data", height=420)
+    by_type = by_type[by_type["fatalities"] > 0].copy()
+    if by_type.empty:
+        return _empty_fig("No fatality data for this selection", height=300)
 
-    selected = set(key_events or [])
-    defs = [[EVENT_DEFINITIONS.get(k, "")] for k in counts.index]
-    accent = "#355c84"
-    context = "#ced9e7"
-    colors = [
-        accent if (selected and evt in selected) else (context if selected else accent)
-        for evt in counts.index
-    ]
+    by_type["avg_per_event"] = (by_type["fatalities"] / by_type["events"].clip(lower=1)).round(1)
+    by_type = by_type.sort_values("fatalities", ascending=True)  # bottom-to-top: most lethal on top
+
+    colors = [KEY_EVENT_COLORS.get(t, "#94a3b8") for t in by_type["key_event"]]
+    chart_height = max(260, len(by_type) * 28 + 50)
+
     fig = go.Figure(go.Bar(
-        y=counts.index,
-        x=counts.values,
+        x=by_type["fatalities"],
+        y=by_type["key_event"],
         orientation="h",
-        marker=dict(color=colors, line=dict(color="rgba(56,78,99,0.08)", width=0.5)),
-        text=[f"{int(v):,}" for v in counts.values],
+        marker_color=colors,
+        marker_line_width=0,
+        text=[f"{v:,}" for v in by_type["fatalities"]],
         textposition="outside",
-        textfont=dict(size=10, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+        textfont=dict(size=12, color=PLOTLY_TEXT, family=PLOTLY_FONT),
         cliponaxis=False,
-        customdata=defs,
+        customdata=by_type[["events", "avg_per_event"]].values,
         hovertemplate=(
             "<b>%{y}</b><br>"
-            "%{x:,} events<br>"
-            "<i>%{customdata[0]}</i>"
+            "<b>%{x:,}</b> reported fatalities<br>"
+            "%{customdata[0]:,} events · "
+            "<b>avg %{customdata[1]:.1f}</b> deaths per event"
             "<extra></extra>"
         ),
     ))
-    if selected:
-        note = "Selected event type highlighted for context" if len(selected) == 1 else "Selected event types highlighted for context"
-        fig.add_annotation(
-            x=1, y=1.07, xref="paper", yref="paper",
-            text=note,
-            showarrow=False,
-            xanchor="right",
-            font=dict(size=9, color="#64748B", family=PLOTLY_FONT),
-        )
+
     fig.update_layout(
-        height=420,
+        height=chart_height,
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=4, r=80, t=12, b=4),
+        margin=dict(l=4, r=68, t=8, b=0),
         font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT),
-        yaxis=dict(
-            tickfont=dict(size=9, color=PLOTLY_TEXT, family=PLOTLY_FONT), title=None,
-            autorange="reversed", automargin=True,
-        ),
-        xaxis=dict(
-            showgrid=True, gridcolor=PLOTLY_GRID,
-            tickfont=dict(size=9, color=PLOTLY_TEXT, family=PLOTLY_FONT), title=None,
-            rangemode="tozero",
-        ),
-        hoverlabel=dict(
-            bgcolor=PLOTLY_HOVER_BG,
-            bordercolor=PLOTLY_HOVER_BORDER,
-            font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=11),
-        ),
+        xaxis=dict(showgrid=True, gridcolor=PLOTLY_GRID,
+                   tickfont=dict(size=12, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+                   title=None, rangemode="tozero"),
+        yaxis=dict(tickfont=dict(size=12, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+                   title=None, automargin=True),
+        hoverlabel=dict(bgcolor=PLOTLY_HOVER_BG, bordercolor=PLOTLY_HOVER_BORDER,
+                        font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=13)),
     )
     return fig
 
@@ -966,8 +942,7 @@ def layout():
 
     # Keep first layout light; charts are hydrated by callback after mount.
     init_map        = _empty_fig(height=820)
-    init_trend      = _empty_fig(height=320)
-    init_bar        = _empty_fig("Loading conflict types...", height=420)
+    init_area       = _empty_fig("Loading…", height=380)
     init_conflicts  = "—"
     init_fatalities = "—"
     h_region, h_count = "—", "—"
@@ -1059,41 +1034,17 @@ def layout():
                 html.Div([
                     dcc.Dropdown(id="ov-key-event",
                                  options=[{"label": k, "value": k} for k in key_evt_opts],
-                                 multi=False, placeholder="Event Type · All", clearable=True),
-                    html.Button(
-                        "ⓘ definitions",
-                        id="ov-glossary-btn",
-                        n_clicks=0,
-                        className="glossary-toggle-btn",
-                        title="Show/hide event type definitions",
-                        **{"aria-expanded": "false", "aria-controls": "ov-event-glossary"},
-                    ),
+                                 multi=True, placeholder="Event Type · All", clearable=True),
                 ], className="filter-strip-item filter-strip-item--type"),
 
                 html.Button("Reset", id="ov-reset-btn",
                             n_clicks=0, className="btn-reset btn-reset--solo"),
             ], className="filter-strip-row"),
-            html.Div(id="ov-key-event-note", className="filter-strip-help"),
-            # ── Event type glossary (collapsible) ──────────────────────────────
-            html.Div(
-                id="ov-event-glossary",
-                className="event-glossary",
-                style={"display": "none"},
-                children=[
-                    html.Div(className="event-glossary-grid", children=[
-                        html.Div([
-                            html.Span(name, className="eg-term"),
-                            html.Span(defn, className="eg-defn"),
-                        ], className="eg-item")
-                        for name, defn in EVENT_DEFINITIONS.items()
-                        if name not in ("Massacre",)   # skip duplicate key
-                    ]),
-                ],
-            ),
         ], id="ov-filter-card", className="filter-card filter-card--inline"),
 
-        # ── filter summary ─────────────────────────────────────────────────────
-        html.Div(init_summary, id="ov-filter-summary", className="filter-summary"),
+        # ── viewing summary + event type definition ────────────────────────────
+        html.Div(init_summary, id="ov-filter-summary", className="viewing-summary-wrap"),
+        html.Div(id="ov-key-event-note", className="event-def-note"),
 
         # ── national picture feature grid ─────────────────────────────────────
         html.Div([
@@ -1180,27 +1131,30 @@ def layout():
                     html.Div([
                         html.Div([
                             html.H2("Event Trend", className="card-title"),
-                            html.Div(
-                                "Use the timeline to see when reported events rose, fell, or shifted around major turning points",
+                            html.Div(id="ov-trend-subtitle",
+                                children="Monthly view · When reported events rose, fell, or shifted around key turning points",
                                 className="card-subtitle",
                             ),
                         ]),
-                        dcc.RadioItems(
-                            id="ov-trend-metric",
-                            options=[
-                                {"label": "Events",     "value": "events"},
-                                {"label": "Fatalities", "value": "fatalities"},
-                                {"label": "By type",    "value": "multi"},
-                            ],
-                            value="events",
-                            inline=True,
-                            className="metric-toggle metric-toggle--quiet",
-                        ),
+                        html.Div([
+                            dcc.RadioItems(
+                                id="ov-trend-metric",
+                                options=[
+                                    {"label": "Events",     "value": "events"},
+                                    {"label": "Fatalities", "value": "fatalities"},
+                                    {"label": "By type",    "value": "multi"},
+                                ],
+                                value="events",
+                                inline=True,
+                                className="metric-toggle metric-toggle--quiet",
+                            ),
+                            html.Div(id="ov-bytype-hint", className="bytype-hint"),
+                        ], className="trend-controls"),
                     ], className="dash-card-head dash-card-head--split"),
                     dcc.Loading(
                         dcc.Graph(
                             id="ov-trend",
-                            figure=init_trend,
+                            figure=_empty_fig(height=300),
                             config=_chart_config("myanmar_monthly_trend"),
                         ),
                         type="dot", color="#2563eb",
@@ -1209,17 +1163,18 @@ def layout():
 
                 html.Div([
                     html.Div([
-                        html.H2("Event Types", className="card-title"),
+                        html.H2("Fatalities by Event Type", className="card-title"),
                         html.Div(
-                            "Compare the composition of the selected period, not just the total volume",
+                            "Which types of violence cause the most reported deaths · "
+                            "hover for event count and average deaths per event",
                             className="card-subtitle",
                         ),
                     ], className="dash-card-head"),
                     dcc.Loading(
                         dcc.Graph(
-                            id="ov-activity-bar",
-                            figure=init_bar,
-                            config=_chart_config("myanmar_activity_types"),
+                            id="ov-type-area",
+                            figure=init_area,
+                            config=_chart_config("myanmar_fatalities_by_type"),
                         ),
                         type="dot", color="#2563eb",
                     ),
@@ -1299,6 +1254,34 @@ def apply_filters(from_date, to_date, region, key_events):
             "preset_label": None}
 
 
+# 4b. Trend metric + filters → update subtitle (granularity + mode hint) + bytype hint
+@callback(
+    Output("ov-trend-subtitle",  "children"),
+    Output("ov-bytype-hint",     "children"),
+    Input("ov-trend-metric",     "value"),
+    Input("ov-applied-filters",  "data"),
+    prevent_initial_call=False,
+)
+def update_trend_subtitle(metric, applied):
+    start = applied.get("start_date") if applied else None
+    end   = applied.get("end_date")   if applied else None
+    glabel = _granularity_label(start, end)
+
+    if metric == "multi":
+        subtitle = (
+            f"{glabel} · Combat types visible by default"
+        )
+        hint = [
+            html.Span("ℹ", className="bytype-hint-icon"),
+            " Click a legend item to show / hide it · double-click to isolate one type",
+        ]
+    else:
+        subtitle = f"{glabel} · When reported events rose, fell, or shifted around key turning points"
+        hint = ""
+    return subtitle, hint
+
+
+# 5. Key event note — show definition for single selected type
 @callback(
     Output("ov-key-event-note", "children"),
     Input("ov-key-event", "value"),
@@ -1307,27 +1290,14 @@ def apply_filters(from_date, to_date, region, key_events):
 def update_incident_type_note(selected_event):
     if not selected_event:
         return ""
-    definition = EVENT_DEFINITIONS.get(selected_event, "")
-    if not definition:
+    types = [selected_event] if isinstance(selected_event, str) else selected_event
+    if len(types) != 1:
         return ""
-    if selected_event == "Others":
-        return "Others mainly covers records not shown separately here, especially strategic developments such as changes to group activity, disrupted weapons use, base establishment, agreements, non-violent transfers of territory, and a small number of riot records."
-    return f"{selected_event}: {definition}."
+    defn = EVENT_DEFINITIONS.get(types[0], "")
+    return defn if defn else ""
 
 
-@callback(
-    Output("ov-event-glossary", "style"),
-    Output("ov-glossary-btn",   "className"),
-    Input("ov-glossary-btn",    "n_clicks"),
-    prevent_initial_call=True,
-)
-def toggle_event_glossary(n):
-    if n and n % 2 == 1:
-        return {"display": "block"}, "glossary-toggle-btn glossary-toggle-btn--open"
-    return {"display": "none"}, "glossary-toggle-btn"
-
-
-# 5. Reset button → clear all filters and restore date pickers to full range
+# 5b. Reset button → clear all filters and restore date pickers to full range
 @callback(
     Output("ov-region",          "value"),
     Output("ov-key-event",       "value"),
@@ -1352,7 +1322,7 @@ def reset_filters(n):
     Output("ov-kpi-fatalities", "children"),
     Output("ov-filter-summary", "children"),
     Output("ov-trend",          "figure"),
-    Output("ov-activity-bar",   "figure"),
+    Output("ov-type-area",      "figure"),
     Output("ov-highest-region", "children"),
     Output("ov-highest-count",  "children"),
     Input("ov-applied-filters", "data"),
@@ -1382,10 +1352,8 @@ def update_charts(applied, mode, metric, trend_metric):
     acled = load_acled_main()
     geo   = load_geojson()
 
-    # Filter ONCE — pass the resulting view to every builder. Previously this
-    # function ran the same filter four times (one per chart) on a 90k-row frame.
     ac = _filter_overview_events(acled, start_date, end_date, region, key_events)
-    n_conflicts  = _fmt(len(ac))
+    n_conflicts  = _fmt(ac["event_id_cnty"].nunique())
     n_fatalities = _fmt(int(ac["fatalities"].sum()))
 
     filter_summary = _build_filter_chips(start_month, end_month, region, key_events,
@@ -1393,32 +1361,30 @@ def update_charts(applied, mode, metric, trend_metric):
                                          start_date=start_date, end_date=end_date)
     store = _build_store(ac, geo, start_date, end_date, region, key_events, mode)
 
+    empty_trend     = _empty_fig(height=300)
+    empty_townships = _empty_fig("No data", height=320)
+
     if store is None:
-        empty = _empty_fig("No data for this selection", height=820)
-        return (empty, n_conflicts, n_fatalities, filter_summary,
-                _empty_fig(height=320), _empty_fig("No data", height=350), "—", "—")
+        empty_map = _empty_fig("No data for this selection", height=820)
+        return (empty_map, n_conflicts, n_fatalities, filter_summary,
+                empty_trend, empty_townships, "—", "—")
 
     if mode == "animated":
         fig_map = _build_animated_choropleth(store, geo, metric)
     else:
-        fig_map = _build_choropleth(
-            store,
-            geo,
-            metric,
-            start_date=start_date,
-            end_date=end_date,
-        )
+        fig_map = _build_choropleth(store, geo, metric,
+                                    start_date=start_date, end_date=end_date)
 
-    # For "By type" mode pass the all-type filtered frame (no key_events filter)
-    # so every event category can draw its own line.
+    # Trend: "By type" uses the all-types frame so top-5 picks from full scope
     if trend_metric == "multi":
-        ac_all_types = _filter_overview_events(acled, start_date, end_date, region, None)
-        fig_trend = _build_trend(ac_all_types, start_date, end_date, region,
-                                 None, metric="multi")
+        ac_all = _filter_overview_events(acled, start_date, end_date, region, None)
+        fig_trend = _build_trend(ac_all, start_date, end_date, region, None, metric="multi")
     else:
         fig_trend = _build_trend(ac, start_date, end_date, region, key_events,
                                  metric=trend_metric)
-    fig_bar   = _build_activity_bar(acled, start_date, end_date, region, key_events)
+
+    fig_townships = _build_fatality_breakdown(ac)
     h_region, h_count = _highest_events(ac, acled)
 
-    return fig_map, n_conflicts, n_fatalities, filter_summary, fig_trend, fig_bar, h_region, h_count
+    return (fig_map, n_conflicts, n_fatalities, filter_summary,
+            fig_trend, fig_townships, h_region, h_count)

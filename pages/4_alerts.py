@@ -22,9 +22,11 @@ from components.page_bits import data_disclaimer
 
 
 COMBAT_EVENTS = (
-    "Ground-based attack",
-    "Air attack",
-    "Drone attack",
+    "Armed Clash",
+    "Shelling/Artillery",
+    "IED/Mine",
+    "Air Strike",
+    "Drone Strike",
     "Massacres",
 )
 NON_ARMED_ACTORS = {
@@ -441,7 +443,7 @@ def _build_alert_frames():
         "latest_end": latest_end,
         "window_start": _window_start(latest_end),
         "window_label": _window_label(latest_end),
-        "combat_label": "Ground-based attack, Air attack, Drone attack, and Massacres",
+        "combat_label": "Armed Clash, Shelling/Artillery, IED/Mine, Air Strike, Drone Strike, and Massacres",
         "thresholds": thresholds,
         "window_days": WINDOW_DAYS,
         "local_blocks": LOCAL_LOOKBACK,
@@ -581,7 +583,7 @@ def _build_map(snapshot: pd.DataFrame, geojson: dict, window_label: str, selecte
         hoverlabel=dict(
             bgcolor=PLOTLY_HOVER_BG,
             bordercolor=PLOTLY_HOVER_BORDER,
-            font=dict(family=PLOTLY_FONT, color="#24384d", size=11),
+            font=dict(family=PLOTLY_FONT, color="#24384d", size=13),
             align="left",
         ),
     )
@@ -691,17 +693,17 @@ def _build_detail_figure(history: pd.DataFrame, township_name: str):
             font=dict(family=PLOTLY_FONT, color="#24384d"),
         ),
     )
-    fig.update_annotations(font=dict(size=11, family=PLOTLY_FONT, color="#5a6c7e"), yshift=10)
+    fig.update_annotations(font=dict(size=13, family=PLOTLY_FONT, color="#5a6c7e"), yshift=10)
     fig.update_xaxes(
         showgrid=False,
         tickformat="%b\n%Y",
-        tickfont=dict(size=10, family=PLOTLY_FONT),
+        tickfont=dict(size=13, family=PLOTLY_FONT),
     )
     fig.update_yaxes(
         showgrid=True,
         gridcolor=PLOTLY_GRID,
         zeroline=False,
-        tickfont=dict(size=10, family=PLOTLY_FONT),
+        tickfont=dict(size=13, family=PLOTLY_FONT),
     )
     return fig
 
@@ -719,7 +721,7 @@ def _build_mix_figure(combat_context: pd.DataFrame, township_code: str, window_s
         fig.add_annotation(
             text=f"No named offending-side armed actors are available for combat events in the {WINDOW_SCOPE_LABEL}.",
             x=0.5, y=0.5, showarrow=False,
-            font=dict(size=12, family=PLOTLY_FONT, color="#5a6c7e"),
+            font=dict(size=13, family=PLOTLY_FONT, color="#5a6c7e"),
         )
         fig.update_layout(
             height=470,
@@ -840,7 +842,7 @@ def _build_mix_figure(combat_context: pd.DataFrame, township_code: str, window_s
             bgcolor="rgba(255,251,246,0.94)",
             bordercolor="rgba(64, 88, 112, 0.14)",
             borderwidth=1, borderpad=4,
-            font=dict(size=11, family=PLOTLY_FONT, color="#1f3247"),
+            font=dict(size=13, family=PLOTLY_FONT, color="#1f3247"),
         ))
     for label, yc in zip(event_labels, event_centers):
         annotations.append(dict(
@@ -853,7 +855,7 @@ def _build_mix_figure(combat_context: pd.DataFrame, township_code: str, window_s
             bgcolor="rgba(255,251,246,0.94)",
             bordercolor="rgba(64, 88, 112, 0.14)",
             borderwidth=1, borderpad=4,
-            font=dict(size=11, family=PLOTLY_FONT, color="#1f3247"),
+            font=dict(size=13, family=PLOTLY_FONT, color="#1f3247"),
         ))
 
     fig = go.Figure(go.Sankey(
@@ -884,7 +886,7 @@ def _build_mix_figure(combat_context: pd.DataFrame, township_code: str, window_s
         margin=dict(l=210, r=210, t=TOP_MARGIN, b=BOTTOM_MARGIN),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=11),
+        font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=13),
         annotations=annotations,
         hoverlabel=dict(
             bgcolor=PLOTLY_HOVER_BG,
@@ -1044,7 +1046,7 @@ def layout():
                     html.Div("Prototype · work in progress", className="hero-pill hero-pill--prototype"),
                     html.Div("Aim: transparent township alerting", className="hero-pill"),
                     html.Div(f"Window: latest available {WINDOW_DAYS} days", className="hero-pill"),
-                    html.Div("Combat scope: Ground-based attack, Air attack, Drone attack, and Massacres", className="hero-pill"),
+                    html.Div("Combat scope: Armed Clash, Shelling/Artillery, IED/Mine, Air Strike, Drone Strike, and Massacres", className="hero-pill"),
                 ], className="hero-pill-row hero-pill-row--tight"),
             ], className="page-header-left"),
             html.Div([
@@ -1094,7 +1096,7 @@ def layout():
                     html.Div([
                         html.Div("What counts as activity?", className="alert-method-title"),
                         html.Div(
-                            "Alert activity is combat-only: Ground-based attack, Air attack, Drone attack, and Massacres. Protests, arrests, displacement, looting/property destruction, and other non-combat dashboard categories are excluded from alert scoring.",
+                            "Alert activity is combat-only: Armed Clash, Shelling/Artillery, IED/Mine, Air Strike, Drone Strike, and Massacres. Protests, arrests, displacement, looting/property destruction, and other non-combat dashboard categories are excluded from alert scoring.",
                             className="alert-method-copy",
                         ),
                     ], className="alert-method-block"),

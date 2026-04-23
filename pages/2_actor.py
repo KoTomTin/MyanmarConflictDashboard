@@ -233,29 +233,18 @@ def _build_filter_chips(start_month, end_month, region, actor_name,
                         preset_label: str | None = None,
                         start_date: str | None = None,
                         end_date: str | None = None):
-    def fmt_m(m):
-        try:
-            return pd.Timestamp(m + "-01").strftime("%b %Y")
-        except Exception:
-            return m or ""
-
-    time_str = preset_label or _format_selected_range(start_date, end_date, start_month, end_month)
-    chips = [
-        ("Date", time_str),
-        ("Region", region or "All Myanmar"),
-        ("Actor", actor_name),
-    ]
-    chips.append(("View", "Quarterly playback" if mode == "animated" else "Total period"))
+    region_str = region or "All Myanmar"
+    time_str   = preset_label or _format_selected_range(start_date, end_date, start_month, end_month)
     return html.Div(
-        [html.Span("Now showing", className="filter-chip filter-chip--label")] +
-        [
-            html.Span([
-                html.Span(f"{label}: ", className="filter-chip-key"),
-                html.Span(value, className="filter-chip-value"),
-            ], className="filter-chip")
-            for label, value in chips
-        ],
-        className="filter-chip-row",
+        html.Div([
+            html.Span("Viewing ", className="vs-label"),
+            html.Span(actor_name or "all actors", className="vs-value"),
+            html.Span(" · ", className="vs-sep"),
+            html.Span(region_str, className="vs-value"),
+            html.Span(" · ", className="vs-sep"),
+            html.Span(time_str, className="vs-value"),
+        ], className="viewing-sentence"),
+        className="viewing-summary",
     )
 
 
@@ -358,9 +347,9 @@ def _build_choropleth(
             title=dict(
                 text="Events",
                 side="top",
-                font=dict(size=11, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+                font=dict(size=13, color=PLOTLY_TEXT, family=PLOTLY_FONT),
             ),
-            tickfont=dict(size=10, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+            tickfont=dict(size=13, color=PLOTLY_TEXT, family=PLOTLY_FONT),
             orientation="h",
             thickness=10,
             len=0.36,
@@ -388,7 +377,7 @@ def _build_choropleth(
         hoverlabel=dict(
             bgcolor=PLOTLY_HOVER_BG,
             bordercolor=PLOTLY_HOVER_BORDER,
-            font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=11),
+            font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=13),
         ),
     )
     return fig
@@ -423,9 +412,9 @@ def _build_animated_choropleth(store: dict, geo: dict) -> go.Figure:
             title=dict(
                 text="Events",
                 side="top",
-                font=dict(size=11, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+                font=dict(size=13, color=PLOTLY_TEXT, family=PLOTLY_FONT),
             ),
-            tickfont=dict(size=10, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+            tickfont=dict(size=13, color=PLOTLY_TEXT, family=PLOTLY_FONT),
             orientation="h",
             thickness=10,
             len=0.34,
@@ -466,7 +455,7 @@ def _build_animated_choropleth(store: dict, geo: dict) -> go.Figure:
         "currentvalue": {
             "visible": True, "prefix": "Quarter: ",
             "xanchor": "center",
-            "font": {"size": 11, "color": PLOTLY_TEXT, "family": PLOTLY_FONT},
+            "font": {"size": 13, "color": PLOTLY_TEXT, "family": PLOTLY_FONT},
         },
         "transition": {"duration": 200},
         "bgcolor": "rgba(250,246,240,0.96)",
@@ -481,7 +470,7 @@ def _build_animated_choropleth(store: dict, geo: dict) -> go.Figure:
         "bgcolor": "rgba(255,251,246,0.96)",
         "bordercolor": PLOTLY_HOVER_BORDER,
         "borderwidth": 1,
-        "font": {"size": 11, "color": PLOTLY_TEXT, "family": PLOTLY_FONT},
+        "font": {"size": 13, "color": PLOTLY_TEXT, "family": PLOTLY_FONT},
         "buttons": [
             {
                 "args": [None, {"frame": {"duration": 600, "redraw": True},
@@ -512,7 +501,7 @@ def _build_animated_choropleth(store: dict, geo: dict) -> go.Figure:
         hoverlabel=dict(
             bgcolor=PLOTLY_HOVER_BG,
             bordercolor=PLOTLY_HOVER_BORDER,
-            font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=11),
+            font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=13),
         ),
         sliders=sliders,
         updatemenus=updatemenus,
@@ -580,7 +569,7 @@ def _build_trend(al: pd.DataFrame, start_date: str | None, end_date: str | None)
                     x=mdt, y=1.13 if i % 2 == 0 else 1.04, xref="x", yref="paper",
                     text=f"<b>{short_name}</b>",
                     showarrow=False,
-                    font=dict(size=10, color=color, family=PLOTLY_FONT),
+                    font=dict(size=13, color=color, family=PLOTLY_FONT),
                     xanchor="center", yanchor="bottom",
                     bgcolor=PLOTLY_HOVER_BG,
                     bordercolor=color, borderwidth=1, borderpad=3,
@@ -605,19 +594,19 @@ def _build_trend(al: pd.DataFrame, start_date: str | None, end_date: str | None)
         margin=dict(l=4, r=4, t=62, b=54),
         yaxis2=dict(overlaying="y", range=[0, 1], visible=False, fixedrange=True),
         legend=dict(orientation="h", yanchor="top", y=-0.28, xanchor="left", x=0,
-                    font=dict(size=10, family=PLOTLY_FONT, color=PLOTLY_TEXT), bgcolor="rgba(0,0,0,0)"),
+                    font=dict(size=13, family=PLOTLY_FONT, color=PLOTLY_TEXT), bgcolor="rgba(0,0,0,0)"),
         font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT),
         xaxis=dict(showgrid=False, tickformat="%d %b" if use_daily else "%b %Y", tickangle=-30,
-                   tickfont=dict(size=10, family=PLOTLY_FONT, color=PLOTLY_TEXT), linecolor=PLOTLY_GRID),
+                   tickfont=dict(size=13, family=PLOTLY_FONT, color=PLOTLY_TEXT), linecolor=PLOTLY_GRID),
         yaxis=dict(showgrid=True, gridcolor=PLOTLY_GRID, zeroline=True,
                    zerolinecolor=PLOTLY_GRID, zerolinewidth=1,
                    rangemode="tozero", autorange=True,
-                   tickfont=dict(size=10, family=PLOTLY_FONT, color=PLOTLY_TEXT), title=None),
+                   tickfont=dict(size=13, family=PLOTLY_FONT, color=PLOTLY_TEXT), title=None),
         hovermode="x unified",
         hoverlabel=dict(
             bgcolor=PLOTLY_HOVER_BG,
             bordercolor=PLOTLY_HOVER_BORDER,
-            font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=11),
+            font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=13),
         ),
     )
     return fig
@@ -651,7 +640,7 @@ def _build_alliance_chart(ally_pairs, actor_name, valid_ids):
         marker=dict(color="#355c84", line=dict(color="rgba(56,78,99,0.08)", width=0.5)),
         text=[f"{v:,}" for v in tbl["events"]],
         textposition="outside",
-        textfont=dict(size=10, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+        textfont=dict(size=13, color=PLOTLY_TEXT, family=PLOTLY_FONT),
         cliponaxis=False,
         hovertemplate="<b>%{y}</b><br>%{x:,} shared events<extra></extra>",
     ))
@@ -660,14 +649,14 @@ def _build_alliance_chart(ally_pairs, actor_name, valid_ids):
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=4, r=80, t=12, b=4),
         font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT),
-        yaxis=dict(tickfont=dict(size=9, color=PLOTLY_TEXT, family=PLOTLY_FONT), title=None,
+        yaxis=dict(tickfont=dict(size=13, color=PLOTLY_TEXT, family=PLOTLY_FONT), title=None,
                    autorange="reversed", automargin=True),
-        xaxis=dict(showgrid=True, gridcolor=PLOTLY_GRID, tickfont=dict(size=9, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+        xaxis=dict(showgrid=True, gridcolor=PLOTLY_GRID, tickfont=dict(size=13, color=PLOTLY_TEXT, family=PLOTLY_FONT),
                    title=None, rangemode="tozero"),
         hoverlabel=dict(
             bgcolor=PLOTLY_HOVER_BG,
             bordercolor=PLOTLY_HOVER_BORDER,
-            font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=11),
+            font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=13),
         ),
     )
     return dcc.Graph(figure=fig, config=_chart_config("actor_associated_actors"))
@@ -840,7 +829,7 @@ def layout():
         ], id="ac-filter-card", className="filter-card"),
 
         # ── filter summary ─────────────────────────────────────────────────────
-        html.Div(init_summary, id="ac-filter-summary", className="filter-summary"),
+        html.Div(init_summary, id="ac-filter-summary", className="viewing-summary-wrap"),
 
         # ── two-column body ────────────────────────────────────────────────────
         html.Div([

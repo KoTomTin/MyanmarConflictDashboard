@@ -346,8 +346,24 @@ def add_tsp_pcode(df: pd.DataFrame, lookup: pd.DataFrame) -> pd.DataFrame:
 
 def create_key_event(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Encode key_event with 9 categories.
+    Encode key_event with 12 categories.
     Requires: event_type, sub_event_type, inter1, notes columns.
+
+    Priority order (np.select first-match):
+      1. Arrests
+      2. Looting/property destruction
+      3. Air Strike        (Air/drone strike, inter1 == State forces, no drone keyword)
+      4. Drone Strike      (Air/drone strike, non-state actor or 'drone' in notes)
+      5. Shelling/Artillery
+      6. IED/Mine
+      7. Armed Clash       (all remaining Battles / Explosions ground combat)
+      8. Attack on Civilians (Violence against civilians)
+      9. Protests
+     10. Displacement      (notes heuristic)
+     → Others (default)
+
+    Post-recode override applied in clean_dataframe() and main loop:
+      civilian_targeting == 'Yes' & fatalities >= 5  →  Massacres
     """
     df    = df.copy()
     et    = df["event_type"].astype(str).str.strip()
@@ -359,23 +375,36 @@ def create_key_event(df: pd.DataFrame) -> pd.DataFrame:
     is_drone_flag = notes.str.contains(r"drone", na=False) | ~i1.str.casefold().eq("state forces")
     is_combat_et  = et.isin(["Battles", "Explosions/Remote violence"])
 
+    SHELLING_SUBS = frozenset(["Shelling/artillery/missile attack"])
+    IED_SUBS      = frozenset([
+        "Remote explosive/landmine/IED",
+        "Grenade",
+        "Suicide bomb",
+        "Landmine",
+        "IED",
+    ])
+
     conditions = [
         set_ == "Arrests",
         set_ == "Looting/property destruction",
-        is_air_drone & is_drone_flag,            # Drone attack
-        is_air_drone & ~is_drone_flag,           # Air attack
-        is_combat_et & ~is_air_drone,            # Ground-based attack
-        et == "Violence against civilians",
+        is_air_drone & ~is_drone_flag,                             # Air Strike
+        is_air_drone &  is_drone_flag,                             # Drone Strike
+        is_combat_et & ~is_air_drone & set_.isin(SHELLING_SUBS),  # Shelling/Artillery
+        is_combat_et & ~is_air_drone & set_.isin(IED_SUBS),       # IED/Mine
+        is_combat_et & ~is_air_drone,                              # Armed Clash (all other ground)
+        et == "Violence against civilians",                        # Attack on Civilians
         et == "Protests",
-        (set_ == "Other") & notes.str.contains("displacement", na=False),  # Displacement
+        (set_ == "Other") & notes.str.contains("displacement", na=False),
     ]
     choices = [
         "Arrests",
         "Looting/property destruction",
-        "Drone attack",
-        "Air attack",
-        "Ground-based attack",
-        "Violence against civilians",
+        "Air Strike",
+        "Drone Strike",
+        "Shelling/Artillery",
+        "IED/Mine",
+        "Armed Clash",
+        "Attack on Civilians",
         "Protests",
         "Displacement",
     ]
@@ -592,7 +621,7 @@ def build_actor_level(df_cleaned: pd.DataFrame) -> pd.DataFrame:
         event_id_cnty, actor_name, type1, type2, allies
     """
     # Filter to combat events (includes Massacres — mass-casualty civilian attacks by armed actors)
-    COMBAT_EVENTS = {"Ground-based attack", "Air attack", "Drone attack", "Massacres"}
+    COMBAT_EVENTS = {"Armed Clash", "Shelling/Artillery", "IED/Mine", "Air Strike", "Drone Strike", "Massacres"}
     df = df_cleaned[df_cleaned["key_event"].isin(COMBAT_EVENTS)].copy()
 
     # Only keep event_id_cnty as the join key — event properties live in acled_cleaned
@@ -819,6 +848,13 @@ def main(update_only: bool = False, export_csv: bool = False):
         df_all = pd.read_parquet(OUTPUT_PARQUET)
         # Parquet preserves datetime dtype — no re-parsing needed
         print(f"  Loaded {len(df_all):,} rows. Latest: {df_all['event_date'].max().date()}")
+
+        # Re-apply key_event recode so taxonomy changes take effect without a
+        # full re-run.  Notes column is absent (intentionally not stored), so
+        # drone detection falls back to inter1 only — which is the primary
+        # signal anyway.
+        print("  Re-applying key_event recode to existing dataset...")
+        df_all = create_key_event(df_all)
 
         # Timestamp-based sync follows ACLED's guidance for catching both new rows and
         # edits to older events. We keep a 48-hour overlap to avoid edge misses.
