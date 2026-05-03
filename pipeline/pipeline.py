@@ -856,29 +856,36 @@ def main(update_only: bool = False, export_csv: bool = False):
         print("  Re-applying key_event recode to existing dataset...")
         df_all = create_key_event(df_all)
 
-        # Timestamp-based sync follows ACLED's guidance for catching both new rows and
-        # edits to older events. We keep a 48-hour overlap to avoid edge misses.
-        if sync_state.get("last_sync_timestamp"):
-            sync_from_ts = max(int(sync_state["last_sync_timestamp"]) - SYNC_OVERLAP_SECONDS, 0)
-            print(f"  Resuming from stored sync timestamp {sync_state['last_sync_timestamp']} with 48h overlap.")
-        else:
-            latest_event_dt = df_all["event_date"].max()
-            fallback_dt = latest_event_dt - timedelta(days=14)
-            sync_from_ts = int(pd.Timestamp(fallback_dt).tz_localize("UTC").timestamp())
-            print("  No sync state found; falling back to a 14-day timestamp overlap from the latest stored event.")
+        # Event-date based sync. The earlier timestamp= filter silently stopped
+        # returning new rows in early April 2026 — three consecutive weekly runs
+        # produced identical row_count and latest_event_date.  Switching to the
+        # date-range query (the same path the full rebuild uses) is reliable.
+        # We refetch the last 14 days of event_dates so retroactive ACLED edits
+        # to recent events are captured.  Deduplication on event_id_cnty handles
+        # the resulting overlap.
+        latest_event_dt = pd.to_datetime(df_all["event_date"].max()).date()
+        fetch_from = latest_event_dt - timedelta(days=14)
+        fetch_to = date.today()
+        # Track the wall-clock start so the deleted-events query (which still
+        # uses Unix timestamps and works correctly) keeps a consistent cursor.
+        sync_from_ts = int(
+            pd.Timestamp(latest_event_dt - timedelta(days=14))
+            .tz_localize("UTC").timestamp()
+        )
 
-        print(f"\n[2/4] Fetching new and updated data from ACLED API (timestamp >= {sync_from_ts})...")
+        print(f"\n[2/4] Fetching ACLED events with event_date {fetch_from} → {fetch_to} ...")
         try:
             token  = get_token()
-            df_api = fetch_myanmar_api(token, start_timestamp=sync_from_ts)
+            df_api = fetch_myanmar_api(token, start_date=fetch_from.isoformat(), end_date=fetch_to.isoformat())
             if not df_api.empty:
                 df_api_clean = clean_dataframe(df_api, pcode_lookup)
                 df_all = pd.concat([df_all, df_api_clean], ignore_index=True)
                 before = len(df_all)
                 df_all = df_all.drop_duplicates(subset=["event_id_cnty"], keep="last")
-                print(f"  Net new rows after dedup: {before - len(df_all) + len(df_api_clean):,}")
+                net_new = before - len(df_all) + len(df_api_clean)
+                print(f"  API rows fetched: {len(df_api_clean):,}  ·  Net new after dedup: {net_new:,}")
             else:
-                print("  No new events found.")
+                print("  No events returned in the date window.")
 
             deleted_ids = fetch_deleted_event_ids(token, sync_from_ts)
             if deleted_ids:
