@@ -856,14 +856,13 @@ def _build_fatality_breakdown(df) -> go.Figure:
     by_type["avg_per_event"] = (by_type["fatalities"] / by_type["events"].clip(lower=1)).round(1)
     by_type = by_type.sort_values("fatalities", ascending=True)  # bottom-to-top: most lethal on top
 
-    colors = [KEY_EVENT_COLORS.get(t, "#94a3b8") for t in by_type["key_event"]]
     chart_height = max(260, len(by_type) * 28 + 50)
 
     fig = go.Figure(go.Bar(
         x=by_type["fatalities"],
         y=by_type["key_event"],
         orientation="h",
-        marker_color=colors,
+        marker_color="#355c84",
         marker_line_width=0,
         text=[f"{v:,}" for v in by_type["fatalities"]],
         textposition="outside",
