@@ -1,12 +1,14 @@
 name: Update ACLED Data
 
-# Run weekly on Thursday evening to give ACLED's weekly publication cadence
-# time to settle before the manual production redeploy.
-# The pipeline is idempotent and records the latest successful check, even when
+# Run daily at 14:15 UTC (~20:45 Yangon time). ACLED publishes weekly, so most
+# runs will find no new events and simply refresh last_checked.json — that is
+# intentional, so the dashboard's "Last checked" timestamp advances every day
+# while "Events up to" only moves forward when ACLED actually publishes.
+# The pipeline is idempotent and records the latest successful check even when
 # the data coverage date itself does not move forward on that run.
 on:
   schedule:
-    - cron: '15 14 * * 4'
+    - cron: '15 14 * * *'
   workflow_dispatch:
 
 concurrency:
