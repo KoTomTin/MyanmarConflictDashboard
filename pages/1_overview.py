@@ -1038,7 +1038,9 @@ def layout():
                 ], className="filter-strip-item filter-strip-item--type"),
 
                 html.Button("Reset", id="ov-reset-btn",
-                            n_clicks=0, className="btn-reset btn-reset--solo"),
+                            n_clicks=0, className="btn-reset btn-reset--solo",
+                            title="Clear region and event-type filters and restore the full date range",
+                            **{"aria-label": "Reset all overview filters"}),
             ], className="filter-strip-row"),
         ], id="ov-filter-card", className="filter-card filter-card--inline"),
 
