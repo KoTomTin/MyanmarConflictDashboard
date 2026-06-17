@@ -1,10 +1,10 @@
 {
   "cadence_note": "Scheduled ACLED check: daily, ~21:00 Yangon time",
-  "date_display": "16 Jun 2026",
-  "display": "16 Jun 2026 \u00b7 22:22 Yangon",
-  "last_checked_utc": "2026-06-16T15:52:45.347449+00:00",
-  "last_checked_yangon": "2026-06-16T22:22:45.347449+06:30",
+  "date_display": "17 Jun 2026",
+  "display": "17 Jun 2026 \u00b7 21:53 Yangon",
+  "last_checked_utc": "2026-06-17T15:23:13.847125+00:00",
+  "last_checked_yangon": "2026-06-17T21:53:13.847125+06:30",
   "recorded_time": true,
-  "time_display": "22:22",
+  "time_display": "21:53",
   "timezone_label": "Yangon time"
 }
