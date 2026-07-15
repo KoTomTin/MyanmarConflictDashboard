@@ -75,7 +75,10 @@ def _load_acled_main(version: float) -> pd.DataFrame:
     for col in ["key_event", "detailed_event", "primary_actor", "secondary_actor",
                 "admin1", "admin2", "admin3", "Tsp_Pcode", "civilian_targeting"]:
         if col in df.columns:
-            df[col] = df[col].astype(str).str.strip()
+            s = df[col].astype(str).str.strip()
+            # Missing values must stay missing — astype(str) turns NaN into the
+            # literal "nan", which leaks into hover text and defeats dropna().
+            df[col] = s.where(~s.isin(("nan", "None", "NaT", "")))
     if "fatalities" in df.columns:
         df["fatalities"] = pd.to_numeric(df["fatalities"], errors="coerce").fillna(0).astype(int)
     # Convert low-cardinality columns to category — cuts ~65 MB RAM

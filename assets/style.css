@@ -1214,7 +1214,7 @@ body::before {
 }
 .panel-subtitle, .card-subtitle {
   font-size: 0.83rem;
-  color: #6b7c89;
+  color: #5d7080; /* ≥4.5:1 on the cream card — #6b7c89 failed AA at this size */
   margin-top: 3px;
   font-family: var(--font);
 }
@@ -1254,7 +1254,7 @@ body::before {
 .kpi-label {
   font-size: 0.73rem;
   font-weight: 700;
-  color: #6a7c8b;
+  color: #5d7080; /* darkened from #6a7c8b for AA contrast at small sizes */
   letter-spacing: 0.05em;
   text-transform: uppercase;
   font-family: var(--font);
@@ -1690,7 +1690,7 @@ body::before {
 .alert-mini-stat-key {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #6a7c8b;
+  color: #5d7080; /* darkened from #6a7c8b for AA contrast at small sizes */
 }
 .alert-mini-stat-value {
   font-size: 0.79rem;

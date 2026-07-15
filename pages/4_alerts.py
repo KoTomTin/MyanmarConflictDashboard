@@ -57,12 +57,9 @@ ALERT_SORT = {
     "No unusual change": 3,
 }
 
-PLOTLY_FONT = "Avenir Next, Segoe UI, Arial, sans-serif"
-PLOTLY_DISPLAY = "Iowan Old Style, Palatino Linotype, Book Antiqua, Georgia, serif"
-PLOTLY_TEXT = "#415669"
-PLOTLY_GRID = "#e6ddd0"
-PLOTLY_HOVER_BG = "rgba(255,251,246,0.98)"
-PLOTLY_HOVER_BORDER = "#d9cfbf"
+# Theme constants come from the shared module — do not redefine locally.
+from components.plot_theme import (PLOTLY_FONT, PLOTLY_DISPLAY, PLOTLY_TEXT,
+                                   PLOTLY_GRID, PLOTLY_HOVER_BG, PLOTLY_HOVER_BORDER)
 
 
 def _chart_config(filename: str, *, show_modebar: bool = False) -> dict:
@@ -603,9 +600,9 @@ def _build_ranking(snapshot: pd.DataFrame):
         return html.Div("No unusual change is currently flagged in this view.", className="table-empty")
 
     rows = []
-    for idx, row in flagged.head(12).iterrows():
+    for rank, (_, row) in enumerate(flagged.head(12).iterrows(), start=1):
         rows.append(html.Div([
-            html.Div(f"{idx + 1}", className="alert-list-rank"),
+            html.Div(f"{rank}", className="alert-list-rank"),
             html.Div([
                 html.Div(row["township"], className="alert-list-name"),
                 html.Div(row["admin1"], className="alert-list-meta"),
@@ -1053,7 +1050,12 @@ def layout():
                     html.Div("Prototype · work in progress", className="hero-pill hero-pill--prototype"),
                     html.Div("Aim: transparent township alerting", className="hero-pill"),
                     html.Div(f"Window: latest available {WINDOW_DAYS} days", className="hero-pill"),
-                    html.Div("Combat scope: Armed Clash, Shelling/Artillery, IED/Mine, Air Strike, Drone Strike, and Massacres", className="hero-pill"),
+                    html.Div(
+                        "Combat events only",
+                        className="hero-pill",
+                        title="Armed Clash, Shelling/Artillery, IED/Mine, Air Strike, "
+                              "Drone Strike, and Massacres — see “How does this page work?” below",
+                    ),
                 ], className="hero-pill-row hero-pill-row--tight"),
             ], className="page-header-left"),
             html.Div([
@@ -1154,6 +1156,9 @@ def layout():
                         html.Div(f"Click a township to inspect why it is flagged in the {WINDOW_SCOPE_LABEL}.",
                                  className="card-subtitle"),
                     ], className="map-stage-copy"),
+                    # Legend lives in the head so colors are decodable while the
+                    # user is looking at the map, not 760px below it.
+                    legend,
                 ], className="dash-card-head map-stage-head"),
                 dcc.Loading(
                         dcc.Graph(
@@ -1170,7 +1175,6 @@ def layout():
                     html.Div(f"Grey townships look normal in the {WINDOW_SCOPE_LABEL}. Colored townships are unusually high relative to their own history. Click a township to see the exact comparison against its recent and long-term baselines.",
                              className="highest-region"),
                 ], className="highest-events"),
-                html.Div(legend, className="dash-card-body"),
             ], className="dash-card map-stage alerts-map-stage"),
 
             html.Div([

@@ -70,12 +70,10 @@ COMBAT_TREND_TYPES = [
     "Drone Strike",
 ]
 
-PLOTLY_FONT = "Avenir Next, Segoe UI, Arial, sans-serif"
-PLOTLY_DISPLAY = "Iowan Old Style, Palatino Linotype, Book Antiqua, Georgia, serif"
-PLOTLY_TEXT = "#415669"
-PLOTLY_GRID = "#e6ddd0"
-PLOTLY_HOVER_BG = "rgba(255,251,246,0.98)"
-PLOTLY_HOVER_BORDER = "#d9cfbf"
+# Theme constants come from the shared module — do not redefine locally,
+# per-page overrides are exactly how the contrast fix failed to ship once.
+from components.plot_theme import (PLOTLY_FONT, PLOTLY_DISPLAY, PLOTLY_TEXT,
+                                   PLOTLY_GRID, PLOTLY_HOVER_BG, PLOTLY_HOVER_BORDER)
 
 # ── Module-level helpers ───────────────────────────────────────────────────────
 
@@ -1106,7 +1104,7 @@ def layout():
                 ),
 
                 html.Div([
-                    html.Div("Most Active Township", className="highest-label"),
+                    html.Div("Most Active Township · by reported events", className="highest-label"),
                     html.Div([
                         html.Div(h_region, id="ov-highest-region", className="highest-region"),
                         html.Div(h_count, id="ov-highest-count", className="highest-count"),
@@ -1193,19 +1191,23 @@ def layout():
 # Callbacks
 # ══════════════════════════════════════════════════════════════════════════════
 
-# 1. View toggle buttons → update mode store + button styles
+# 1. View toggle buttons → update mode store + button styles + AT state
 @callback(
     Output("ov-mode",           "data"),
     Output("ov-mode-total-btn", "className"),
     Output("ov-mode-anim-btn",  "className"),
+    Output("ov-mode-total-btn", "aria-pressed"),
+    Output("ov-mode-anim-btn",  "aria-pressed"),
     Input("ov-mode-total-btn",  "n_clicks"),
     Input("ov-mode-anim-btn",   "n_clicks"),
     prevent_initial_call=True,
 )
 def switch_mode(n_total, n_anim):
     if ctx.triggered_id == "ov-mode-anim-btn":
-        return "animated", "view-toggle-btn", "view-toggle-btn view-toggle-btn--active"
-    return "time_range", "view-toggle-btn view-toggle-btn--active", "view-toggle-btn"
+        return ("animated", "view-toggle-btn", "view-toggle-btn view-toggle-btn--active",
+                "false", "true")
+    return ("time_range", "view-toggle-btn view-toggle-btn--active", "view-toggle-btn",
+            "true", "false")
 
 
 # 2. Quick date preset buttons → update date pickers
@@ -1233,6 +1235,44 @@ def set_quick_dates(n7, n30, n1y, nall):
     return start_date, end_date
 
 
+def _infer_preset_label(from_date, to_date) -> str | None:
+    """Name the quick preset matching the current date range, or None if custom.
+
+    Inferred from the dates (not the clicked button) so the highlight and the
+    viewing sentence stay honest when the user adjusts a picker manually."""
+    if not from_date or not to_date:
+        return None
+    try:
+        start  = pd.Timestamp(from_date).normalize()
+        end    = pd.Timestamp(to_date).normalize()
+        max_dt = load_acled_main()["event_date"].max().normalize()
+    except Exception:
+        return None
+    if end != max_dt:
+        return None
+    if start == pd.Timestamp("2021-02-01"):
+        return "Since Feb 2021"
+    return {7: "Last 7 days", 30: "Last 30 days", 365: "Last 1 year"}.get((end - start).days)
+
+
+# 2b. Date pickers → highlight whichever quick preset is currently active
+@callback(
+    Output("ov-btn-7d",   "className"),
+    Output("ov-btn-30d",  "className"),
+    Output("ov-btn-1y",   "className"),
+    Output("ov-btn-all",  "className"),
+    Input("ov-from-date", "date"),
+    Input("ov-to-date",   "date"),
+    prevent_initial_call=False,
+)
+def highlight_quick_preset(from_date, to_date):
+    label = _infer_preset_label(from_date, to_date)
+    return tuple(
+        "quick-btn quick-btn--active" if name == label else "quick-btn"
+        for name in ("Last 7 days", "Last 30 days", "Last 1 year", "Since Feb 2021")
+    )
+
+
 # 4. Filter controls → save filter state automatically
 @callback(
     Output("ov-applied-filters", "data", allow_duplicate=True),
@@ -1252,7 +1292,8 @@ def apply_filters(from_date, to_date, region, key_events):
             "start_date": from_date or d["start_val"],
             "end_date": to_date or d["end_val"],
             "region": region, "key_events": key_events,
-            "preset_label": None}
+            "preset_label": _infer_preset_label(from_date or d["start_val"],
+                                                to_date or d["end_val"])}
 
 
 # 4b. Trend metric + filters → update subtitle (granularity + mode hint) + bytype hint
@@ -1269,9 +1310,11 @@ def update_trend_subtitle(metric, applied):
     glabel = _granularity_label(start, end)
 
     if metric == "multi":
-        subtitle = (
-            f"{glabel} · Combat types visible by default"
-        )
+        subtitle = f"{glabel} · Combat types visible by default"
+        # This chart deliberately ignores the event-type filter (top types are
+        # picked from full scope) — say so instead of implying it's filtered.
+        if applied and applied.get("key_events"):
+            subtitle += " · event-type filter not applied here (all types shown)"
         hint = [
             html.Span("ℹ", className="bytype-hint-icon"),
             " Click a legend item to show / hide it · double-click to isolate one type",

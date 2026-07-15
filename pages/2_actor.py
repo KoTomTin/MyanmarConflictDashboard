@@ -39,12 +39,9 @@ MILESTONES = [
      "The SAC held phased elections in controlled areas; the process was widely rejected as illegitimate."),
 ]
 
-PLOTLY_FONT = "Avenir Next, Segoe UI, Arial, sans-serif"
-PLOTLY_DISPLAY = "Iowan Old Style, Palatino Linotype, Book Antiqua, Georgia, serif"
-PLOTLY_TEXT = "#415669"
-PLOTLY_GRID = "#e6ddd0"
-PLOTLY_HOVER_BG = "rgba(255,251,246,0.98)"
-PLOTLY_HOVER_BORDER = "#d9cfbf"
+# Theme constants come from the shared module — do not redefine locally.
+from components.plot_theme import (PLOTLY_FONT, PLOTLY_DISPLAY, PLOTLY_TEXT,
+                                   PLOTLY_GRID, PLOTLY_HOVER_BG, PLOTLY_HOVER_BORDER)
 
 
 # ── Module-level defaults ──────────────────────────────────────────────────────
@@ -665,13 +662,16 @@ def _build_alliance_chart(ally_pairs, actor_name, valid_ids):
 # ── Highest events ─────────────────────────────────────────────────────────────
 
 def _highest_events(al: pd.DataFrame, acled: pd.DataFrame, region):
+    # Always return a township, never the region itself — the card is labelled
+    # "Most Active Township", so under a region filter we rank townships
+    # within that region rather than echoing the region total.
     if al.empty:
         return "—", "—"
     if region:
         valid_pcodes = set(acled[acled["admin1"] == region]["Tsp_Pcode"].dropna().unique())
         al = al[al["Tsp_Pcode"].isin(valid_pcodes)]
-        return region, f"{al['event_id_cnty'].nunique():,}"
-    by_pcode = al.groupby("Tsp_Pcode")["event_id_cnty"].nunique()
+    by_pcode = al.groupby("Tsp_Pcode", observed=True)["event_id_cnty"].nunique()
+    by_pcode = by_pcode[by_pcode > 0]
     if by_pcode.empty:
         return "—", "—"
     top_pcode = by_pcode.idxmax()
@@ -879,7 +879,7 @@ def layout():
                     ),
 
                     html.Div([
-                        html.Div("Most Active Township", className="highest-label"),
+                        html.Div("Most Active Township · by reported events", className="highest-label"),
                         html.Div([
                             html.Div(h_region, id="ac-highest-region", className="highest-region"),
                             html.Div(h_count,  id="ac-highest-count",  className="highest-count"),
@@ -980,19 +980,23 @@ def update_actor_options(applied):
     return _actor_options(al)
 
 
-# 1. Mode card buttons → mode store + button styles
+# 1. Mode card buttons → mode store + button styles + AT state
 @callback(
     Output("ac-mode",           "data"),
     Output("ac-mode-total-btn", "className"),
     Output("ac-mode-anim-btn",  "className"),
+    Output("ac-mode-total-btn", "aria-pressed"),
+    Output("ac-mode-anim-btn",  "aria-pressed"),
     Input("ac-mode-total-btn",  "n_clicks"),
     Input("ac-mode-anim-btn",   "n_clicks"),
     prevent_initial_call=True,
 )
 def switch_mode(n_total, n_anim):
     if ctx.triggered_id == "ac-mode-anim-btn":
-        return "animated", "view-toggle-btn", "view-toggle-btn view-toggle-btn--active"
-    return "time_range", "view-toggle-btn view-toggle-btn--active", "view-toggle-btn"
+        return ("animated", "view-toggle-btn", "view-toggle-btn view-toggle-btn--active",
+                "false", "true")
+    return ("time_range", "view-toggle-btn view-toggle-btn--active", "view-toggle-btn",
+            "true", "false")
 
 
 # 2. Quick preset buttons → update date pickers
