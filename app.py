@@ -4,12 +4,13 @@ import os
 import traceback
 import html as std_html
 import dash
+import pandas as pd
 from dash import html, dcc, Output, Input, callback
 import dash_bootstrap_components as dbc
 from flask import request as flask_request, Response
 from flask_compress import Compress
 
-from components.loaders import load_last_updated
+from components.loaders import load_last_updated, load_acled_main
 
 _ov = importlib.import_module("pages.1_overview")
 _ac = importlib.import_module("pages.2_actor")
@@ -266,7 +267,15 @@ def _cache_headers(resp):
 
 @server.route("/healthz")
 def healthz():
-    return Response("ok", mimetype="text/plain")
+    # Verifies the data layer, not just the process: a deploy that serves an
+    # error div because the parquet is missing/corrupt must fail this probe.
+    try:
+        latest = load_acled_main()["event_date"].max()
+        if pd.isna(latest):
+            raise ValueError("acled_cleaned.parquet contains no dated events")
+        return Response(f"ok data-through={latest.date().isoformat()}", mimetype="text/plain")
+    except Exception as e:
+        return Response(f"unhealthy: {e}", status=503, mimetype="text/plain")
 
 
 @server.route("/robots.txt")

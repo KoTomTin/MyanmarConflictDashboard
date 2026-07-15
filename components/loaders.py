@@ -1,4 +1,8 @@
 # components/loaders.py
+#
+# Each public loader delegates to an lru_cache'd private function keyed on the
+# source file's mtime, so a long-running server picks up pipeline updates on
+# the next request instead of serving the old frame until process restart.
 from __future__ import annotations
 import os
 from pathlib import Path
@@ -27,17 +31,22 @@ def _mtime(p: Path) -> float:
         return 0.0
 
 # ---- Geo ----
-@lru_cache(maxsize=1)
-def load_geojson(version: float | None = None) -> dict:
+def load_geojson() -> dict:
     source = WEB_BOUNDARIES_GEOJSON if WEB_BOUNDARIES_GEOJSON.exists() else BOUNDARIES_GEOJSON
-    version = version or _mtime(source)
+    return _load_geojson(_mtime(source))
+
+@lru_cache(maxsize=1)
+def _load_geojson(version: float) -> dict:
+    source = WEB_BOUNDARIES_GEOJSON if WEB_BOUNDARIES_GEOJSON.exists() else BOUNDARIES_GEOJSON
     with open(source, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
+def load_neighbor_borders() -> dict:
+    return _load_neighbor_borders(_mtime(NEIGHBOR_BORDERS_GEOJSON))
+
 @lru_cache(maxsize=1)
-def load_neighbor_borders(version: float | None = None) -> dict:
-    version = version or _mtime(NEIGHBOR_BORDERS_GEOJSON)
+def _load_neighbor_borders(version: float) -> dict:
     if not NEIGHBOR_BORDERS_GEOJSON.exists():
         return {"type": "FeatureCollection", "features": []}
     with open(NEIGHBOR_BORDERS_GEOJSON, "r", encoding="utf-8") as f:
@@ -54,9 +63,11 @@ _ALLY_CAT_COLS   = ["type1", "type2"]
 _MONTHLY_CAT_COLS = ["Tsp_Pcode", "admin1", "key_event"]  # month excluded — used in >= / <= range comparisons
 
 # ---- ACLED main ----
+def load_acled_main() -> pd.DataFrame:
+    return _load_acled_main(_mtime(ACLED_MAIN_PARQUET))
+
 @lru_cache(maxsize=1)
-def load_acled_main(version: float | None = None) -> pd.DataFrame:
-    version = version or _mtime(ACLED_MAIN_PARQUET)
+def _load_acled_main(version: float) -> pd.DataFrame:
     df = pd.read_parquet(ACLED_MAIN_PARQUET)
     # Parquet preserves dtypes — event_date is already datetime
     df["event_date"] = pd.to_datetime(df["event_date"], errors="coerce")
@@ -74,9 +85,11 @@ def load_acled_main(version: float | None = None) -> pd.DataFrame:
     return df
 
 # ---- Actor level ----
+def load_actor_level() -> pd.DataFrame:
+    return _load_actor_level(_mtime(ACTOR_LEVEL_PARQUET))
+
 @lru_cache(maxsize=1)
-def load_actor_level(version: float | None = None) -> pd.DataFrame:
-    version = version or _mtime(ACTOR_LEVEL_PARQUET)
+def _load_actor_level(version: float) -> pd.DataFrame:
     df = pd.read_parquet(ACTOR_LEVEL_PARQUET)
     for col in _ACTOR_CAT_COLS:
         if col in df.columns:
@@ -84,9 +97,11 @@ def load_actor_level(version: float | None = None) -> pd.DataFrame:
     return df
 
 # ---- Ally pairs ----
+def load_ally_pairs() -> pd.DataFrame:
+    return _load_ally_pairs(_mtime(ALLY_PAIRS_PARQUET))
+
 @lru_cache(maxsize=1)
-def load_ally_pairs(version: float | None = None) -> pd.DataFrame:
-    version = version or _mtime(ALLY_PAIRS_PARQUET)
+def _load_ally_pairs(version: float) -> pd.DataFrame:
     df = pd.read_parquet(ALLY_PAIRS_PARQUET)
     for col in _ALLY_CAT_COLS:
         if col in df.columns:
@@ -94,11 +109,13 @@ def load_ally_pairs(version: float | None = None) -> pd.DataFrame:
     return df
 
 # ---- Monthly township aggregation (pre-built by pipeline, Massacres recoding already applied) ----
-@lru_cache(maxsize=1)
-def load_monthly_township(version: float | None = None) -> pd.DataFrame:
+def load_monthly_township() -> pd.DataFrame:
     """Read pre-aggregated monthly township counts from parquet.
     Columns: Tsp_Pcode, admin1, month, key_event, events, fatalities."""
-    version = version or _mtime(MONTHLY_TSP_PARQUET)
+    return _load_monthly_township(_mtime(MONTHLY_TSP_PARQUET))
+
+@lru_cache(maxsize=1)
+def _load_monthly_township(version: float) -> pd.DataFrame:
     df = pd.read_parquet(MONTHLY_TSP_PARQUET)
     for col in _MONTHLY_CAT_COLS:
         if col in df.columns:
@@ -106,18 +123,22 @@ def load_monthly_township(version: float | None = None) -> pd.DataFrame:
     return df
 
 
+def load_last_updated() -> str:
+    return _load_last_updated(_mtime(LAST_UPDATED_FILE))
+
 @lru_cache(maxsize=1)
-def load_last_updated(version: float | None = None) -> str:
-    version = version or _mtime(LAST_UPDATED_FILE)
+def _load_last_updated(version: float) -> str:
     try:
         return LAST_UPDATED_FILE.read_text(encoding="utf-8").strip()
     except FileNotFoundError:
         return ""
 
 
+def load_last_checked() -> dict:
+    return _load_last_checked(max(_mtime(LAST_CHECKED_FILE), _mtime(LAST_UPDATED_FILE)))
+
 @lru_cache(maxsize=1)
-def load_last_checked(version: float | None = None) -> dict:
-    version = version or max(_mtime(LAST_CHECKED_FILE), _mtime(LAST_UPDATED_FILE))
+def _load_last_checked(version: float) -> dict:
     if LAST_CHECKED_FILE.exists():
         try:
             payload = json.loads(LAST_CHECKED_FILE.read_text(encoding="utf-8"))
@@ -126,7 +147,7 @@ def load_last_checked(version: float | None = None) -> dict:
         except Exception:
             pass
 
-    fallback = load_last_updated(_mtime(LAST_UPDATED_FILE))
+    fallback = load_last_updated()
     if not fallback:
         return {}
 
@@ -140,6 +161,6 @@ def load_last_checked(version: float | None = None) -> dict:
         "date_display": date_str,
         "time_display": "",
         "timezone_label": "Yangon time",
-        "cadence_note": "Scheduled ACLED check: Thursday evening",
+        "cadence_note": "Scheduled ACLED check: daily, ~21:00 Yangon time",
         "recorded_time": False,
     }

@@ -71,7 +71,10 @@ FINAL_COLS = [
     "civilian_targeting",
     "admin1", "admin2", "admin3", "Tsp_Pcode",
     "fatalities",
-    # notes intentionally excluded — used during processing, not stored
+    # notes intentionally excluded — used during processing, not stored.
+    # The two notes-derived boolean signals ARE stored so the recode can be
+    # re-applied to the parquet without flipping notes-dependent categories.
+    "notes_mentions_drone", "notes_mentions_displacement",
 ]
 
 # ── Actor recoding constants ───────────────────────────────────────────────────
@@ -344,10 +347,44 @@ def add_tsp_pcode(df: pd.DataFrame, lookup: pd.DataFrame) -> pd.DataFrame:
 # 4. KEY EVENT RECODING
 # ══════════════════════════════════════════════════════════════════════════════
 
+def _notes_flags(df: pd.DataFrame) -> tuple[pd.Series, pd.Series]:
+    """
+    Return the two notes-derived boolean signals (drone mention, displacement
+    mention) used by the key_event / detailed_event recodes.
+
+    The notes column is not persisted to parquet, so re-running the recode on
+    stored data used to silently flip notes-dependent categories (state-forces
+    Drone Strike → Air Strike, Displacement → Others) on every --update-only
+    run. Resolution order:
+      1. notes present (fresh API/Excel data)      → derive from notes
+      2. persisted flag columns present            → reuse them
+      3. legacy parquet without flags              → reconstruct from
+         detailed_event, which was derived from notes at full-rebuild time
+         and is never re-derived without them.
+    """
+    if "notes" in df.columns:
+        notes = df["notes"].astype(str).str.lower()
+        drone = notes.str.contains("drone", na=False)
+        disp  = notes.str.contains("displacement", na=False)
+    elif "notes_mentions_drone" in df.columns and "notes_mentions_displacement" in df.columns:
+        drone = df["notes_mentions_drone"].fillna(False).astype(bool)
+        disp  = df["notes_mentions_displacement"].fillna(False).astype(bool)
+    else:
+        de = (
+            df["detailed_event"].astype(str)
+            if "detailed_event" in df.columns
+            else pd.Series("", index=df.index)
+        )
+        drone = de.eq("Drone strike")
+        disp  = de.eq("Displacement")
+    return drone, disp
+
+
 def create_key_event(df: pd.DataFrame) -> pd.DataFrame:
     """
     Encode key_event with 12 categories.
-    Requires: event_type, sub_event_type, inter1, notes columns.
+    Requires: event_type, sub_event_type, inter1, and either notes or the
+    persisted notes_mentions_* flag columns (see _notes_flags).
 
     Priority order (np.select first-match):
       1. Arrests
@@ -368,11 +405,14 @@ def create_key_event(df: pd.DataFrame) -> pd.DataFrame:
     df    = df.copy()
     et    = df["event_type"].astype(str).str.strip()
     set_  = df["sub_event_type"].astype(str).str.strip()
-    notes = df["notes"].astype(str).str.lower() if "notes" in df.columns else pd.Series("", index=df.index)
     i1    = df["inter1"].astype(str).str.strip()  if "inter1" in df.columns else pd.Series("State forces", index=df.index)
 
+    drone_mention, disp_mention = _notes_flags(df)
+    df["notes_mentions_drone"]        = drone_mention
+    df["notes_mentions_displacement"] = disp_mention
+
     is_air_drone  = set_ == "Air/drone strike"
-    is_drone_flag = notes.str.contains(r"drone", na=False) | ~i1.str.casefold().eq("state forces")
+    is_drone_flag = drone_mention | ~i1.str.casefold().eq("state forces")
     is_combat_et  = et.isin(["Battles", "Explosions/Remote violence"])
 
     SHELLING_SUBS = frozenset(["Shelling/artillery/missile attack"])
@@ -394,7 +434,7 @@ def create_key_event(df: pd.DataFrame) -> pd.DataFrame:
         is_combat_et & ~is_air_drone,                              # Armed Clash (all other ground)
         et == "Violence against civilians",                        # Attack on Civilians
         et == "Protests",
-        (set_ == "Other") & notes.str.contains("displacement", na=False),
+        (set_ == "Other") & disp_mention,
     ]
     choices = [
         "Arrests",
@@ -422,19 +462,22 @@ def create_detailed_event(df: pd.DataFrame) -> pd.DataFrame:
     key_event is already finalised by create_key_event — this function does NOT modify it.
     """
     df = df.copy()
+    # Resolve the notes-derived flags BEFORE overwriting detailed_event —
+    # the legacy fallback in _notes_flags reads the stored detailed_event.
+    drone_mention, disp_mention = _notes_flags(df)
+
     df["detailed_event"] = df["sub_event_type"].astype(str)
 
-    notes = df["notes"].astype(str).str.lower() if "notes" in df.columns else pd.Series("", index=df.index)
-    i1    = df["inter1"].astype(str).str.strip()  if "inter1" in df.columns else pd.Series("State forces", index=df.index)
+    i1 = df["inter1"].astype(str).str.strip() if "inter1" in df.columns else pd.Series("State forces", index=df.index)
 
     is_air   = df["sub_event_type"].astype(str).str.strip() == "Air/drone strike"
-    is_drone = notes.str.contains(r"drone", na=False) | ~i1.str.casefold().eq("state forces")
+    is_drone = drone_mention | ~i1.str.casefold().eq("state forces")
 
     df.loc[is_air & is_drone,  "detailed_event"] = "Drone strike"
     df.loc[is_air & ~is_drone, "detailed_event"] = "Air strike"
 
     is_other = df["sub_event_type"].astype(str).str.strip() == "Other"
-    df.loc[is_other & notes.str.contains("displacement", na=False), "detailed_event"] = "Displacement"
+    df.loc[is_other & disp_mention, "detailed_event"] = "Displacement"
 
     return df
 
@@ -882,7 +925,8 @@ def main(update_only: bool = False, export_csv: bool = False):
                 df_all = pd.concat([df_all, df_api_clean], ignore_index=True)
                 before = len(df_all)
                 df_all = df_all.drop_duplicates(subset=["event_id_cnty"], keep="last")
-                net_new = before - len(df_all) + len(df_api_clean)
+                duplicates_removed = before - len(df_all)
+                net_new = len(df_api_clean) - duplicates_removed
                 print(f"  API rows fetched: {len(df_api_clean):,}  ·  Net new after dedup: {net_new:,}")
             else:
                 print("  No events returned in the date window.")
@@ -896,7 +940,12 @@ def main(update_only: bool = False, export_csv: bool = False):
                 print("  No deleted Myanmar event IDs found in the sync window.")
             sync_completed = True
         except Exception as e:
-            print(f"  ⚠  API fetch failed: {e}")
+            # Fail loudly: exiting 0 here made the GitHub Actions run look
+            # green while no data landed — the pipeline was silently stale
+            # for weeks twice (Apr 2026, May–Jul 2026). Nothing has been
+            # saved yet, so aborting leaves the datasets untouched.
+            print(f"  ✗  API sync failed: {e}")
+            sys.exit(1)
 
     # Sort by date
     df_all["event_date"] = pd.to_datetime(df_all["event_date"])

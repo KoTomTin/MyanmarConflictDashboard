@@ -41,6 +41,25 @@ jobs:
           ACLED_PASSWORD: ${{ secrets.ACLED_PASSWORD }}
         run: python pipeline/pipeline.py --update-only
 
+      # Tripwire for silent staleness: a sync can "succeed" while returning no
+      # rows (this happened in Apr 2026 with the timestamp= filter, and again
+      # May–Jul 2026 when the schedule was disabled). ACLED publishes weekly,
+      # so 21 days with no new event dates means something upstream is broken
+      # and a human needs to look — fail the run so GitHub sends a notification.
+      - name: Verify data freshness
+        run: |
+          python - <<'EOF'
+          import json, sys
+          from datetime import date
+          state = json.load(open("data/processed/acled_sync_state.json"))
+          latest = date.fromisoformat(state["latest_event_date"])
+          age = (date.today() - latest).days
+          print(f"Latest event date: {latest} ({age} days old)")
+          if age > 21:
+              sys.exit(f"STALE DATA: latest event is {age} days old (threshold: 21). "
+                       f"The ACLED fetch is returning no new events — investigate.")
+          EOF
+
       - name: Commit and push updated data
         run: |
           git config user.name  "github-actions[bot]"

@@ -16,7 +16,8 @@ from plotly.subplots import make_subplots
 from dash import dcc, html, callback, Output, Input, State
 
 from components.colors import KEY_EVENT_COLORS, ALERT_CATEGORY_COLORS
-from components.loaders import load_acled_main, load_geojson, load_last_checked
+from components.loaders import (load_acled_main, load_geojson, load_last_checked,
+                                ACLED_MAIN_PARQUET, _mtime)
 from components.map_utils import apply_tight_geos, ensure_full_geoindex, filter_geo_by_property
 from components.page_bits import data_disclaimer
 
@@ -318,8 +319,14 @@ def _assign_category(row: pd.Series) -> str:
     return "Both surges"
 
 
-@lru_cache(maxsize=1)
 def _build_alert_frames():
+    # Keyed on the parquet mtime so alert windows recompute after each data
+    # update instead of living for the whole process lifetime.
+    return _build_alert_frames_cached(_mtime(ACLED_MAIN_PARQUET))
+
+
+@lru_cache(maxsize=1)
+def _build_alert_frames_cached(version: float):
     geojson = load_geojson()
     geo_lookup = _geo_lookup(geojson)
 
