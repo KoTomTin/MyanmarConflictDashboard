@@ -11,8 +11,30 @@ Geo helpers (reusable across pages):
 from __future__ import annotations
 import plotly.graph_objects as go
 
+# URL under which app.py serves the boundary file (see the /geo/ route).
+# Full-country choropleths pass this string as `geojson=` so the browser
+# fetches and caches the geometry once instead of receiving ~1.2 MB of
+# coordinates inside every figure JSON.
+GEO_BOUNDARIES_URL = "/geo/boundaries.geojson"
+
+
+def geojson_arg(active_geo: dict, region=None) -> dict | str:
+    """Value for go.Choropleth(geojson=...): the cached URL for full-country
+    maps, or the inline sub-geojson for region-filtered views (rare path)."""
+    return active_geo if region else GEO_BOUNDARIES_URL
+
+
 # ---------- internal: compute lon/lat bounds ----------
+# Keyed by id() with the dict itself retained in the value, so the id can't be
+# recycled while the entry exists; the identity re-check makes stale hits safe.
+_BOUNDS_CACHE: dict[int, tuple[dict, tuple[float, float, float, float]]] = {}
+
+
 def _geo_bounds(geojson: dict) -> tuple[float, float, float, float]:
+    hit = _BOUNDS_CACHE.get(id(geojson))
+    if hit is not None and hit[0] is geojson:
+        return hit[1]
+
     min_lon, max_lon, min_lat, max_lat = 180.0, -180.0, 90.0, -90.0
 
     def _walk(x):
@@ -31,7 +53,11 @@ def _geo_bounds(geojson: dict) -> tuple[float, float, float, float]:
 
     for feat in geojson.get("features", []):
         _walk(feat.get("geometry", {}).get("coordinates", []))
-    return min_lon, max_lon, min_lat, max_lat
+    bounds = (min_lon, max_lon, min_lat, max_lat)
+    if len(_BOUNDS_CACHE) > 512:
+        _BOUNDS_CACHE.clear()
+    _BOUNDS_CACHE[id(geojson)] = (geojson, bounds)
+    return bounds
 
 
 # ---------- public: tighten map frame ----------
@@ -135,13 +161,26 @@ def ensure_full_geoindex(
 
 
 # ---------- public: filter geojson to a property value ----------
+# Memoized: sub-geojsons are rebuilt on every map callback otherwise, and the
+# stable result objects are what make the bounds cache above effective.
+_FILTER_CACHE: dict[tuple[int, str, str], tuple[dict, dict]] = {}
+
+
 def filter_geo_by_property(
     geojson: dict,
     prop: str,
     value: str,
 ) -> dict:
+    key = (id(geojson), prop, str(value))
+    hit = _FILTER_CACHE.get(key)
+    if hit is not None and hit[0] is geojson:
+        return hit[1]
     feats = [ft for ft in geojson.get("features", []) if ft.get("properties", {}).get(prop) == value]
-    return {"type": "FeatureCollection", "features": feats}
+    out = {"type": "FeatureCollection", "features": feats}
+    if len(_FILTER_CACHE) > 1024:
+        _FILTER_CACHE.clear()
+    _FILTER_CACHE[key] = (geojson, out)
+    return out
 
 
 # ---------- public: get list of ids from geojson ----------

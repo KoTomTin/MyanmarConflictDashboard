@@ -23,7 +23,8 @@ from dash.exceptions import PreventUpdate
 from components.loaders   import (load_acled_main, load_geojson, load_last_checked)
 from components.colors    import (KEY_EVENT_COLORS, KEY_EVENT_ORDER,
                                    SEQUENTIAL_BLUES_ZERO_GREY)
-from components.map_utils import apply_tight_geos, add_neighbor_labels, filter_geo_by_property
+from components.map_utils import (apply_tight_geos, add_neighbor_labels,
+                                  filter_geo_by_property, geojson_arg)
 from components.page_bits import data_disclaimer
 
 
@@ -328,34 +329,33 @@ def _build_store(df, geo, start_date, end_date, region, key_events,
     pcodes     = _geo_pcodes(active_geo)
     text       = _tsp_text(active_geo)
     states     = _tsp_states(active_geo)
-    n          = len(pcodes)
-    pcode_idx  = {p: i for i, p in enumerate(pcodes)}
     start_month = pd.to_datetime(start_date).strftime("%Y-%m") if start_date else None
     end_month = pd.to_datetime(end_date).strftime("%Y-%m") if end_date else None
 
-    agg = df.groupby(["Tsp_Pcode", "event_date"]).agg(
+    # observed=True is essential: Tsp_Pcode is categorical, and the default
+    # observed=False materialises every category × date combination (~10x rows).
+    agg = df.groupby(["Tsp_Pcode", "event_date"], observed=True).agg(
         events=("event_id_cnty", "nunique"),
         fatalities=("fatalities", "sum"),
     ).reset_index()
 
     if mode == "animated":
         agg["quarter"] = agg["event_date"].dt.to_period("Q").astype(str)
-        qagg = agg.groupby(["Tsp_Pcode", "quarter"]).agg(
+        qagg = agg.groupby(["Tsp_Pcode", "quarter"], observed=True).agg(
             events=("events", "sum"), fatalities=("fatalities", "sum"),
         ).reset_index()
+
+        def _matrix(col: str) -> list[list[int]]:
+            piv = (
+                qagg.pivot_table(index="quarter", columns="Tsp_Pcode", values=col,
+                                 aggfunc="sum", fill_value=0, observed=True)
+                .reindex(columns=pcodes, fill_value=0)
+                .sort_index()
+            )
+            return piv.astype(int).values.tolist()
+
+        matrix_ev, matrix_fat = _matrix("events"), _matrix("fatalities")
         all_quarters = sorted(qagg["quarter"].unique())
-        matrix_ev, matrix_fat = [], []
-        for q in all_quarters:
-            z_ev  = [0] * n
-            z_fat = [0] * n
-            sub = qagg[qagg["quarter"] == q]
-            for _, row in sub.iterrows():
-                i = pcode_idx.get(row["Tsp_Pcode"])
-                if i is not None:
-                    z_ev[i]  = int(row["events"])
-                    z_fat[i] = int(row["fatalities"])
-            matrix_ev.append(z_ev)
-            matrix_fat.append(z_fat)
         # Use per-quarter distribution (not cumulative totals) so the colour
         # scale is calibrated to a single quarter's intensity, making changes
         # visible across the animation.
@@ -370,16 +370,11 @@ def _build_store(df, geo, start_date, end_date, region, key_events,
             "pcodes": pcodes, "text": text, "states": states, "region": region,
         }
     else:
-        total = agg.groupby("Tsp_Pcode").agg(
+        total = agg.groupby("Tsp_Pcode", observed=True).agg(
             events=("events", "sum"), fatalities=("fatalities", "sum"),
-        ).reset_index()
-        z_ev  = [0] * n
-        z_fat = [0] * n
-        for _, row in total.iterrows():
-            i = pcode_idx.get(row["Tsp_Pcode"])
-            if i is not None:
-                z_ev[i]  = int(row["events"])
-                z_fat[i] = int(row["fatalities"])
+        )
+        z_ev  = total["events"].reindex(pcodes, fill_value=0).astype(int).tolist()
+        z_fat = total["fatalities"].reindex(pcodes, fill_value=0).astype(int).tolist()
         return {
             "mode": "time_range",
             "z": z_ev, "z_fat": z_fat,
@@ -406,9 +401,9 @@ def _build_animated_choropleth(store: dict, geo: dict,
 
     initial_z  = matrix[0] if n_frames > 0 else [0] * len(store["pcodes"])
 
-    # Base trace
+    # Base trace — full-country maps reference the geometry by URL (browser-cached)
     base_trace = go.Choropleth(
-        geojson=active_geo,
+        geojson=geojson_arg(active_geo, store.get("region")),
         locations=store["pcodes"],
         z=initial_z,
         text=store["text"],
@@ -544,7 +539,7 @@ def _build_choropleth(
     hover_lbl  = cb_title
 
     fig = go.Figure(go.Choropleth(
-        geojson=active_geo,
+        geojson=geojson_arg(active_geo, store.get("region")),
         locations=store["pcodes"],
         z=z, text=store["text"],
         customdata=store.get("states", [""] * len(store["pcodes"])),

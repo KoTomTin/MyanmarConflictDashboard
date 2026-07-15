@@ -15,7 +15,8 @@ from dash.exceptions import PreventUpdate
 from components.loaders   import (load_acled_main, load_actor_level,
                                    load_ally_pairs, load_geojson, load_last_checked)
 from components.colors    import SEQUENTIAL_BLUES_ZERO_GREY
-from components.map_utils import apply_tight_geos, add_neighbor_labels, filter_geo_by_property
+from components.map_utils import (apply_tight_geos, add_neighbor_labels,
+                                  filter_geo_by_property, geojson_arg)
 from components.page_bits import data_disclaimer
 
 
@@ -254,7 +255,7 @@ def _actor_options(actor_level: pd.DataFrame) -> list[dict]:
         .nunique().sort_values(ascending=False).reset_index()
     )
     return [{"label": f"{r.actor_name}  ({r.event_id_cnty:,})", "value": r.actor_name}
-            for _, r in counts.iterrows()]
+            for r in counts.itertuples()]
 
 
 # ── Store builder ──────────────────────────────────────────────────────────────
@@ -269,29 +270,27 @@ def _build_store(actor_level, geo, actor_name, start_date, end_date,
     pcodes     = _geo_pcodes(active_geo)
     text       = _tsp_text(active_geo)
     states     = _tsp_states(active_geo)
-    n          = len(pcodes)
-    pcode_idx  = {p: i for i, p in enumerate(pcodes)}
     start_month = pd.to_datetime(start_date).strftime("%Y-%m") if start_date else None
     end_month = pd.to_datetime(end_date).strftime("%Y-%m") if end_date else None
 
+    # observed=True: Tsp_Pcode is categorical — the default materialises every
+    # category × date combination (~10x the real rows).
     agg = (
-        al.groupby(["Tsp_Pcode", "event_date"])["event_id_cnty"]
+        al.groupby(["Tsp_Pcode", "event_date"], observed=True)["event_id_cnty"]
         .nunique().reset_index(name="events")
     )
 
     if mode == "animated":
         agg["quarter"] = agg["event_date"].dt.to_period("Q").astype(str)
-        qagg = agg.groupby(["Tsp_Pcode", "quarter"])["events"].sum().reset_index()
+        qagg = agg.groupby(["Tsp_Pcode", "quarter"], observed=True)["events"].sum().reset_index()
         all_quarters = sorted(qagg["quarter"].unique())
-        matrix = []
-        for q in all_quarters:
-            z   = [0] * n
-            sub = qagg[qagg["quarter"] == q]
-            for _, row in sub.iterrows():
-                i = pcode_idx.get(row["Tsp_Pcode"])
-                if i is not None:
-                    z[i] = int(row["events"])
-            matrix.append(z)
+        piv = (
+            qagg.pivot_table(index="quarter", columns="Tsp_Pcode", values="events",
+                             aggfunc="sum", fill_value=0, observed=True)
+            .reindex(columns=pcodes, fill_value=0)
+            .sort_index()
+        )
+        matrix = piv.astype(int).values.tolist()
         return {
             "mode": "animated", "frames": all_quarters,
             "frame_labels": [_quarter_label(q) for q in all_quarters],
@@ -301,12 +300,8 @@ def _build_store(actor_level, geo, actor_name, start_date, end_date,
             "pcodes": pcodes, "text": text, "states": states, "region": region,
         }
     else:
-        total = agg.groupby("Tsp_Pcode")["events"].sum().reset_index()
-        z = [0] * n
-        for _, row in total.iterrows():
-            i = pcode_idx.get(row["Tsp_Pcode"])
-            if i is not None:
-                z[i] = int(row["events"])
+        total = agg.groupby("Tsp_Pcode", observed=True)["events"].sum()
+        z = total.reindex(pcodes, fill_value=0).astype(int).tolist()
         return {
             "mode": "time_range", "z": z, "max_val": _q95(pd.Series(z)),
             "start_month": start_month,
@@ -326,7 +321,7 @@ def _build_choropleth(
 ) -> go.Figure:
     active_geo = filter_geo_by_property(geo, "ST", store["region"]) if store.get("region") else geo
     fig = go.Figure(go.Choropleth(
-        geojson=active_geo,
+        geojson=geojson_arg(active_geo, store.get("region")),
         locations=store["pcodes"],
         z=store["z"], text=store["text"],
         customdata=store.get("states", [""] * len(store["pcodes"])),
@@ -391,7 +386,7 @@ def _build_animated_choropleth(store: dict, geo: dict) -> go.Figure:
     initial_z  = matrix[0] if n_frames > 0 else [0] * len(store["pcodes"])
 
     base_trace = go.Choropleth(
-        geojson=active_geo,
+        geojson=geojson_arg(active_geo, store.get("region")),
         locations=store["pcodes"],
         z=initial_z, text=store["text"],
         customdata=store.get("states", [""] * len(store["pcodes"])),
@@ -955,29 +950,29 @@ def layout():
 # Callbacks
 # ══════════════════════════════════════════════════════════════════════════════
 
-# 0. Filters → update actor dropdown counts to reflect current date/region scope
+# 0. Date/region scope → update actor dropdown counts.
+# Keyed on the date/region controls directly (not the applied-filters store)
+# so changing only the actor — which cannot affect the options — doesn't
+# re-fire this. The month column is precomputed in the loader.
 @callback(
-    Output("ac-actor", "options"),
-    Input("ac-applied-filters", "data"),
+    Output("ac-actor",    "options"),
+    Input("ac-from-date", "date"),
+    Input("ac-to-date",   "date"),
+    Input("ac-region",    "value"),
     prevent_initial_call=True,
 )
-def update_actor_options(applied):
-    if not applied:
-        raise PreventUpdate
-    actor_level = load_actor_level()
-    al = actor_level.copy()
-    al["event_date"] = pd.to_datetime(al["event_date"], errors="coerce")
-    al["month"] = al["event_date"].dt.to_period("M").astype(str)
-    start_month = applied.get("start_month")
-    end_month   = applied.get("end_month")
-    region      = applied.get("region")
-    if start_month: al = al[al["month"] >= start_month]
-    if end_month:   al = al[al["month"] <= end_month]
+def update_actor_options(from_date, to_date, region):
+    al = load_actor_level()
+    mask = pd.Series(True, index=al.index)
+    if from_date:
+        mask &= al["month"] >= from_date[:7]
+    if to_date:
+        mask &= al["month"] <= to_date[:7]
     if region:
         acled = load_acled_main()
         valid_pcodes = set(acled[acled["admin1"] == region]["Tsp_Pcode"].dropna().unique())
-        al = al[al["Tsp_Pcode"].isin(valid_pcodes)]
-    return _actor_options(al)
+        mask &= al["Tsp_Pcode"].isin(valid_pcodes)
+    return _actor_options(al[mask])
 
 
 # 1. Mode card buttons → mode store + button styles + AT state

@@ -31,14 +31,19 @@ def _mtime(p: Path) -> float:
         return 0.0
 
 # ---- Geo ----
+def geojson_source_path() -> Path:
+    """The boundary file the app serves — also exposed over HTTP at /geo/ so
+    choropleth traces can reference it by URL instead of embedding ~1.2 MB
+    of geometry in every figure JSON."""
+    return WEB_BOUNDARIES_GEOJSON if WEB_BOUNDARIES_GEOJSON.exists() else BOUNDARIES_GEOJSON
+
+
 def load_geojson() -> dict:
-    source = WEB_BOUNDARIES_GEOJSON if WEB_BOUNDARIES_GEOJSON.exists() else BOUNDARIES_GEOJSON
-    return _load_geojson(_mtime(source))
+    return _load_geojson(_mtime(geojson_source_path()))
 
 @lru_cache(maxsize=1)
 def _load_geojson(version: float) -> dict:
-    source = WEB_BOUNDARIES_GEOJSON if WEB_BOUNDARIES_GEOJSON.exists() else BOUNDARIES_GEOJSON
-    with open(source, "r", encoding="utf-8") as f:
+    with open(geojson_source_path(), "r", encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -94,6 +99,10 @@ def load_actor_level() -> pd.DataFrame:
 @lru_cache(maxsize=1)
 def _load_actor_level(version: float) -> pd.DataFrame:
     df = pd.read_parquet(ACTOR_LEVEL_PARQUET)
+    if "event_date" in df.columns:
+        df["event_date"] = pd.to_datetime(df["event_date"], errors="coerce")
+        # Precomputed once here — deriving it per callback cost ~300 ms/request
+        df["month"] = df["event_date"].dt.to_period("M").astype(str)
     for col in _ACTOR_CAT_COLS:
         if col in df.columns:
             df[col] = df[col].astype("category")

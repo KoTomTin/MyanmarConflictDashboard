@@ -1,6 +1,7 @@
 import importlib
 import json
 import os
+import threading
 import traceback
 import html as std_html
 import dash
@@ -10,7 +11,7 @@ import dash_bootstrap_components as dbc
 from flask import request as flask_request, Response
 from flask_compress import Compress
 
-from components.loaders import load_last_updated, load_acled_main
+from components.loaders import load_last_updated, load_acled_main, geojson_source_path
 
 _ov = importlib.import_module("pages.1_overview")
 _ac = importlib.import_module("pages.2_actor")
@@ -246,6 +247,7 @@ server = app.server
 server.config["COMPRESS_MIMETYPES"] = [
     "text/html", "text/css", "text/xml", "text/plain",
     "application/json", "application/javascript",
+    "application/geo+json",
     "image/svg+xml",
 ]
 server.config["COMPRESS_LEVEL"] = 6
@@ -262,6 +264,20 @@ def _cache_headers(resp):
         resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
     elif path.startswith("/assets/"):
         resp.headers["Cache-Control"] = "public, max-age=86400"
+    return resp
+
+
+@server.route("/geo/boundaries.geojson")
+def geo_boundaries():
+    # Referenced by choropleth traces as a URL (components/map_utils.py) so the
+    # browser downloads the boundary geometry once instead of receiving it
+    # embedded in every map figure. Served as an in-memory Response (not
+    # send_from_directory) because Flask-Compress skips streamed responses for
+    # gzip clients; boundaries change ~never, so a day of client cache is safe.
+    src = geojson_source_path()
+    resp = Response(src.read_bytes(), mimetype="application/geo+json")
+    resp.headers["Cache-Control"] = "public, max-age=86400"
+    resp.set_etag(str(src.stat().st_mtime))
     return resp
 
 
@@ -450,6 +466,22 @@ def highlight_active_nav(pathname):
         for item in NAV_ITEMS
     ]
     return mobile
+
+
+# ── Warm data caches in the background ────────────────────────────────────────
+# The alerts precompute costs ~1.3 s cold; without this the first visitor after
+# every restart or data refresh pays it. Daemon thread so startup isn't blocked;
+# lru_cache makes a race with an early request harmless (worst case: computed twice).
+def _warm_caches():
+    try:
+        load_acled_main()
+        _al._build_alert_frames()
+        print("[warm] data caches ready")
+    except Exception as e:
+        print(f"[warm] cache warming failed: {e}")
+
+
+threading.Thread(target=_warm_caches, daemon=True, name="cache-warm").start()
 
 
 if __name__ == "__main__":

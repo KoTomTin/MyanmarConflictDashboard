@@ -18,7 +18,8 @@ from dash import dcc, html, callback, Output, Input, State
 from components.colors import KEY_EVENT_COLORS, ALERT_CATEGORY_COLORS
 from components.loaders import (load_acled_main, load_geojson, load_last_checked,
                                 ACLED_MAIN_PARQUET, _mtime)
-from components.map_utils import apply_tight_geos, ensure_full_geoindex, filter_geo_by_property
+from components.map_utils import (apply_tight_geos, ensure_full_geoindex,
+                                  filter_geo_by_property, geojson_arg)
 from components.page_bits import data_disclaimer
 
 
@@ -507,7 +508,8 @@ def _filter_snapshot(region: str | None):
     return current, history, combat_context, geojson, meta
 
 
-def _build_map(snapshot: pd.DataFrame, geojson: dict, window_label: str, selected_tsp: str | None):
+def _build_map(snapshot: pd.DataFrame, geojson: dict, window_label: str, selected_tsp: str | None,
+               region: str | None = None):
     df = ensure_full_geoindex(
         snapshot[[
             "Tsp_Pcode", "township", "admin1", "map_code", "map_category",
@@ -536,7 +538,7 @@ def _build_map(snapshot: pd.DataFrame, geojson: dict, window_label: str, selecte
 
     fig = go.Figure()
     fig.add_trace(go.Choropleth(
-        geojson=geojson,
+        geojson=geojson_arg(geojson, region),
         locations=df["Tsp_Pcode"],
         z=df["map_code"],
         featureidkey="properties.TS_PCODE",
@@ -1323,7 +1325,7 @@ def update_alert_snapshot(region, click_data, current_tsp):
     else:
         selected_tsp = option_values[0] if option_values else None
 
-    fig = _build_map(snapshot, geojson, meta["window_label"], selected_tsp)
+    fig = _build_map(snapshot, geojson, meta["window_label"], selected_tsp, region=region)
     flagged = snapshot["flagged"].sum()
     event_alerts = ((snapshot["flag_local_event"] == 1) | (snapshot["flag_global_event"] == 1)).sum()
     fatal_alerts = ((snapshot["flag_local_fatal"] == 1) | (snapshot["flag_global_fatal"] == 1)).sum()
