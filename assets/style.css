@@ -89,11 +89,11 @@
   /* ── Type scale ───────────────────────────────────────────── */
   --text-base:  15.5px;
   --leading:    1.58;
-  --text-xs:    0.72rem;   /* 11.2px — kpi labels, kickers */
-  --text-sm:    0.78rem;   /* 12.1px — captions, muted */
-  --text-base2: 0.84rem;   /* 13.0px — compact body, subtitles */
-  --text-md:    0.88rem;   /* 13.6px — nav, small controls */
-  --text-body:  0.96rem;   /* 14.9px — body copy */
+  --text-xs:    0.8rem;    /* 11.2px — kpi labels, kickers */
+  --text-sm:    0.85rem;   /* 12.1px — captions, muted */
+  --text-base2: 0.9rem;    /* 13.0px — compact body, subtitles */
+  --text-md:    0.92rem;   /* 13.6px — nav, small controls */
+  --text-body:  1rem;      /* 14.9px — body copy */
   --text-lg:    1.08rem;   /* 16.7px — card title */
   --text-xl:    1.35rem;   /* 20.9px — KPI value (compact) */
   --text-2xl:   1.65rem;   /* 25.6px — page title */
@@ -207,13 +207,13 @@ body::before {
   font-family: var(--font-display);
 }
 .brand-name {
-  font-size: 0.8rem;
+  font-size: 0.86rem;
   color: #6B7280;
   line-height: 1.35;
   font-family: var(--font);
 }
 .brand-tagline {
-  font-size: 0.77rem;
+  font-size: 0.84rem;
   color: var(--text-muted);
   line-height: 1.4;
   margin-top: 4px;
@@ -246,7 +246,7 @@ body::before {
   border-radius: var(--radius-sm);
   border-left: 3px solid transparent;
   color: var(--sidebar-text);
-  font-size: 0.88rem;
+  font-size: 0.92rem;
   font-weight: 500;
   cursor: pointer;
   transition: background var(--transition), color var(--transition);
@@ -277,18 +277,18 @@ body::before {
   margin-bottom: 10px;
 }
 .howto-title {
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: #6B7280;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
+  text-transform: none;
+  letter-spacing: 0.01em;
   margin-bottom: 8px;
   font-family: var(--font);
 }
 .howto-list {
   padding-left: 18px;
   margin: 0;
-  font-size: 0.81rem;
+  font-size: 0.87rem;
   color: #9CA3AF;
   line-height: 1.9;
   font-family: var(--font);
@@ -300,7 +300,7 @@ body::before {
   border: 1px solid var(--border);
   border-radius: 20px;
   color: var(--accent);
-  font-size: 0.81rem;
+  font-size: 0.87rem;
   font-weight: 600;
   padding: 7px 12px;
   cursor: pointer;
@@ -315,7 +315,7 @@ body::before {
   border-top: 1px solid var(--sidebar-divider);
 }
 .sidebar-meta {
-  font-size: 0.8rem;
+  font-size: 0.86rem;
   color: #83909b;
   line-height: 1.65;
   font-family: var(--font);
@@ -369,7 +369,7 @@ body::before {
   font-family: var(--font-display) !important;
 }
 .page-subtitle {
-  font-size: 0.83rem;
+  font-size: 0.9rem;
   color: #4c6073;
   margin-top: 4px;
   line-height: 1.5;
@@ -382,16 +382,16 @@ body::before {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  font-size: 0.77rem;
+  font-size: 0.84rem;
   line-height: 1.35;
   color: #627689;
   max-width: 76ch;
 }
 .page-link-label {
-  font-size: 0.73rem;
+  font-size: 0.8rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  text-transform: none;
   color: #8392a0;
   margin-right: 2px;
 }
@@ -419,7 +419,7 @@ body::before {
   transform: translateY(-1px);
 }
 .page-subtitle--armed {
-  font-size: 0.77rem;
+  font-size: 0.84rem;
   font-weight: 700;
   color: #b45309;           /* amber-700 — deliberate, not alarming red */
   background: #fef3c7;      /* amber-100 */
@@ -431,7 +431,7 @@ body::before {
   letter-spacing: 0.01em;
 }
 .data-disclaimer {
-  font-size: 0.77rem;
+  font-size: 0.84rem;
   color: #667786;
   margin-top: 14px;
   padding: 10px 12px;
@@ -444,7 +444,7 @@ body::before {
 
 /* Last Updated — subtle info badge */
 .page-last-updated {
-  font-size: 0.83rem;
+  font-size: 0.9rem;
   color: #355066;
   font-weight: 700;
   background: rgba(255, 251, 246, 0.92);
@@ -473,7 +473,7 @@ body::before {
   border: 1px solid rgba(148,163,184,.22);
   box-shadow: var(--shadow-sm);
   color: #475569;
-  font-size: 0.86rem;
+  font-size: 0.92rem;
   line-height: 1.45;
 }
 .trust-chip--source {
@@ -493,7 +493,7 @@ body::before {
   margin-bottom: 12px;
 }
 .section-kicker {
-  font-size: 0.79rem;
+  font-size: 0.86rem;
   font-weight: 800;
   color: #2563eb;
   letter-spacing: 0.08em;
@@ -508,7 +508,7 @@ body::before {
 }
 
 .hero-kicker {
-  font-size: 0.77rem;
+  font-size: 0.84rem;
   font-weight: 700;
   color: #2563eb;
   letter-spacing: 0.08em;
@@ -517,7 +517,9 @@ body::before {
 }
 .overview-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) auto;
+  /* Right column capped so long status pills can no longer squeeze the
+     title/subtitle into a ragged 30ch column (the pills wrap instead). */
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 44%);
   gap: 8px;
   align-items: center;
   border: 1px solid rgba(64, 88, 112, 0.10);
@@ -552,7 +554,7 @@ body::before {
   gap: 6px;
   padding: 6px 11px;
   border-radius: 999px;
-  font-size: 0.86rem;
+  font-size: 0.92rem;
   color: #475569;
   background: rgba(255,255,255,.85);
   border: 1px solid rgba(148, 163, 184, .25);
@@ -585,7 +587,7 @@ body::before {
   border: 1px solid rgba(191, 219, 254, .7);
 }
 .hero-stat-label {
-  font-size: 0.79rem;
+  font-size: 0.86rem;
   font-weight: 700;
   color: #64748B;
   margin-bottom: 3px;
@@ -596,7 +598,7 @@ body::before {
   color: #0f172a;
 }
 .hero-status-note {
-  font-size: 0.79rem;
+  font-size: 0.86rem;
   color: #64748B;
   line-height: 1.45;
   padding: 0 2px;
@@ -622,21 +624,23 @@ body::before {
   box-shadow: var(--shadow-sm);
 }
 .hero-status-key {
-  font-size: 0.73rem;
+  font-size: 0.8rem;
   font-weight: 700;
-  color: #617382;
+  color: #566b7d; /* AA on the pill background */
   white-space: nowrap;
 }
 .hero-status-value-inline {
-  font-size: 0.83rem;
+  font-size: 0.9rem;
   font-weight: 800;
   color: #1d3247;
   white-space: nowrap;
 }
 .hero-status-note--inline {
   padding: 0 0 0 2px;
-  font-size: 0.8rem;
-  white-space: nowrap;
+  font-size: 0.86rem;
+  /* wraps instead of forcing the header's right column wide */
+  white-space: normal;
+  max-width: 34ch;
 }
 
 /* ── Snapshot strip ──────────────────────────────────────────── */
@@ -648,11 +652,11 @@ body::before {
   margin-bottom: 12px;
 }
 .snap-header {
-  font-size: 0.73rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
+  text-transform: none;
+  letter-spacing: 0.01em;
   margin-bottom: 10px;
   font-family: var(--font);
 }
@@ -675,11 +679,11 @@ body::before {
   padding: 10px 12px;
 }
 .snap-label {
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  text-transform: none;
+  letter-spacing: 0.01em;
   margin-bottom: 4px;
   font-family: var(--font);
 }
@@ -746,13 +750,13 @@ body::before {
 }
 .filter-mobile-toggle-title {
   display: block;
-  font-size: 0.86rem;
+  font-size: 0.92rem;
   font-weight: 800;
   color: #27445e;
 }
 .filter-mobile-toggle-subtitle {
   display: block;
-  font-size: 0.73rem;
+  font-size: 0.8rem;
   color: #64748B;
   margin-top: 2px;
   line-height: 1.45;
@@ -779,7 +783,7 @@ body::before {
   flex-shrink: 0;
 }
 .filter-toolbar-note {
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   color: #64748B;
   white-space: nowrap;
 }
@@ -809,7 +813,7 @@ body::before {
 .filter-strip-help {
   min-height: 18px;
   margin-top: 3px;
-  font-size: 0.8rem;
+  font-size: 0.86rem;
   line-height: 1.4;
   color: #64748B;
 }
@@ -823,7 +827,7 @@ body::before {
   align-items: start;
 }
 .filter-hint {
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   color: var(--text-muted);
   margin-top: 5px;
   font-style: italic;
@@ -853,7 +857,7 @@ body::before {
 }
 
 .filter-label {
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: var(--text-muted);
   letter-spacing: 0.01em;
@@ -863,17 +867,17 @@ body::before {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: var(--text-muted);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  text-transform: none;
   font-family: var(--font);
   margin-right: 6px;
   user-select: none;
 }
 .filter-cue-icon {
-  font-size: 0.86rem;
+  font-size: 0.92rem;
   opacity: 0.7;
 }
 .filter-drawer-actions {
@@ -886,7 +890,7 @@ body::before {
   border-top: 1px solid rgba(226, 232, 240, 0.9);
 }
 .filter-drawer-note {
-  font-size: 0.81rem;
+  font-size: 0.87rem;
   line-height: 1.5;
   color: #64748B;
   max-width: 54ch;
@@ -911,7 +915,7 @@ body::before {
   border: 1px solid #D1D5DB;
   border-radius: 5px;
   padding: 4px 8px;
-  font-size: 0.83rem;
+  font-size: 0.9rem;
   font-family: var(--font);
   color: #374151;
   background: #fff;
@@ -970,14 +974,14 @@ body::before {
   box-shadow: 0 0 0 3px rgba(38,79,119,0.10);
 }
 .date-card-header {
-  font-size: 0.79rem;
+  font-size: 0.86rem;
   font-weight: 700;
   color: #496174;
   letter-spacing: 0.01em;
   margin-bottom: 2px;
 }
 .date-card--compact .date-card-header {
-  font-size: 0.77rem;
+  font-size: 0.84rem;
   margin-bottom: 1px;
 }
 
@@ -1008,7 +1012,7 @@ body::before {
   border-bottom: none !important;
   background: transparent !important;
   padding: 0 !important;
-  font-size: 0.88rem !important;
+  font-size: 0.92rem !important;
   font-weight: 700 !important;
   color: #27445e !important;
   font-family: var(--font) !important;
@@ -1017,7 +1021,7 @@ body::before {
   line-height: 1.4 !important;
 }
 .date-card--compact .DateInput_input {
-  font-size: 0.77rem !important;
+  font-size: 0.84rem !important;
 }
 .date-card .DateInput_input:focus {
   outline: none !important;
@@ -1040,7 +1044,7 @@ body::before {
   border: 1px solid rgba(64, 88, 112, 0.14);
   border-radius: 20px;
   padding: 3px 9px;
-  font-size: 0.73rem;
+  font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
   transition: background var(--transition), color var(--transition),
@@ -1064,11 +1068,11 @@ body::before {
 /* Override react-dates date picker size */
 .DateRangePicker,
 .DateRangePickerInput {
-  font-size: 0.88rem !important;
+  font-size: 0.92rem !important;
   font-family: var(--font) !important;
 }
 .DateInput_input {
-  font-size: 0.88rem !important;
+  font-size: 0.92rem !important;
   font-family: var(--font) !important;
   padding: 4px 8px !important;
   color: var(--text-primary) !important;
@@ -1097,7 +1101,7 @@ body::before {
 }
 .month-pair .Select-control { min-height: 32px !important; }
 .month-pair-sep {
-  font-size: 0.83rem;
+  font-size: 0.9rem;
   color: var(--text-muted);
   flex-shrink: 0;
 }
@@ -1124,7 +1128,7 @@ body::before {
   border: 1px solid rgba(38,79,119,0.25);
   border-radius: var(--radius-sm);
   padding: 7px 14px;
-  font-size: 0.86rem;
+  font-size: 0.92rem;
   font-weight: 700;
   cursor: pointer;
   transition: background var(--transition);
@@ -1137,13 +1141,13 @@ body::before {
 .btn-reset--solo {
   min-width: 92px;
   padding: 6px 12px;
-  font-size: 0.81rem;
+  font-size: 0.87rem;
   white-space: nowrap;
 }
 .filter-inline-help {
   min-height: 18px;
   margin-top: 4px;
-  font-size: 0.77rem;
+  font-size: 0.84rem;
   line-height: 1.4;
   color: #64748B;
 }
@@ -1154,7 +1158,7 @@ body::before {
   border-color: rgba(62, 84, 106, 0.15) !important;
   border-radius: 12px !important;
   background: rgba(255, 252, 247, 0.90) !important;
-  font-size: 0.86rem !important;
+  font-size: 0.92rem !important;
   min-height: 34px !important;
   font-family: var(--font) !important;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.65);
@@ -1205,15 +1209,17 @@ body::before {
   flex-shrink: 0;
   margin-top: 2px;
 }
+/* One font rule: serif is page identity (brand + page titles) only;
+   everything inside cards — titles included — is the sans workhorse. */
 .panel-title, .card-title {
-  font-size: 1.11rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--text-primary);
-  font-family: var(--font-display);
+  font-family: var(--font);
   letter-spacing: -0.01em;
 }
 .panel-subtitle, .card-subtitle {
-  font-size: 0.83rem;
+  font-size: 0.9rem;
   color: #5d7080; /* ≥4.5:1 on the cream card — #6b7c89 failed AA at this size */
   margin-top: 3px;
   font-family: var(--font);
@@ -1252,11 +1258,11 @@ body::before {
 .kpi-accent-green  { border-left-color: var(--accent-green);  }
 
 .kpi-label {
-  font-size: 0.73rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: #5d7080; /* darkened from #6a7c8b for AA contrast at small sizes */
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  text-transform: none;
   font-family: var(--font);
 }
 .kpi-value {
@@ -1269,7 +1275,7 @@ body::before {
   margin-top: 2px;
 }
 .kpi-sub {
-  font-size: 0.77rem;
+  font-size: 0.84rem;
   color: var(--text-muted);
   margin-top: 1px;
   margin-bottom: 2px;
@@ -1286,7 +1292,7 @@ body::before {
   color: #0f172a;
 }
 .kpi-card--hero .kpi-sub {
-  max-width: 26ch;
+  max-width: none; /* 26ch forced one-word-per-line wrapping in the hero card */
 }
 .kpi-card--support {
   background:
@@ -1299,7 +1305,7 @@ body::before {
 
 /* Sparkline trend label */
 .sparkline-label {
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   color: var(--text-muted);
   text-align: center;
   padding: 3px 0 8px;
@@ -1313,13 +1319,13 @@ body::before {
   padding: 7px 10px;
   border-radius: 10px;
 }
-.kpis-compact .kpi-label { font-size: 0.78rem; }
+.kpis-compact .kpi-label { font-size: 0.85rem; }
 .kpis-compact .kpi-value {
   font-size: 1.23rem;
   letter-spacing: -0.01em;
 }
 .kpis-compact .kpi-sub {
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   margin-top: 0;
   margin-bottom: 0;
 }
@@ -1340,7 +1346,7 @@ body::before {
 
 /* Event type definition — shown below the viewing sentence when 1 type is selected */
 .event-def-note {
-  font-size: 0.83rem;
+  font-size: 0.9rem;
   color: var(--text-muted);
   line-height: 1.45;
   padding: 0 2px;
@@ -1358,7 +1364,7 @@ body::before {
   flex-shrink: 0;
 }
 .bytype-hint {
-  font-size: 0.73rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
   line-height: 1.4;
   text-align: right;
@@ -1390,7 +1396,7 @@ body::before {
 }
 .viewing-defn {
   margin-top: 3px;
-  font-size: 0.81rem;
+  font-size: 0.87rem;
   color: var(--text-muted);
   line-height: 1.5;
   max-width: 72ch;
@@ -1410,7 +1416,7 @@ body::before {
   color: #334155;
   border-radius: 999px;
   padding: 7px 11px;
-  font-size: 0.86rem;
+  font-size: 0.92rem;
   box-shadow: var(--shadow-sm);
 }
 .filter-chip--label {
@@ -1439,11 +1445,11 @@ body::before {
   margin-bottom: 2px;
 }
 .actor-banner-label {
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
+  text-transform: none;
+  letter-spacing: 0.01em;
   white-space: nowrap;
   font-family: var(--font);
 }
@@ -1519,7 +1525,7 @@ body::before {
   background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,250,252,.96));
 }
 .overview-note-kicker {
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1527,7 +1533,7 @@ body::before {
   margin-bottom: 6px;
 }
 .overview-note-copy {
-  font-size: 0.83rem;
+  font-size: 0.9rem;
   color: #475569;
   line-height: 1.5;
 }
@@ -1561,7 +1567,7 @@ body::before {
   align-items: center;
   gap: 6px;
   padding: 11px 14px;
-  font-size: 0.86rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: #2b4f6f;
   cursor: pointer;
@@ -1596,14 +1602,14 @@ body::before {
   background: rgba(255, 252, 247, 0.78);
 }
 .alert-method-title {
-  font-size: 0.83rem;
+  font-size: 0.9rem;
   font-weight: 800;
   color: #1f4263;
   margin-bottom: 5px;
   font-family: var(--font);
 }
 .alert-method-copy {
-  font-size: 0.79rem;
+  font-size: 0.86rem;
   line-height: 1.5;
   color: #516577;
 }
@@ -1639,7 +1645,7 @@ body::before {
   margin: 10px 16px 14px;
   padding-top: 10px;
   border-top: 1px solid rgba(64, 88, 112, 0.10);
-  font-size: 0.77rem;
+  font-size: 0.84rem;
   line-height: 1.55;
   color: #617383;
 }
@@ -1662,13 +1668,13 @@ body::before {
   background: rgba(255, 252, 247, 0.78);
 }
 .alert-reason-title {
-  font-size: 0.88rem;
+  font-size: 0.92rem;
   font-weight: 800;
   color: #1f4263;
   margin-bottom: 6px;
 }
 .alert-reason-copy {
-  font-size: 0.82rem;
+  font-size: 0.88rem;
   line-height: 1.55;
   color: #516577;
 }
@@ -1688,12 +1694,12 @@ body::before {
   border: 1px solid rgba(64, 88, 112, 0.10);
 }
 .alert-mini-stat-key {
-  font-size: 0.8rem;
+  font-size: 0.86rem;
   font-weight: 700;
   color: #5d7080; /* darkened from #6a7c8b for AA contrast at small sizes */
 }
 .alert-mini-stat-value {
-  font-size: 0.79rem;
+  font-size: 0.86rem;
   font-weight: 800;
   color: #1f3247;
 }
@@ -1701,7 +1707,7 @@ body::before {
   margin: 0 16px 14px;
   padding-top: 10px;
   border-top: 1px solid rgba(64, 88, 112, 0.10);
-  font-size: 0.77rem;
+  font-size: 0.84rem;
   line-height: 1.55;
   color: #617383;
 }
@@ -1720,7 +1726,7 @@ body::before {
   border-radius: 999px;
   background: rgba(255, 251, 246, 0.94);
   border: 1px solid rgba(64, 88, 112, 0.12);
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   font-weight: 800;
   color: #28445d;
   letter-spacing: 0.01em;
@@ -1745,7 +1751,7 @@ body::before {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.77rem;
+  font-size: 0.84rem;
   color: #516577;
   line-height: 1.35;
 }
@@ -1784,7 +1790,7 @@ body::before {
   gap: 6px;
   border-radius: 999px;
   padding: 6px 10px;
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   font-weight: 700;
   border: 1px solid rgba(64, 88, 112, 0.12);
   background: rgba(255,255,255,.9);
@@ -1823,7 +1829,7 @@ body::before {
   background: rgba(255, 252, 247, 0.84);
 }
 .alert-list-rank {
-  font-size: 0.83rem;
+  font-size: 0.9rem;
   font-weight: 800;
   color: #64748b;
   text-align: center;
@@ -1838,7 +1844,7 @@ body::before {
   line-height: 1.2;
 }
 .alert-list-meta {
-  font-size: 0.77rem;
+  font-size: 0.84rem;
   color: #6b7c89;
   margin-top: 2px;
 }
@@ -1849,7 +1855,7 @@ body::before {
   gap: 2px;
 }
 .alert-list-stat {
-  font-size: 0.77rem;
+  font-size: 0.84rem;
   color: #5c7184;
   white-space: nowrap;
 }
@@ -1890,7 +1896,7 @@ body::before {
   border-top: 1px solid var(--border-light);
 }
 .highest-label {
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   color: var(--text-muted);
@@ -1960,7 +1966,7 @@ body::before {
   color: #1f4263;
 }
 .view-toggle-label {
-  font-size: 0.79rem;
+  font-size: 0.86rem;
   font-weight: 700;
   line-height: 1;
 }
@@ -1987,14 +1993,14 @@ body::before {
 }
 .mode-card-icon  { font-size: 1rem; margin-top: 1px; flex-shrink: 0; }
 .mode-card-title {
-  font-size: 0.88rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: var(--text-primary);
   font-family: var(--font);
 }
 .mode-card--active .mode-card-title { color: var(--accent); }
 .mode-card-desc {
-  font-size: 0.77rem;
+  font-size: 0.84rem;
   color: var(--text-muted);
   margin-top: 2px;
   font-family: var(--font);
@@ -2040,7 +2046,7 @@ body::before {
 }
 .metric-toggle .form-check-label,
 .metric-toggle label {
-  font-size: 0.86rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: #344a5e;
   font-family: var(--font);
@@ -2061,7 +2067,7 @@ body::before {
   border-top: 1px solid var(--border-light);
 }
 .month-label {
-  font-size: 0.83rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: var(--text-secondary);
   text-align: center;
@@ -2077,7 +2083,7 @@ body::before {
   border: none;
   border-radius: var(--radius-sm);
   padding: 5px 12px;
-  font-size: 0.83rem;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   transition: background var(--transition);
@@ -2136,10 +2142,10 @@ body::before {
   filter: blur(12px);
 }
 .support-rail-title {
-  font-size: 0.83rem;
+  font-size: 0.9rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  text-transform: none;
   color: #64748B;
   margin-bottom: -2px;
 }
@@ -2197,7 +2203,7 @@ body::before {
 }
 .about-markdown code, .method-markdown code {
   background: #F1F5F9; border-radius: 4px; padding: 1px 5px;
-  font-size: 0.88rem; color: #475569;
+  font-size: 0.92rem; color: #475569;
 }
 
 /* ── Graphs ──────────────────────────────────────────────────── */
@@ -2305,7 +2311,7 @@ body::before {
 }
 .topnav-brand .brand-tagline {
   margin-top: 0;
-  font-size: 0.73rem;
+  font-size: 0.8rem;
   color: #7f8d97;
 }
 .topnav-nav {
@@ -2315,7 +2321,7 @@ body::before {
   flex-wrap: wrap;
 }
 .topnav-nav-label {
-  font-size: 0.73rem;
+  font-size: 0.8rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2329,7 +2335,7 @@ body::before {
   align-items: center;
 }
 .mob-nav-link {
-  font-size: 0.86rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: var(--sidebar-text);
   text-decoration: none !important;
@@ -2476,7 +2482,7 @@ body::before {
   .overview-body .col-charts { order: 1; }
   .overview-body .col-map { order: 2; }
   .trust-chip {
-    font-size: 0.83rem;
+    font-size: 0.9rem;
     min-height: 0;
   }
   .section-intro {
@@ -2492,7 +2498,7 @@ body::before {
     font-size: 1.12rem;
   }
   .overview-note-copy {
-    font-size: 0.79rem;
+    font-size: 0.86rem;
   }
   .filter-actions-bar {
     position: sticky;
@@ -2523,7 +2529,7 @@ body::before {
     gap: 6px;
   }
   .filter-chip {
-    font-size: 0.83rem;
+    font-size: 0.9rem;
   }
   .kpi-card--hero .kpi-value {
     font-size: 2.2rem;
@@ -2593,7 +2599,7 @@ button.view-toggle-btn.view-toggle-btn--active {
 /* Tagline contrast bump — was #8b97a4 0.58rem (failed AA). */
 .brand-tagline {
   color: #6a7785;
-  font-size: 0.8rem;
+  font-size: 0.86rem;
 }
 
 /* Skeleton loader — shimmering placeholder for chart cards while data loads. */
@@ -2659,7 +2665,7 @@ button.view-toggle-btn.view-toggle-btn--active {
   background: linear-gradient(180deg, rgba(255, 251, 246, 0.96), rgba(247, 242, 234, 0.92));
   border: 1px solid rgba(64, 88, 112, 0.14);
   box-shadow: var(--shadow-sm);
-  font-size: 0.83rem;
+  font-size: 0.9rem;
   color: #3d5266;
   align-items: center;
 }
@@ -2671,7 +2677,7 @@ button.view-toggle-btn.view-toggle-btn--active {
   background: rgba(37, 82, 119, 0.08);
   padding: 1px 6px;
   border-radius: 4px;
-  font-size: 0.79rem;
+  font-size: 0.86rem;
   color: #234b70;
 }
 
@@ -2690,14 +2696,14 @@ button.view-toggle-btn.view-toggle-btn--active {
   margin-bottom: 6px;
 }
 .actor-empty-hint {
-  font-size: 0.81rem;
+  font-size: 0.87rem;
   color: var(--text-muted);
   line-height: 1.55;
 }
 
 /* Actor co-appearance disclaimer. */
 .actor-coapp-note {
-  font-size: 0.79rem;
+  font-size: 0.86rem;
   color: #5a6c7e;
   background: rgba(255, 247, 229, 0.7);
   border: 1px solid rgba(185, 112, 24, 0.22);
@@ -2715,7 +2721,7 @@ button.view-toggle-btn.view-toggle-btn--active {
   gap: 4px;
   margin-top: 4px;
   padding: 2px 8px;
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   font-family: var(--font-ui, "Avenir Next", "Segoe UI", Arial, sans-serif);
   color: var(--text-muted);
   background: transparent;
@@ -2760,14 +2766,14 @@ button.view-toggle-btn.view-toggle-btn--active {
 }
 
 .eg-term {
-  font-size: 0.81rem;
+  font-size: 0.87rem;
   font-weight: 600;
   color: #234b70;
   letter-spacing: 0.01em;
 }
 
 .eg-defn {
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   color: var(--text-muted);
   line-height: 1.5;
 }

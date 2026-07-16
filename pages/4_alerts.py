@@ -284,6 +284,30 @@ def _short_actor_label(name: str, limit: int = 34) -> str:
     return text[: limit - 1].rstrip() + "…"
 
 
+def _wrap_actor_label(name: str, width: int = 26, max_lines: int = 2) -> str:
+    """Wrap a long actor name onto up to max_lines <br>-separated lines so it
+    fits the sankey gutter instead of overflowing past the paper edge (which
+    clipped leading characters). Ellipsize only past the line budget."""
+    words = str(name).strip().split()
+    lines, cur = [], ""
+    for w in words:
+        cand = f"{cur} {w}".strip()
+        if len(cand) <= width or not cur:
+            cur = cand
+        else:
+            lines.append(cur)
+            cur = w
+        if len(lines) == max_lines:
+            break
+    if len(lines) < max_lines and cur:
+        lines.append(cur)
+    text = "<br>".join(lines[:max_lines])
+    used = sum(len(l) for l in lines[:max_lines])
+    if used < len(" ".join(words)) - (len(lines) - 1):
+        text += "…"
+    return text
+
+
 def _hex_rgba(hex_color: str, alpha: float = 0.24) -> str:
     h = str(hex_color).lstrip("#")
     if len(h) != 6:
@@ -725,7 +749,7 @@ def _build_mix_figure(combat_context: pd.DataFrame, township_code: str, window_s
     if flow.empty:
         fig = go.Figure()
         fig.add_annotation(
-            text=f"No named offending-side armed actors are available for combat events in the {WINDOW_SCOPE_LABEL}.",
+            text=f"No named attacking-side armed actors are available for combat events in the {WINDOW_SCOPE_LABEL}.",
             x=0.5, y=0.5, showarrow=False,
             font=dict(size=13, family=PLOTLY_FONT, color="#5a6c7e"),
         )
@@ -788,12 +812,18 @@ def _build_mix_figure(combat_context: pd.DataFrame, township_code: str, window_s
         KEY_EVENT_COLORS.get(evt, "#9ca3af") for evt in event_nodes
     ]
 
+    def _actor_count(actor):
+        if actor == "Other armed actors":
+            return actor_counts[~actor_counts.index.isin(top_actors)].sum()
+        return actor_counts.get(actor, 0)
+
     actor_labels = [
-        f"{_short_actor_label(actor, 28)} · {_fmt(actor_counts.get(actor, 0))}" if actor != "Other armed actors"
-        else f"{actor} · {_fmt(actor_counts[~actor_counts.index.isin(top_actors)].sum())}"
+        f"{_wrap_actor_label(actor)} · {_fmt(_actor_count(actor))}"
         for actor in actor_nodes
     ]
     event_labels = [f"{evt} · {_fmt(event_totals.get(evt, 0))}" for evt in event_nodes]
+    # Hover carries the untruncated name
+    full_labels = [f"{actor} · {_fmt(_actor_count(actor))}" for actor in actor_nodes] + event_labels
     labels = actor_labels + event_labels
 
     # Compute outflow per actor and inflow per event so we can place each
@@ -875,7 +905,7 @@ def _build_mix_figure(combat_context: pd.DataFrame, township_code: str, window_s
             color=node_colors,
             x=node_x,
             y=node_y,
-            customdata=np.array(labels, dtype=object),
+            customdata=np.array(full_labels, dtype=object),
             hovertemplate="%{customdata}<extra></extra>",
         ),
         link=dict(
@@ -1272,12 +1302,12 @@ def layout():
                     html.Div([
                         html.H2("Combat Pathways", className="card-title"),
                         html.Div(
-                            f"Links connect offending-side armed actors to combat event types recorded in the same combat events during the {WINDOW_SCOPE_LABEL}.",
+                            f"Links connect attacking-side armed actors to the types of combat events they were recorded in during the {WINDOW_SCOPE_LABEL}.",
                             className="card-subtitle",
                         ),
                     ], className="dash-card-head"),
                     html.Div([
-                        html.Div("Offending-side armed actors", className="flow-side-heading flow-side-heading--left"),
+                        html.Div("Attacking-side armed actors", className="flow-side-heading flow-side-heading--left"),
                         html.Div("Combat event types", className="flow-side-heading flow-side-heading--right"),
                     ], className="flow-side-headings"),
                     dcc.Loading(
@@ -1287,7 +1317,7 @@ def layout():
                 ], className="dash-card alert-detail-panel"),
             ], className="alerts-detail-grid"),
             html.Div(
-                "Dashboard event categories are reviewed and recoded by our team using local contextual knowledge where possible. Offending-side actor links summarize recorded combat events for descriptive analysis and do not by themselves establish command responsibility or territorial control.",
+                "Dashboard event categories are reviewed and recoded by our team using local contextual knowledge where possible. Attacking-side actor links summarize recorded combat events for descriptive analysis and do not by themselves establish command responsibility or territorial control.",
                 className="alert-shared-footnote",
             ),
         ], className="alerts-inspector-section"),

@@ -32,15 +32,15 @@ from components.page_bits import data_disclaimer
 
 # (date, hover title, short pill, line color, description)
 MILESTONES = [
-    ("2021-02-01", "Feb 1, 2021 – Military Coup",           "Military Coup",       "#dc2626",
+    ("2021-02-01", "Feb 1, 2021 – Military Coup",           "Military<br>Coup",       "#dc2626",
      "The Myanmar military seized power and arrested elected leaders, sparking nationwide protests."),
-    ("2021-09-07", "Sept 7, 2021 – NUG Declaration of People's Defensive War", "People's Defensive War",    "#d97706",
+    ("2021-09-07", "Sept 7, 2021 – NUG Declaration of People's Defensive War", "People's<br>Defensive War",    "#d97706",
      "The NUG called for armed resistance against the military, escalating the conflict."),
     ("2023-10-27", "Oct 27, 2023 – Operation 1027",         "Op. 1027",   "#7c3aed",
      "Rebel alliance launched a major offensive, capturing key territory in northern Shan State."),
     ("2025-03-28", "Mar 28, 2025 – 7.7 Earthquake",         "Earthquake", "#0891b2",
      "A major earthquake near Mandalay caused heavy destruction and worsened the crisis."),
-    ("2025-12-28", "Dec 28, 2025 – SAC-organized Elections", "SAC-run Elections",  "#6b7280",
+    ("2025-12-28", "Dec 28, 2025 – SAC-organized Elections", "SAC-run<br>Elections",  "#6b7280",
      "The SAC held phased elections in controlled areas; the process was widely rejected as illegitimate."),
 ]
 
@@ -658,9 +658,9 @@ def _build_multi_trend(df, start_date, end_date, top_n: int = 5) -> go.Figure:
                           xref="x", yref="paper",
                           line=dict(color=mc, width=1.2, dash="dot"), opacity=0.45)
             fig.add_annotation(
-                x=mdt, y=1.11 if i % 2 == 0 else 1.04, xref="x", yref="paper",
+                x=mdt, y=1.18 if i % 2 == 0 else 1.02, xref="x", yref="paper",
                 text=f"<b>{short_name}</b>", showarrow=False,
-                font=dict(size=13, color=mc, family=PLOTLY_FONT),
+                font=dict(size=11.5, color=mc, family=PLOTLY_FONT),
                 xanchor="center", yanchor="bottom",
                 bgcolor=PLOTLY_HOVER_BG, bordercolor=mc, borderwidth=1, borderpad=2,
             )
@@ -668,7 +668,7 @@ def _build_multi_trend(df, start_date, end_date, top_n: int = 5) -> go.Figure:
     fig.update_layout(
         height=340,
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=4, r=4, t=56, b=4),
+        margin=dict(l=4, r=4, t=86, b=4),
         showlegend=True,
         legend=dict(
             orientation="h", yanchor="top", y=-0.22, xanchor="left", x=0,
@@ -775,13 +775,13 @@ def _build_trend(df, start_date, end_date, region, key_events,
                     opacity=0.5,
                 )
                 fig.add_annotation(
-                    x=mdt, y=1.11 if i % 2 == 0 else 1.04, xref="x", yref="paper",
+                    x=mdt, y=1.18 if i % 2 == 0 else 1.02, xref="x", yref="paper",
                     text=f"<b>{short_name}</b>",
                     showarrow=False,
-                    font=dict(size=13, color=milestone_color, family=PLOTLY_FONT),
+                    font=dict(size=11.5, color=milestone_color, family=PLOTLY_FONT),
                     xanchor="center", yanchor="bottom",
                     bgcolor=PLOTLY_HOVER_BG,
-                    bordercolor=milestone_color, borderwidth=1, borderpad=3,
+                    bordercolor=milestone_color, borderwidth=1, borderpad=2,
                 )
                 fig.add_trace(go.Scatter(
                     x=[mdt], y=[0.5], yaxis="y2",
@@ -799,7 +799,7 @@ def _build_trend(df, start_date, end_date, region, key_events,
     fig.update_layout(
         height=300,
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=4, r=4, t=58, b=4),
+        margin=dict(l=4, r=4, t=86, b=4),
         yaxis2=dict(overlaying="y", range=[0, 1], visible=False, fixedrange=True),
         showlegend=False,
         font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT),
@@ -997,7 +997,7 @@ def layout():
                         dcc.DatePickerSingle(
                             id="ov-from-date",
                             date=start_date,
-                            display_format="DD/MM/YYYY",
+                            display_format="D MMM YYYY",
                             first_day_of_week=1,
                             className="date-picker-single",
                         ),
@@ -1010,7 +1010,7 @@ def layout():
                         dcc.DatePickerSingle(
                             id="ov-to-date",
                             date=end_date,
-                            display_format="DD/MM/YYYY",
+                            display_format="D MMM YYYY",
                             first_day_of_week=1,
                             className="date-picker-single",
                         ),

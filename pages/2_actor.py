@@ -521,7 +521,7 @@ def _build_trend(al: pd.DataFrame, start_date: str | None, end_date: str | None)
     )
 
     color_map = {"offend": "#b85d57", "being_offended": "#3f698d"}
-    label_map = {"offend": "Offending side", "being_offended": "Targeted side"}
+    label_map = {"offend": "Initiated", "being_offended": "Received"}
 
     fig = go.Figure()
     for role in trend["type2"].unique():
@@ -558,13 +558,13 @@ def _build_trend(al: pd.DataFrame, start_date: str | None, end_date: str | None)
                     opacity=0.55,
                 )
                 fig.add_annotation(
-                    x=mdt, y=1.13 if i % 2 == 0 else 1.04, xref="x", yref="paper",
+                    x=mdt, y=1.18 if i % 2 == 0 else 1.02, xref="x", yref="paper",
                     text=f"<b>{short_name}</b>",
                     showarrow=False,
-                    font=dict(size=13, color=color, family=PLOTLY_FONT),
+                    font=dict(size=11.5, color=color, family=PLOTLY_FONT),
                     xanchor="center", yanchor="bottom",
                     bgcolor=PLOTLY_HOVER_BG,
-                    bordercolor=color, borderwidth=1, borderpad=3,
+                    bordercolor=color, borderwidth=1, borderpad=2,
                 )
                 # Small diamond on hidden y2 axis — hover target with full description
                 fig.add_trace(go.Scatter(
@@ -583,7 +583,7 @@ def _build_trend(al: pd.DataFrame, start_date: str | None, end_date: str | None)
     fig.update_layout(
         height=310,
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=4, r=4, t=62, b=54),
+        margin=dict(l=4, r=4, t=86, b=54),
         yaxis2=dict(overlaying="y", range=[0, 1], visible=False, fixedrange=True),
         legend=dict(orientation="h", yanchor="top", y=-0.28, xanchor="left", x=0,
                     font=dict(size=13, family=PLOTLY_FONT, color=PLOTLY_TEXT), bgcolor="rgba(0,0,0,0)"),
@@ -762,66 +762,62 @@ def layout():
             ], className="hero-status-inline"),
         ], className="page-header overview-hero"),
 
-        # ── filter card ────────────────────────────────────────────────────────
+        # ── filter strip — same compact layout as the Overview so filtering
+        #    works the same way on every page ──────────────────────────────────
         html.Div([
             html.Div([
-
-                # Time Range: quick presets + date-card pickers
-                html.Div([
-                    html.Label("Time Range", className="filter-label"),
-                    html.Div([
-                        html.Button("Last 7 days",    id="ac-btn-7d",  n_clicks=0, className="quick-btn"),
-                        html.Button("Last 30 days",   id="ac-btn-30d", n_clicks=0, className="quick-btn"),
-                        html.Button("Last 1 year",    id="ac-btn-1y",  n_clicks=0, className="quick-btn"),
-                        html.Button("Since Feb 2021", id="ac-btn-all", n_clicks=0, className="quick-btn"),
-                    ], className="quick-btn-row"),
-                    html.Div([
-                        html.Div([
-                            html.Div("Date From", className="date-card-header"),
-                            dcc.DatePickerSingle(
-                                id="ac-from-date",
-                                date=start_val,
-                                display_format="DD/MM/YYYY",
-                                first_day_of_week=1,
-                                className="date-picker-single",
-                            ),
-                        ], className="date-card"),
-                        html.Div([
-                            html.Div("Date To", className="date-card-header"),
-                            dcc.DatePickerSingle(
-                                id="ac-to-date",
-                                date=end_val,
-                                display_format="DD/MM/YYYY",
-                                first_day_of_week=1,
-                                className="date-picker-single",
-                            ),
-                        ], className="date-card"),
-                    ], className="date-card-group"),
-                ], className="filter-group filter-group--datepicker"),
+                html.Span([
+                    html.Span("⚙", className="filter-cue-icon"),
+                    " Filters",
+                ], className="filter-cue-label"),
+                html.Button("Last 7 days",    id="ac-btn-7d",  n_clicks=0, className="quick-btn"),
+                html.Button("Last 30 days",   id="ac-btn-30d", n_clicks=0, className="quick-btn"),
+                html.Button("Last 1 year",    id="ac-btn-1y",  n_clicks=0, className="quick-btn"),
+                html.Button("Since Feb 2021", id="ac-btn-all", n_clicks=0, className="quick-btn"),
 
                 html.Div([
-                    html.Label("Region", className="filter-label"),
+                    html.Div([
+                        html.Div("From", className="date-card-header"),
+                        dcc.DatePickerSingle(
+                            id="ac-from-date",
+                            date=start_val,
+                            display_format="D MMM YYYY",
+                            first_day_of_week=1,
+                            className="date-picker-single",
+                        ),
+                    ], className="date-card date-card--compact"),
+                ], className="filter-strip-item filter-strip-item--date"),
+
+                html.Div([
+                    html.Div([
+                        html.Div("To", className="date-card-header"),
+                        dcc.DatePickerSingle(
+                            id="ac-to-date",
+                            date=end_val,
+                            display_format="D MMM YYYY",
+                            first_day_of_week=1,
+                            className="date-picker-single",
+                        ),
+                    ], className="date-card date-card--compact"),
+                ], className="filter-strip-item filter-strip-item--date"),
+
+                html.Div([
                     dcc.Dropdown(id="ac-region",
                                  options=[{"label": r, "value": r} for r in admin1_opts],
-                                 multi=False, placeholder="All Regions", clearable=True),
-                ], className="filter-group"),
+                                 multi=False, placeholder="Region · All Myanmar", clearable=True),
+                ], className="filter-strip-item filter-strip-item--select"),
 
                 html.Div([
-                    html.Label("Actor", className="filter-label"),
                     dcc.Dropdown(id="ac-actor", options=actor_opts,
                                  value=DEFAULT_ACTOR, clearable=False, searchable=True),
-                ], className="filter-group filter-group--wide"),
+                ], className="filter-strip-item filter-strip-item--type"),
 
-            ], className="filter-controls"),
-            html.Div([
-                html.Div(
-                    "Changes update automatically. Use Reset to return to the default actor view.",
-                    className="filter-drawer-note",
-                ),
                 html.Button("Reset", id="ac-reset-btn",
-                            n_clicks=0, className="btn-reset btn-reset--solo"),
-            ], className="filter-drawer-actions"),
-        ], id="ac-filter-card", className="filter-card"),
+                            n_clicks=0, className="btn-reset btn-reset--solo",
+                            title="Restore the default actor, full date range, and all regions",
+                            **{"aria-label": "Reset all actor filters"}),
+            ], className="filter-strip-row"),
+        ], id="ac-filter-card", className="filter-card filter-card--inline"),
 
         # ── filter summary ─────────────────────────────────────────────────────
         html.Div(init_summary, id="ac-filter-summary", className="viewing-summary-wrap"),
@@ -892,14 +888,19 @@ def layout():
                               html.Div(_fmt(n_townships),  id="ac-kpi-townships", className="kpi-value"),
                               html.Div(f"of {total_townships} in Myanmar",         className="kpi-sub")],
                              className="kpi-card kpi-accent-teal"),
-                    html.Div([html.Div("Offending-side Events",     className="kpi-label"),
+                    html.Div([html.Div("Events Initiated",     className="kpi-label"),
                               html.Div(_fmt(n_offenses),   id="ac-kpi-offenses",   className="kpi-value"),
-                              html.Div("actor on offending side", className="kpi-sub")],
-                             className="kpi-card kpi-accent-orange"),
-                    html.Div([html.Div("Targeted-side Events",       className="kpi-label"),
+                              html.Div("recorded on the attacking side", className="kpi-sub")],
+                             className="kpi-card kpi-accent-orange",
+                             title="Combat events where this actor (or its side) was recorded as "
+                                   "carrying out the attack, in our coding of ACLED records. "
+                                   "Descriptive only — not a legal attribution."),
+                    html.Div([html.Div("Events Received",       className="kpi-label"),
                               html.Div(_fmt(n_defenses),   id="ac-kpi-defenses",   className="kpi-value"),
-                              html.Div("actor on targeted side", className="kpi-sub")],
-                             className="kpi-card kpi-accent-red"),
+                              html.Div("recorded on the side being attacked", className="kpi-sub")],
+                             className="kpi-card kpi-accent-red",
+                             title="Combat events where this actor was recorded on the side being "
+                                   "attacked, in our coding of ACLED records."),
                 ], className="kpis-row kpis-row--3 kpis-compact"),
 
                 html.Div([
@@ -923,10 +924,10 @@ def layout():
                     html.Div([
                         html.H2("Monthly Engagement Trend", className="card-title"),
                         html.Div([
-                            html.Span("Offending side", style={"color": "#ef4444", "fontWeight": "600"}),
-                            html.Span(" = actor recorded on the offending side in our recode  ·  "),
-                            html.Span("Targeted side", style={"color": "#3b82f6", "fontWeight": "600"}),
-                            html.Span(" = actor recorded on the opposing side in our recode."),
+                            html.Span("Initiated", style={"color": "#b85d57", "fontWeight": "600"}),
+                            html.Span(" = this actor's side carried out the attack  ·  "),
+                            html.Span("Received", style={"color": "#3f698d", "fontWeight": "600"}),
+                            html.Span(" = this actor's side was attacked. Sides come from our coding of ACLED records."),
                         ], className="card-subtitle"),
                     ], className="dash-card-head"),
                     dcc.Loading(
@@ -1019,6 +1020,41 @@ def set_quick_dates(n7, n30, n1y, nall):
     return start_date, end_date
 
 
+def _infer_preset_label(from_date, to_date) -> str | None:
+    """Name the quick preset matching the current date range, or None if custom."""
+    if not from_date or not to_date:
+        return None
+    try:
+        start  = pd.Timestamp(from_date).normalize()
+        end    = pd.Timestamp(to_date).normalize()
+        max_dt = load_acled_main()["event_date"].max().normalize()
+    except Exception:
+        return None
+    if end != max_dt:
+        return None
+    if start == pd.Timestamp("2021-02-01"):
+        return "Since Feb 2021"
+    return {7: "Last 7 days", 30: "Last 30 days", 365: "Last 1 year"}.get((end - start).days)
+
+
+# 2b. Date pickers → highlight whichever quick preset is currently active
+@callback(
+    Output("ac-btn-7d",   "className"),
+    Output("ac-btn-30d",  "className"),
+    Output("ac-btn-1y",   "className"),
+    Output("ac-btn-all",  "className"),
+    Input("ac-from-date", "date"),
+    Input("ac-to-date",   "date"),
+    prevent_initial_call=False,
+)
+def highlight_quick_preset(from_date, to_date):
+    label = _infer_preset_label(from_date, to_date)
+    return tuple(
+        "quick-btn quick-btn--active" if name == label else "quick-btn"
+        for name in ("Last 7 days", "Last 30 days", "Last 1 year", "Since Feb 2021")
+    )
+
+
 # 3. Filter controls → update store automatically
 @callback(
     Output("ac-applied-filters", "data", allow_duplicate=True),
@@ -1036,7 +1072,8 @@ def apply_filters(from_date, to_date, region, actor):
             "start_date": from_date or d["start_val"],
             "end_date": to_date or d["end_val"],
             "region": region, "actor_name": actor or DEFAULT_ACTOR,
-            "preset_label": None}
+            "preset_label": _infer_preset_label(from_date or d["start_val"],
+                                                to_date or d["end_val"])}
 
 
 # 4. Reset → restore date pickers + default store
