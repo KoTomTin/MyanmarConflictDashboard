@@ -1,6 +1,6 @@
 name: Update ACLED Data
 
-# Run daily at 14:15 UTC (~20:45 Yangon time). ACLED publishes weekly, so most
+# Run daily at 00:30 UTC (07:00 Yangon time). ACLED publishes weekly, so most
 # runs will find no new events and simply refresh last_checked.json — that is
 # intentional, so the dashboard's "Last checked" timestamp advances every day
 # while "Events up to" only moves forward when ACLED actually publishes.
@@ -8,7 +8,7 @@ name: Update ACLED Data
 # the data coverage date itself does not move forward on that run.
 on:
   schedule:
-    - cron: '15 14 * * *'
+    - cron: '30 0 * * *'
   workflow_dispatch:
 
 concurrency:

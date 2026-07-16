@@ -173,6 +173,6 @@ def _load_last_checked(version: float) -> dict:
         "date_display": date_str,
         "time_display": "",
         "timezone_label": "Yangon time",
-        "cadence_note": "Scheduled ACLED check: daily, ~21:00 Yangon time",
+        "cadence_note": "Scheduled ACLED check: daily, ~07:00 Yangon time",
         "recorded_time": False,
     }
