@@ -906,6 +906,77 @@ def _highest_events(df, acled_df):
     return top_name, f"{int(by_tsp.iloc[0]):,}"
 
 
+# ── "Right now" strip — answers "what is happening?" before any filtering ─────
+
+def _delta_chip(cur: int, prev: int) -> html.Span:
+    """Direction + size of change vs the previous 30 days. Percentages are
+    suppressed on tiny bases (unstable) and always shown next to the absolute."""
+    if prev < 20:
+        return html.Span(f"previous 30 days: {prev:,}", className="snap-delta snap-delta--flat")
+    pct = (cur - prev) / prev * 100
+    if abs(pct) < 1:
+        return html.Span(f"≈ same as previous 30 days ({prev:,})",
+                         className="snap-delta snap-delta--flat")
+    arrow, cls = ("▲", "snap-delta--up") if pct > 0 else ("▼", "snap-delta--down")
+    return html.Span(f"{arrow} {abs(pct):.0f}% vs previous 30 days ({prev:,})",
+                     className=f"snap-delta {cls}")
+
+
+def _build_now_strip(df: pd.DataFrame) -> html.Div:
+    max_dt   = df["event_date"].max().normalize()
+    w_start  = max_dt - pd.Timedelta(days=29)
+    p_end    = w_start - pd.Timedelta(days=1)
+    p_start  = p_end - pd.Timedelta(days=29)
+
+    cur  = df[(df["event_date"] >= w_start) & (df["event_date"] <= max_dt)]
+    prev = df[(df["event_date"] >= p_start) & (df["event_date"] <= p_end)]
+
+    ev_c,  ev_p  = cur["event_id_cnty"].nunique(),  prev["event_id_cnty"].nunique()
+    fat_c, fat_p = int(cur["fatalities"].sum()),    int(prev["fatalities"].sum())
+
+    by_region = cur.groupby("admin1", observed=True)["event_id_cnty"].nunique().sort_values(ascending=False)
+    top_region, top_region_n = (by_region.index[0], int(by_region.iloc[0])) if len(by_region) else ("—", 0)
+
+    # Flagged-township count from the Alerts page's own (cached) computation
+    try:
+        import importlib
+        flagged = int(importlib.import_module("pages.4_alerts")._build_alert_frames()[0]["flagged"].sum())
+    except Exception:
+        flagged = None
+
+    window_txt = f"{w_start.strftime('%d %b')} – {max_dt.strftime('%d %b %Y')}"
+    cells = [
+        html.Div([
+            html.Div("Reported events", className="snap-label"),
+            html.Div(f"{ev_c:,}", className="snap-value"),
+            _delta_chip(ev_c, ev_p),
+        ], className="snap-card"),
+        html.Div([
+            html.Div("Reported fatalities", className="snap-label"),
+            html.Div(f"{fat_c:,}", className="snap-value"),
+            _delta_chip(fat_c, fat_p),
+        ], className="snap-card"),
+        html.Div([
+            html.Div("Most affected region", className="snap-label"),
+            html.Div(top_region, className="snap-value"),
+            html.Span(f"{top_region_n:,} events in 30 days", className="snap-delta snap-delta--flat"),
+        ], className="snap-card"),
+        html.Div([
+            html.Div("Townships flagged unusual", className="snap-label"),
+            html.Div(f"{flagged:,}" if flagged is not None else "—", className="snap-value"),
+            dcc.Link("See Township Alerts →", href="/alerts", className="snap-delta snap-link"),
+        ], className="snap-card"),
+    ]
+    return html.Div([
+        html.Div([
+            html.Span(f"Right now · the last 30 days ({window_txt})", className="snap-header-text"),
+            html.Span("  ·  ACLED publishes weekly, so the newest days may still be incomplete",
+                      className="snap-header-sub"),
+        ], className="snap-header"),
+        html.Div(cells, className="snap-cards snap-cards--4"),
+    ], className="snapshot-strip")
+
+
 # ── Layout ─────────────────────────────────────────────────────────────────────
 
 def layout():
@@ -959,7 +1030,7 @@ def layout():
             html.Div([
                 html.H1("Overview", className="page-title"),
                 html.Div(
-                    "Township-level Myanmar conflict dashboard for exploring reported events, fatality estimates, spatial concentration, and change over time.",
+                    "Track reported conflict events across Myanmar's townships — what is happening, where, and how it is changing.",
                     className="page-subtitle",
                 ),
                 html.Div([
@@ -978,6 +1049,9 @@ def layout():
                 html.Div(checked_note, className="hero-status-note hero-status-note--inline"),
             ], className="hero-status-inline"),
         ], className="page-header overview-hero"),
+
+        # ── "right now" strip — the page answers before it asks ────────────────
+        _build_now_strip(df),
 
         # ── filter card ────────────────────────────────────────────────────────
         html.Div([
@@ -1047,7 +1121,7 @@ def layout():
                     html.Div([
                         html.H2("Conflict Geography", className="card-title"),
                         html.Div(
-                            "Distribution of reported events or reported fatality estimates across Myanmar townships",
+                            "Where violence is concentrated — darker townships have more of what you've selected",
                             className="card-subtitle",
                         ),
                     ], className="map-stage-copy"),
@@ -1112,12 +1186,12 @@ def layout():
                     html.Div([
                         html.Div("Reported Events", className="kpi-label"),
                         html.Div(init_conflicts, id="ov-kpi-conflicts", className="kpi-value"),
-                        html.Div("All reported dashboard event records in the selected scope", className="kpi-sub"),
+                        html.Div("Events recorded in the dates and filters you've selected", className="kpi-sub"),
                     ], className="kpi-card kpi-card--hero kpi-accent-blue"),
                     html.Div([
                         html.Div("Reported Fatality Estimate", className="kpi-label"),
                         html.Div(init_fatalities, id="ov-kpi-fatalities", className="kpi-value"),
-                        html.Div("Summed ACLED reported fatalities in the selected scope", className="kpi-sub"),
+                        html.Div("Reported deaths from those events, as estimated by ACLED", className="kpi-sub"),
                     ], className="kpi-card kpi-card--support kpi-accent-red"),
                 ], className="kpis-row kpis-row--2 overview-kpi-strip"),
 

@@ -737,7 +737,7 @@ def layout():
         html.Div([
             html.Div([
                 html.H1("Actor Analysis", className="page-title"),
-                html.Div("Actor-level view of Myanmar conflict events, geographic footprint, associated actors, and engagement trends over time.",
+                html.Div("Pick an armed group to see where it operates, who appears alongside it, and how its activity has changed.",
                          className="page-subtitle"),
                 html.Div([
                     html.Div("Prototype · work in progress", className="hero-pill hero-pill--prototype"),
@@ -832,7 +832,7 @@ def layout():
                     html.Div([
                         html.Div([
                             html.H2("Geographic Footprint", className="card-title"),
-                            html.Div("Point at a township. Blue indicates higher reported activity.",
+                            html.Div("Townships where this actor was recorded in combat — darker blue means more events. Hover for details.",
                                      className="card-subtitle"),
                         ], className="map-stage-copy"),
                         html.Div([
@@ -906,7 +906,7 @@ def layout():
                 html.Div([
                     html.Div([
                         html.H2("Associated Actors", className="card-title"),
-                        html.Div("Co-involved in the same combat events",
+                        html.Div("Groups recorded on the same side in the same combat events",
                                  className="card-subtitle"),
                     ], className="dash-card-head"),
                     dcc.Loading(

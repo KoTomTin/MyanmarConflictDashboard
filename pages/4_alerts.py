@@ -963,28 +963,25 @@ def _metric_reason_block(
         long_threshold = _threshold_value(long_base, row["glob_mad_fatal"], scope="global", metric="fatal", thresholds=thresholds)
 
     if recent_flag and long_flag:
-        comparison = "This signal is above both the recent and longer-term township thresholds."
+        comparison = "That is unusually high against both its recent months and its full history — it triggers the alert."
     elif recent_flag:
-        comparison = "This signal is above the recent township threshold."
+        comparison = "That is unusually high compared with its recent months — it triggers the alert."
     elif long_flag:
-        comparison = "This signal is above the longer-term township threshold."
+        comparison = "That is unusually high compared with its longer history — it triggers the alert."
     else:
-        comparison = "This signal is not currently driving the alert."
+        comparison = "That is within the normal range for this township."
 
-    emergence_bits = []
-    if recent_reason in {"EMERGENCE_ZERO", "EMERGENCE_ONE"}:
-        emergence_bits.append("recent baseline reflects near-zero prior activity")
-    if long_reason in {"EMERGENCE_ZERO", "EMERGENCE_ONE"}:
-        emergence_bits.append("longer-term baseline reflects near-zero prior activity")
     emergence_note = ""
-    if emergence_bits:
-        emergence_note = " This is treated as emergence because the " + " and the ".join(emergence_bits) + "."
+    if (recent_reason in {"EMERGENCE_ZERO", "EMERGENCE_ONE"}
+            or long_reason in {"EMERGENCE_ZERO", "EMERGENCE_ONE"}):
+        emergence_note = (" (This township used to see almost none of this, "
+                          "so even modest numbers count as unusual here.)")
 
-    recent_compare = _relative_to_baseline_text(current, recent_base, "recent baseline")
-    long_compare = _relative_to_baseline_text(current, long_base, "long-term baseline")
+    recent_compare = _relative_to_baseline_text(current, recent_base, "typical recent 30 days here")
+    long_compare = _relative_to_baseline_text(current, long_base, "typical 30 days across its history")
 
     summary = (
-        f"{WINDOW_TOTAL_LABEL.capitalize()} is {_fmt_metric(current)}. That is {recent_compare} "
+        f"The last 30 days: {_fmt_metric(current)}. That is {recent_compare} "
         f"and {long_compare}. {comparison}{emergence_note}"
     )
 
@@ -993,25 +990,25 @@ def _metric_reason_block(
         html.Div(summary, className="alert-reason-copy"),
         html.Div([
             html.Div([
-                html.Span("Current", className="alert-mini-stat-key"),
+                html.Span("Last 30 days", className="alert-mini-stat-key"),
                 html.Span(_fmt_metric(current), className="alert-mini-stat-value"),
             ], className="alert-mini-stat"),
             html.Div([
-                html.Span("Recent baseline", className="alert-mini-stat-key"),
+                html.Span("Typical recent 30 days", className="alert-mini-stat-key"),
                 html.Span(_fmt_metric(recent_base), className="alert-mini-stat-value"),
-            ], className="alert-mini-stat"),
+            ], className="alert-mini-stat", title="Median of this township's previous six 30-day windows"),
             html.Div([
-                html.Span("Long-term baseline", className="alert-mini-stat-key"),
+                html.Span("Typical across its history", className="alert-mini-stat-key"),
                 html.Span(_fmt_metric(long_base), className="alert-mini-stat-value"),
-            ], className="alert-mini-stat"),
+            ], className="alert-mini-stat", title="Median of all earlier 30-day windows for this township"),
             html.Div([
-                html.Span("Recent threshold", className="alert-mini-stat-key"),
+                html.Span("Flagged above (recent)", className="alert-mini-stat-key"),
                 html.Span(_fmt_metric(recent_threshold), className="alert-mini-stat-value"),
-            ], className="alert-mini-stat"),
+            ], className="alert-mini-stat", title="If the last 30 days reach this level, the recent-history comparison flags it"),
             html.Div([
-                html.Span("Long-term threshold", className="alert-mini-stat-key"),
+                html.Span("Flagged above (history)", className="alert-mini-stat-key"),
                 html.Span(_fmt_metric(long_threshold), className="alert-mini-stat-value"),
-            ], className="alert-mini-stat"),
+            ], className="alert-mini-stat", title="If the last 30 days reach this level, the full-history comparison flags it"),
         ], className="alert-reason-stats"),
     ], className="alert-reason-block")
 
@@ -1040,9 +1037,10 @@ def _detail_children(row: pd.Series, *, thresholds: dict, window_label: str):
         html.Div("Inspect selected township", className="overview-note-kicker"),
         html.Div(row["township"], className="card-title"),
         html.Div(
-            f"This panel explains why the township was or was not flagged in {window_label}. "
-            f"Recent baseline means the median of the previous {LOCAL_LOOKBACK} {WINDOW_DAYS}-day windows for this township. "
-            f"Long-term baseline means the median of all earlier {WINDOW_DAYS}-day windows for the same township.",
+            f"Why is this township flagged (or not)? We compare its last {WINDOW_DAYS} days "
+            f"({window_label}) against the township's own past — both its recent months and its "
+            f"full history. “Typical” below means the middle (median) value of past "
+            f"{WINDOW_DAYS}-day periods.",
             className="card-subtitle",
         ),
         chips,
@@ -1075,7 +1073,7 @@ def layout():
             html.Div([
                 html.H1("Township Alerts", className="page-title"),
                 html.Div(
-                    "Combat-focused township alerts showing where recent combat activity or reported fatalities are unusually high relative to each township's own history.",
+                    "Which townships saw unusually intense combat in the last 30 days, compared with their own history.",
                     className="page-subtitle",
                 ),
                 html.Div([
@@ -1300,9 +1298,11 @@ def layout():
 
                 html.Div([
                     html.Div([
-                        html.H2("Combat Pathways", className="card-title"),
+                        html.H2("Who did what here", className="card-title"),
                         html.Div(
-                            f"Links connect attacking-side armed actors to the types of combat events they were recorded in during the {WINDOW_SCOPE_LABEL}.",
+                            f"Which armed groups were recorded attacking in this township in the {WINDOW_SCOPE_LABEL}, "
+                            "and what kind of attacks. Describes recorded events only — it does not establish "
+                            "command responsibility or territorial control.",
                             className="card-subtitle",
                         ),
                     ], className="dash-card-head"),
@@ -1316,10 +1316,6 @@ def layout():
                     ),
                 ], className="dash-card alert-detail-panel"),
             ], className="alerts-detail-grid"),
-            html.Div(
-                "Dashboard event categories are reviewed and recoded by our team using local contextual knowledge where possible. Attacking-side actor links summarize recorded combat events for descriptive analysis and do not by themselves establish command responsibility or territorial control.",
-                className="alert-shared-footnote",
-            ),
         ], className="alerts-inspector-section"),
 
         data_disclaimer(),

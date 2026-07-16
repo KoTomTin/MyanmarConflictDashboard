@@ -672,6 +672,22 @@ body::before {
   grid-template-columns: repeat(5, 1fr);
   gap: 8px;
 }
+.snap-cards--4 { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 900px) {
+  .snap-cards--4 { grid-template-columns: repeat(2, 1fr); }
+}
+.snap-delta {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  font-family: var(--font);
+}
+.snap-delta--up   { color: #b3372f; }
+.snap-delta--down { color: #2f6c9c; }
+.snap-delta--flat { color: var(--text-muted); font-weight: 600; }
+.snap-link { color: #2563eb; text-decoration: none; }
+.snap-link:hover { text-decoration: underline; }
 .snap-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
