@@ -39,13 +39,40 @@ if [ "$LOCAL_SHA" = "$REMOTE_SHA" ]; then
   exit 0
 fi
 
+# Data-only commits (the daily ACLED auto-update) don't need a restart:
+# the app's loaders re-read the parquets when their mtime changes, so a
+# git update alone is a zero-downtime deploy. Anything outside
+# data/processed/ still goes through the full redeploy.
+# Note: capture-then-test (not `grep -qv`) — BSD and GNU grep disagree on -q
+# combined with -v, and early-exit -q can interact with pipefail; this form
+# behaves identically everywhere. `|| true` covers grep's exit 1 when every
+# changed path is under data/processed/.
+NON_DATA_CHANGES=$(sudo -u "$APP_USER" git diff --name-only "$LOCAL_SHA" "$REMOTE_SHA" \
+                     | grep -v "^data/processed/" || true)
+if [ -n "$NON_DATA_CHANGES" ]; then
+  DEPLOY_MODE="full"
+else
+  DEPLOY_MODE="data-only"
+fi
+
 {
   echo ""
   echo "================================================="
-  echo "[$(date -Iseconds)] New commit on $BRANCH"
+  echo "[$(date -Iseconds)] New commit on $BRANCH ($DEPLOY_MODE)"
   echo "  local : $LOCAL_SHA"
   echo "  remote: $REMOTE_SHA"
   echo "================================================="
-  bash "$REDEPLOY_SCRIPT" 2>&1
+  if [ "$DEPLOY_MODE" = "data-only" ]; then
+    sudo -u "$APP_USER" git reset --hard "origin/$BRANCH"
+    sleep 2
+    HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/healthz || echo "000")
+    echo "[$(date -Iseconds)] data-only update applied, healthz: $HTTP_STATUS"
+    if [ "$HTTP_STATUS" != "200" ]; then
+      echo "[$(date -Iseconds)] healthz not OK after data update — running full redeploy"
+      bash "$REDEPLOY_SCRIPT" 2>&1
+    fi
+  else
+    bash "$REDEPLOY_SCRIPT" 2>&1
+  fi
   echo "[$(date -Iseconds)] check-and-deploy run finished"
 } >> "$LOG_FILE"
