@@ -96,13 +96,40 @@ _ASSOC_SPLIT = re.compile(r"\s*;\s*|\s*,\s*")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 1. AUTHENTICATION
+# 1. AUTHENTICATION / HTTP
 # ══════════════════════════════════════════════════════════════════════════════
+
+# ACLED's gateway started rejecting the default python-requests User-Agent from
+# datacenter IPs (GitHub runners) with an nginx 415 in July 2026 — identify
+# ourselves properly. The retrying session also covers transient 429/5xx.
+_HTTP_HEADERS = {
+    "User-Agent": "MyanmarConflictDashboard/1.0 (+https://myanmarconflictdashboard.com; ACLED data pipeline)",
+    "Accept": "application/json",
+}
+_HTTP_SESSION: requests.Session | None = None
+
+
+def _http() -> requests.Session:
+    global _HTTP_SESSION
+    if _HTTP_SESSION is None:
+        from urllib3.util.retry import Retry
+        s = requests.Session()
+        retry = Retry(
+            total=4, backoff_factor=2,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["GET", "POST"],
+        )
+        adapter = requests.adapters.HTTPAdapter(max_retries=retry)
+        s.mount("https://", adapter)
+        s.headers.update(_HTTP_HEADERS)
+        _HTTP_SESSION = s
+    return _HTTP_SESSION
+
 
 def get_token():
     """Request a 24-hour OAuth Bearer token from ACLED."""
     print("  Requesting ACLED OAuth token...")
-    resp = requests.post(
+    resp = _http().post(
         "https://acleddata.com/oauth/token",
         headers={"Content-Type": "application/x-www-form-urlencoded"},
         data={
@@ -174,7 +201,7 @@ def fetch_myanmar_api(
             params["event_date"] = f"{start_date}|{end_date}"
             params["event_date_where"] = "BETWEEN"
 
-        resp = requests.get(
+        resp = _http().get(
             "https://acleddata.com/api/acled/read",
             headers=headers,
             params=params,
@@ -224,7 +251,7 @@ def fetch_deleted_event_ids(token, start_timestamp: int) -> set[str]:
     print(f"  Fetching deleted Myanmar event IDs since timestamp {start_timestamp} ...")
 
     while True:
-        resp = requests.get(
+        resp = _http().get(
             "https://acleddata.com/api/deleted/read",
             headers=headers,
             params={
