@@ -24,6 +24,7 @@ import os
 import sys
 import re
 import json
+import time
 import argparse
 import requests
 import pandas as pd
@@ -126,24 +127,47 @@ def _http() -> requests.Session:
     return _HTTP_SESSION
 
 
-def get_token():
-    """Request a 24-hour OAuth Bearer token from ACLED."""
+def get_token(max_attempts: int = 3):
+    """Request a 24-hour OAuth Bearer token from ACLED.
+
+    Validates the response body, not just the status code — ACLED has been
+    seen returning HTTP 200 with a JSON body missing access_token (Jul 2026),
+    which previously surfaced only as an opaque KeyError. Such responses are
+    retried with backoff since they appear to be transient/gateway artifacts.
+    """
     print("  Requesting ACLED OAuth token...")
-    resp = _http().post(
-        "https://acleddata.com/oauth/token",
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
-        data={
-            "username":   EMAIL,
-            "password":   PASSWORD,
-            "grant_type": "password",
-            "client_id":  "acled",
-        },
-        timeout=30,
-    )
-    if resp.status_code != 200:
-        raise RuntimeError(f"Token request failed ({resp.status_code}): {resp.text[:200]}")
-    print("  Token received OK.")
-    return resp.json()["access_token"]
+    detail = "no attempt made"
+    for attempt in range(1, max_attempts + 1):
+        resp = _http().post(
+            "https://acleddata.com/oauth/token",
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            data={
+                "username":   EMAIL,
+                "password":   PASSWORD,
+                "grant_type": "password",
+                "client_id":  "acled",
+            },
+            timeout=30,
+        )
+        if resp.status_code == 200:
+            try:
+                body = resp.json()
+            except ValueError:
+                body = None
+            if isinstance(body, dict) and body.get("access_token"):
+                print("  Token received OK.")
+                return body["access_token"]
+            detail = (f"HTTP 200 but no access_token in body "
+                      f"(keys: {list(body.keys()) if isinstance(body, dict) else 'non-JSON'}; "
+                      f"body starts: {resp.text[:200]!r})")
+        else:
+            detail = f"HTTP {resp.status_code}: {resp.text[:200]}"
+        if attempt < max_attempts:
+            wait = 15 * attempt
+            print(f"  Token attempt {attempt}/{max_attempts} failed — {detail}")
+            print(f"  Retrying in {wait}s...")
+            time.sleep(wait)
+    raise RuntimeError(f"Token request failed after {max_attempts} attempts: {detail}")
 
 
 def utc_now_ts() -> int:
