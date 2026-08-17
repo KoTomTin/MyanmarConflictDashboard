@@ -598,7 +598,7 @@ def _build_map(snapshot: pd.DataFrame, geojson: dict, window_label: str, selecte
                 marker_line_width=1.9,
             ))
 
-    apply_tight_geos(fig, geojson, height=760, show_colorbar=False)
+    apply_tight_geos(fig, geojson, height=None, show_colorbar=False)
     fig.update_layout(
         title=dict(
             text=window_label,
@@ -980,15 +980,24 @@ def _metric_reason_block(
     recent_compare = _relative_to_baseline_text(current, recent_base, "typical recent 30 days here")
     long_compare = _relative_to_baseline_text(current, long_base, "typical 30 days across its history")
 
-    summary = (
-        f"The last 30 days: {_fmt_metric(current)}. That is {recent_compare} "
-        f"and {long_compare}. {comparison}{emergence_note}"
+    if recent_flag or long_flag:
+        headline = f"{title}: much higher than normal for this township."
+    else:
+        headline = f"{title}: within the normal range for this township."
+    typical = recent_base if float(recent_base or 0) > 0 else long_base
+    plain = (f"{_fmt_metric(current)} in the last {WINDOW_DAYS} days — "
+             f"typically around {_fmt_metric(typical)}.{emergence_note}")
+    math_detail = (
+        f"That is {recent_compare} and {long_compare}. {comparison}"
     )
 
     return html.Div([
-        html.Div(title, className="alert-reason-title"),
-        html.Div(summary, className="alert-reason-copy"),
-        html.Div([
+        html.Div(headline, className="alert-reason-title"),
+        html.Div(plain, className="alert-reason-copy"),
+        html.Details([
+            html.Summary("Show the math", className="alert-math-summary"),
+            html.Div(math_detail, className="alert-reason-copy"),
+            html.Div([
             html.Div([
                 html.Span("Last 30 days", className="alert-mini-stat-key"),
                 html.Span(_fmt_metric(current), className="alert-mini-stat-value"),
@@ -1009,7 +1018,8 @@ def _metric_reason_block(
                 html.Span("Flagged above (history)", className="alert-mini-stat-key"),
                 html.Span(_fmt_metric(long_threshold), className="alert-mini-stat-value"),
             ], className="alert-mini-stat", title="If the last 30 days reach this level, the full-history comparison flags it"),
-        ], className="alert-reason-stats"),
+            ], className="alert-reason-stats"),
+        ], className="alert-math"),
     ], className="alert-reason-block")
 
 
@@ -1051,12 +1061,30 @@ def _detail_children(row: pd.Series, *, thresholds: dict, window_label: str):
     ]
 
 
+
+# ── Sidebar filter panel (rendered into the app shell's sidebar slot) ─────────
+
+def filter_panel():
+    defaults = _get_layout_defaults()
+    region_options = [{"label": r, "value": r} for r in defaults["regions"]]
+    return html.Div([
+        dcc.Dropdown(
+            id="an-region",
+            options=region_options,
+            value=None,
+            clearable=True,
+            placeholder="Region · All Myanmar",
+            className="sb-select",
+        ),
+    ], className="sb-filter-panel")
+
+
 def layout():
     defaults = _get_layout_defaults()
     checked_str = defaults["checked_str"]
     checked_note = defaults["checked_note"]
     region_options = [{"label": r, "value": r} for r in defaults["regions"]]
-    init_map = _empty_fig(f"Preparing the {WINDOW_SCOPE_LABEL}…", height=760)
+    init_map = _empty_fig(f"Preparing the {WINDOW_SCOPE_LABEL}…", height=None)
     init_trend = _empty_fig("Loading township trend…", height=410)
     init_mix = _empty_fig("Loading combat context…", height=470)
     init_rank = html.Div("Loading the current flagged townships…", className="table-empty")
@@ -1072,60 +1100,19 @@ def layout():
         html.Div([
             html.Div([
                 html.H1("Township Alerts", className="page-title"),
-                html.Div(
-                    "Which townships saw unusually intense combat in the last 30 days, compared with their own history.",
-                    className="page-subtitle",
+                html.Span(
+                    "Where combat in the last 30 days is unusually intense vs each township's own history · combat events only",
+                    className="page-subtitle page-subtitle--inline",
+                    title="Combat = Armed Clash, Shelling/Artillery, IED/Mine, Air Strike, "
+                          "Drone Strike, and Massacres — see “How does this page work?” below",
                 ),
-                html.Div([
-                    html.Div("Prototype · work in progress", className="hero-pill hero-pill--prototype"),
-                    html.Div("Aim: transparent township alerting", className="hero-pill"),
-                    html.Div(f"Window: latest available {WINDOW_DAYS} days", className="hero-pill"),
-                    html.Div(
-                        "Combat events only",
-                        className="hero-pill",
-                        title="Armed Clash, Shelling/Artillery, IED/Mine, Air Strike, "
-                              "Drone Strike, and Massacres — see “How does this page work?” below",
-                    ),
-                ], className="hero-pill-row hero-pill-row--tight"),
-            ], className="page-header-left"),
+            ], className="page-header-left page-header-left--inline"),
             html.Div([
-                html.Div([
-                    html.Span(f"Latest {WINDOW_DAYS}-day alert window", className="hero-status-key"),
-                    html.Span(f"Calculating {WINDOW_SCOPE_LABEL}…", id="an-window-value", className="hero-status-value-inline"),
-                ], className="hero-status-pill"),
-                html.Div([
-                    html.Span("Last checked", className="hero-status-key"),
-                    html.Span(checked_str, className="hero-status-value-inline"),
-                ], className="hero-status-pill"),
-                html.Div(checked_note, className="hero-status-note hero-status-note--inline"),
-            ], className="hero-status-inline"),
-        ], className="page-header overview-hero"),
-
-        html.Div([
-            html.Div([
-                html.Div([
-                    html.Label("Region", className="filter-label"),
-                    dcc.Dropdown(
-                        id="an-region",
-                        options=region_options,
-                        value=None,
-                        clearable=True,
-                        placeholder="All Myanmar",
-                    ),
-                ], className="filter-group"),
-                html.Div([
-                    html.Label("Inspect township", className="filter-label"),
-                    dcc.Dropdown(
-                        id="an-township",
-                        options=[],
-                        value=None,
-                        clearable=False,
-                        searchable=True,
-                        placeholder="Loading townships…",
-                    ),
-                ], className="filter-group filter-group--wide"),
-                ], className="filter-controls"),
-        ], className="filter-card"),
+                html.Span("Window ", className="title-meta-key"),
+                html.Span(f"Calculating {WINDOW_SCOPE_LABEL}…", id="an-window-value"),
+                html.Span(f" · Checked {checked_str}", title=checked_note),
+            ], className="title-meta"),
+        ], className="page-title-row"),
 
             html.Details([
                 html.Summary([
@@ -1178,73 +1165,76 @@ def layout():
                 ], className="alert-method-grid"),
             ], className="dash-card alert-method-card alert-method-accordion"),
 
+        # One-line tally strip (was four KPI cards)
+        html.Div([
+            html.Span("—", id="an-kpi-flagged", className="inview-value"),
+            html.Span("townships flagged", className="inview-unit"),
+            html.Span("·", className="inview-sep"),
+            html.Span("—", id="an-kpi-activity", className="inview-value"),
+            html.Span("activity surges", className="inview-unit"),
+            html.Span("·", className="inview-sep"),
+            html.Span("—", id="an-kpi-fatal", className="inview-value inview-value--red"),
+            html.Span("fatality surges", className="inview-unit"),
+            html.Span("·", className="inview-sep"),
+            html.Span("—", id="an-kpi-both", className="inview-value"),
+            html.Span("both together", className="inview-unit"),
+        ], className="inview-strip inview-strip--alerts",
+           title=f"Counts of townships unusually high in the {WINDOW_SCOPE_LABEL}, "
+                 "compared with each township's own history."),
+
+        # Flagged list LEFT (read first), map RIGHT
         html.Div([
             html.Div([
                 html.Div([
                     html.Div([
-                        html.H2("Township Alert Map", className="card-title"),
-                        html.Div(f"Click a township to inspect why it is flagged in the {WINDOW_SCOPE_LABEL}.",
+                        html.Div("Top Flagged Townships", className="card-title"),
+                        html.Div("Ranked by how far above its own normal each township is right now.",
                                  className="card-subtitle"),
-                    ], className="map-stage-copy"),
-                    # Legend lives in the head so colors are decodable while the
-                    # user is looking at the map, not 760px below it.
-                    legend,
-                ], className="dash-card-head map-stage-head"),
-                dcc.Loading(
-                        dcc.Graph(
-                            id="an-map",
-                            figure=init_map,
-                        className="map-graph",
-                        config={**_chart_config("township_alert_map", show_modebar=True), "displayModeBar": True},
-                    ),
-                    type="dot",
-                    color="#2563eb",
-                ),
-                html.Div([
-                        html.Div("How to read the map", className="highest-label"),
-                    html.Div(f"Grey townships look normal in the {WINDOW_SCOPE_LABEL}. Colored townships are unusually high relative to their own history. Click a township to see the exact comparison against its recent and long-term baselines.",
-                             className="highest-region"),
-                ], className="highest-events"),
-            ], className="dash-card map-stage alerts-map-stage"),
+                    ], className="dash-card-head"),
+                    html.Div(init_rank, id="an-ranking", className="dash-card-body an-ranking-scroll"),
+                ], className="dash-card"),
+            ], className="col-charts alerts-rank-col"),
 
             html.Div([
                 html.Div([
                     html.Div([
-                        html.Div("Flagged Townships", className="kpi-label"),
-                        html.Div("—", id="an-kpi-flagged", className="kpi-value"),
-                        html.Div(f"non-normal in the {WINDOW_SCOPE_LABEL}", className="kpi-sub"),
-                    ], className="kpi-card kpi-accent-teal"),
-                    html.Div([
-                        html.Div("Activity Alerts", className="kpi-label"),
-                        html.Div("—", id="an-kpi-activity", className="kpi-value"),
-                        html.Div("activity unusually high against township history", className="kpi-sub"),
-                    ], className="kpi-card kpi-accent-blue"),
-                    html.Div([
-                        html.Div("Fatality Alerts", className="kpi-label"),
-                        html.Div("—", id="an-kpi-fatal", className="kpi-value"),
-                        html.Div("fatality estimates unusually high against history", className="kpi-sub"),
-                    ], className="kpi-card kpi-accent-red"),
-                    html.Div([
-                        html.Div("Both Surges", className="kpi-label"),
-                        html.Div("—", id="an-kpi-both", className="kpi-value"),
-                        html.Div("activity and fatalities high together", className="kpi-sub"),
-                    ], className="kpi-card kpi-accent-purple"),
-                ], className="kpis-row kpis-row--4 kpis-compact"),
-
-                html.Div([
-                    html.Div([
-                        html.Div("Top Flagged Townships", className="card-title"),
-                        html.Div("Ranked by the strength of the current signal after comparing each township to its own history.",
-                                 className="card-subtitle"),
-                    ], className="dash-card-head"),
-                    html.Div(init_rank, id="an-ranking", className="dash-card-body"),
-                ], className="dash-card"),
-
-            ], className="col-charts"),
+                        html.Div(
+                            "Township Alert Map", className="card-title card-title--sm",
+                            title=f"Click a township to inspect why it is flagged in the {WINDOW_SCOPE_LABEL}. "
+                                  "Grey = normal for that township; colored = unusually high vs its own history.",
+                        ),
+                        legend,
+                    ], className="dash-card-head map-stage-head"),
+                    dcc.Loading(
+                            dcc.Graph(
+                                id="an-map",
+                                figure=init_map,
+                            className="map-graph",
+                            responsive=True,
+                            config=_chart_config("township_alert_map"),
+                        ),
+                        type="dot",
+                        color="#2563eb",
+                    ),
+                ], className="dash-card map-stage alerts-map-stage"),
+            ], className="col-map"),
         ], className="page-body alerts-body"),
 
         html.Div([
             html.Div([
+                # Township picker lives beside the section it drives
+                html.Div([
+                    html.Div("Inspect a township", className="sb-section-label"),
+                    dcc.Dropdown(
+                        id="an-township",
+                        options=[],
+                        value=None,
+                        clearable=False,
+                        searchable=True,
+                        placeholder="Loading townships…",
+                        className="an-township-select",
+                    ),
+                ], className="an-inspect-picker"),
                 html.Div(
                     id="an-detail-copy",
                     children=[

@@ -26,6 +26,8 @@ NON_ARMED_ACTORS = {
     "Prisoners (Myanmar)",
 }
 
+MAJOR_MILESTONE_DATES = {"2021-02-01", "2023-10-27", "2025-03-28"}
+
 # (date, hover title, short pill, line color, description)
 MILESTONES = [
     ("2021-02-01", "Feb 1, 2021 – Military Coup",           "Military<br>Coup",       "#dc2626",
@@ -517,7 +519,7 @@ def _build_trend(al: pd.DataFrame, start_date: str | None, end_date: str | None)
     )
 
     color_map = {"offend": "#b85d57", "being_offended": "#3f698d"}
-    label_map = {"offend": "Initiated", "being_offended": "Received"}
+    label_map = {"offend": "As attacker", "being_offended": "As target"}
 
     fig = go.Figure()
     for role in trend["type2"].unique():
@@ -553,15 +555,16 @@ def _build_trend(al: pd.DataFrame, start_date: str | None, end_date: str | None)
                     line=dict(color=color, width=1.5, dash="dot"),
                     opacity=0.55,
                 )
-                fig.add_annotation(
-                    x=mdt, y=1.18 if i % 2 == 0 else 1.02, xref="x", yref="paper",
-                    text=f"<b>{short_name}</b>",
-                    showarrow=False,
-                    font=dict(size=11.5, color=color, family=PLOTLY_FONT),
-                    xanchor="center", yanchor="bottom",
-                    bgcolor=PLOTLY_HOVER_BG,
-                    bordercolor=color, borderwidth=1, borderpad=2,
-                )
+                if date_str in MAJOR_MILESTONE_DATES:
+                    fig.add_annotation(
+                        x=mdt, y=1.02, xref="x", yref="paper",
+                        text=f"<b>{short_name}</b>",
+                        showarrow=False,
+                        font=dict(size=11.5, color=color, family=PLOTLY_FONT),
+                        xanchor="center", yanchor="bottom",
+                        bgcolor=PLOTLY_HOVER_BG,
+                        bordercolor=color, borderwidth=1, borderpad=2,
+                    )
                 # Small diamond on hidden y2 axis — hover target with full description
                 fig.add_trace(go.Scatter(
                     x=[mdt], y=[0.5], yaxis="y2",
@@ -579,7 +582,7 @@ def _build_trend(al: pd.DataFrame, start_date: str | None, end_date: str | None)
     fig.update_layout(
         autosize=True, height=None,
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=4, r=4, t=86, b=54),
+        margin=dict(l=4, r=4, t=52, b=40),
         yaxis2=dict(overlaying="y", range=[0, 1], visible=False, fixedrange=True),
         # Legend floats inside the top-left of the plot area (lines rise later
         # in the series, so this corner stays clear) — below the plot it
@@ -622,38 +625,35 @@ def _build_alliance_chart(ally_pairs, actor_name, valid_ids):
         ap.groupby("ally_name")["event_id_cnty"]
         .nunique().reset_index(name="events")
         .sort_values("events", ascending=False)
-        .head(10)
     )
 
-    fig = go.Figure(go.Bar(
-        y=tbl["ally_name"],
-        x=tbl["events"],
-        orientation="h",
-        marker=dict(color="#355c84", line=dict(color="rgba(56,78,99,0.08)", width=0.5)),
-        text=[f"{v:,}" for v in tbl["events"]],
-        textposition="outside",
-        textfont=dict(size=13, color=PLOTLY_TEXT, family=PLOTLY_FONT),
-        cliponaxis=False,
-        hovertemplate="<b>%{y}</b><br>%{x:,} shared events<extra></extra>",
-    ))
-    fig.update_layout(
-        autosize=True, height=None,
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=4, r=80, t=12, b=4),
-        font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT),
-        yaxis=dict(tickfont=dict(size=11.5, color=PLOTLY_TEXT, family=PLOTLY_FONT), title=None,
-                   autorange="reversed", automargin=True,
-                   tickmode="linear", dtick=1),  # never skip actor names, even when short
-        xaxis=dict(showgrid=True, gridcolor=PLOTLY_GRID, tickfont=dict(size=12, color=PLOTLY_TEXT, family=PLOTLY_FONT),
-                   title=None, rangemode="tozero"),
-        hoverlabel=dict(
-            bgcolor=PLOTLY_HOVER_BG,
-            bordercolor=PLOTLY_HOVER_BORDER,
-            font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=13),
-        ),
-    )
-    return dcc.Graph(figure=fig, responsive=True, className="fill-graph",
-                     config=_chart_config("actor_associated_actors"))
+    # Ranked list, not a bar chart: full names beat truncated acronym bars
+    # for a lay reader ("one giant bar and a pile of acronyms"). Top 5 shown,
+    # the rest behind an expander; the row fill encodes relative volume.
+    top_max = int(tbl["events"].max())
+
+    def _row(rank, name, events):
+        pct = max(6, round(events / top_max * 100))
+        return html.Div([
+            html.Div(f"{rank}", className="coapp-rank"),
+            html.Div([
+                html.Div(name, className="coapp-name"),
+                html.Div(f"{events:,} shared combat events", className="coapp-meta"),
+            ], className="coapp-main"),
+            html.Div(className="coapp-fill", style={"width": f"{pct}%"}),
+        ], className="coapp-row")
+
+    rows = [_row(i + 1, r.ally_name, int(r.events)) for i, r in enumerate(tbl.head(5).itertuples())]
+    rest = tbl.iloc[5:]
+    if len(rest):
+        rows.append(html.Details([
+            html.Summary(f"+ {len(rest)} more groups", className="coapp-more-summary"),
+            html.Div([
+                _row(i + 6, r.ally_name, int(r.events))
+                for i, r in enumerate(rest.head(20).itertuples())
+            ]),
+        ], className="coapp-more"))
+    return html.Div(rows, className="coapp-list")
 
 
 # ── Highest events ─────────────────────────────────────────────────────────────
@@ -675,6 +675,46 @@ def _highest_events(al: pd.DataFrame, acled: pd.DataFrame, region):
     match = acled[acled["Tsp_Pcode"] == top_pcode]["admin3"]
     top_name = str(match.iloc[0]) if not match.empty else top_pcode
     return top_name, f"{int(by_pcode.max()):,}"
+
+
+
+# ── Sidebar filter panel (rendered into the app shell's sidebar slot) ─────────
+
+def filter_panel():
+    d           = _get_defaults()
+    acled       = load_acled_main()
+    actor_level = load_actor_level()
+    admin1_opts = sorted(acled["admin1"].dropna().unique())
+    actor_opts  = _actor_options(actor_level)
+
+    return html.Div([
+        dcc.Dropdown(id="ac-actor", options=actor_opts,
+                     value=DEFAULT_ACTOR, clearable=False, searchable=True,
+                     className="sb-select sb-select--actor"),
+        html.Div([
+            html.Button("Last 7 days",    id="ac-btn-7d",  n_clicks=0, className="quick-btn"),
+            html.Button("Last 30 days",   id="ac-btn-30d", n_clicks=0, className="quick-btn"),
+            html.Button("Last 1 year",    id="ac-btn-1y",  n_clicks=0, className="quick-btn"),
+            html.Button("Since Feb 2021", id="ac-btn-all", n_clicks=0, className="quick-btn"),
+        ], className="sb-presets"),
+        dcc.Dropdown(id="ac-region",
+                     options=[{"label": r, "value": r} for r in admin1_opts],
+                     multi=False, placeholder="Region · All Myanmar", clearable=True,
+                     className="sb-select"),
+        html.Details([
+            html.Summary("Custom dates", className="sb-more-summary"),
+            html.Div([
+                html.Div("From", className="date-card-header"),
+                dcc.DatePickerSingle(id="ac-from-date", date=d["start_val"],
+                                     display_format="D MMM YYYY", first_day_of_week=1,
+                                     className="date-picker-single"),
+                html.Div("To", className="date-card-header"),
+                dcc.DatePickerSingle(id="ac-to-date", date=d["end_val"],
+                                     display_format="D MMM YYYY", first_day_of_week=1,
+                                     className="date-picker-single"),
+            ], className="sb-more-body"),
+        ], className="sb-more"),
+    ], className="sb-filter-panel")
 
 
 # ── Layout ─────────────────────────────────────────────────────────────────────
@@ -739,88 +779,18 @@ def layout():
         html.Div([
             html.Div([
                 html.H1("Actor Analysis", className="page-title"),
+                html.Span(DEFAULT_ACTOR, id="ac-actor-banner-name",
+                          className="page-title-actor"),
                 html.Span(
-                    "Where an armed group operates, who appears alongside it, and how its "
-                    "activity has changed · combat events only",
+                    "combat events only",
                     className="page-subtitle page-subtitle--inline",
                 ),
             ], className="page-header-left page-header-left--inline"),
-            html.Div([
-                html.Div("Prototype", className="hero-pill hero-pill--prototype",
-                         title="Work in progress — methods and views may change"),
-                html.Div([
-                    html.Span("Actor", className="hero-status-key"),
-                    html.Span(DEFAULT_ACTOR, id="ac-actor-banner-name",
-                              className="hero-status-value-inline"),
-                ], className="hero-status-pill"),
-                html.Div([
-                    html.Span("Events up to", className="hero-status-key"),
-                    html.Span(latest_str, className="hero-status-value-inline"),
-                ], className="hero-status-pill"),
-                html.Div([
-                    html.Span("Last checked", className="hero-status-key"),
-                    html.Span(checked_str, className="hero-status-value-inline",
-                              title=checked_note),
-                ], className="hero-status-pill"),
-            ], className="hero-status-inline"),
-        ], className="page-header overview-hero overview-hero--compact"),
-
-        # ── filter strip — same compact layout as the Overview so filtering
-        #    works the same way on every page ──────────────────────────────────
-        html.Div([
-            html.Div([
-                html.Span([
-                    html.Span("⚙", className="filter-cue-icon"),
-                    " Filters",
-                ], className="filter-cue-label"),
-                html.Button("Last 7 days",    id="ac-btn-7d",  n_clicks=0, className="quick-btn"),
-                html.Button("Last 30 days",   id="ac-btn-30d", n_clicks=0, className="quick-btn"),
-                html.Button("Last 1 year",    id="ac-btn-1y",  n_clicks=0, className="quick-btn"),
-                html.Button("Since Feb 2021", id="ac-btn-all", n_clicks=0, className="quick-btn"),
-
-                html.Div([
-                    html.Div([
-                        html.Div("From", className="date-card-header"),
-                        dcc.DatePickerSingle(
-                            id="ac-from-date",
-                            date=start_val,
-                            display_format="D MMM YYYY",
-                            first_day_of_week=1,
-                            className="date-picker-single",
-                        ),
-                    ], className="date-card date-card--compact"),
-                ], className="filter-strip-item filter-strip-item--date"),
-
-                html.Div([
-                    html.Div([
-                        html.Div("To", className="date-card-header"),
-                        dcc.DatePickerSingle(
-                            id="ac-to-date",
-                            date=end_val,
-                            display_format="D MMM YYYY",
-                            first_day_of_week=1,
-                            className="date-picker-single",
-                        ),
-                    ], className="date-card date-card--compact"),
-                ], className="filter-strip-item filter-strip-item--date"),
-
-                html.Div([
-                    dcc.Dropdown(id="ac-region",
-                                 options=[{"label": r, "value": r} for r in admin1_opts],
-                                 multi=False, placeholder="Region · All Myanmar", clearable=True),
-                ], className="filter-strip-item filter-strip-item--select"),
-
-                html.Div([
-                    dcc.Dropdown(id="ac-actor", options=actor_opts,
-                                 value=DEFAULT_ACTOR, clearable=False, searchable=True),
-                ], className="filter-strip-item filter-strip-item--type"),
-
-                html.Button("Reset", id="ac-reset-btn",
-                            n_clicks=0, className="btn-reset btn-reset--solo",
-                            title="Restore the default actor, full date range, and all regions",
-                            **{"aria-label": "Reset all actor filters"}),
-            ], className="filter-strip-row"),
-        ], id="ac-filter-card", className="filter-card filter-card--inline"),
+            html.Div(
+                f"Events up to {latest_str} · Checked {checked_str}",
+                className="title-meta", title=checked_note,
+            ),
+        ], className="page-title-row"),
 
         # ── filter summary + compact actor stats (replaces the 3 KPI cards) ────
         html.Div([
@@ -830,10 +800,10 @@ def layout():
                 html.Span(f"of {total_townships} townships", className="inview-unit"),
                 html.Span("·", className="inview-sep"),
                 html.Span(_fmt(n_offenses), id="ac-kpi-offenses", className="inview-value"),
-                html.Span("initiated", className="inview-unit"),
+                html.Span("as attacker", className="inview-unit"),
                 html.Span("·", className="inview-sep"),
                 html.Span(_fmt(n_defenses), id="ac-kpi-defenses", className="inview-value inview-value--red"),
-                html.Span("received", className="inview-unit"),
+                html.Span("as target", className="inview-unit"),
             ], className="inview-strip",
                title="Initiated = combat events where this actor's side was recorded as carrying "
                      "out the attack; Received = its side was attacked (our coding of ACLED records)."),
@@ -847,11 +817,10 @@ def layout():
                 html.Div([
 
                     html.Div([
-                        html.Div([
-                            html.H2("Geographic Footprint", className="card-title"),
-                            html.Div("Townships where this actor was recorded in combat — darker blue means more events. Hover for details.",
-                                     className="card-subtitle"),
-                        ], className="map-stage-copy"),
+                        html.Div(
+                            "Geographic Footprint", className="card-title card-title--sm",
+                            title="Townships where this actor was recorded in combat — darker blue means more events",
+                        ),
                         html.Div([
                             html.Button(
                                 "Total period",
@@ -873,6 +842,10 @@ def layout():
                                    "title": "Animated quarter-by-quarter playback — use the play button on the map"},
                                 className="view-toggle-btn",
                             ),
+                            html.Button("Reset", id="ac-reset-btn",
+                                        n_clicks=0, className="btn-reset btn-reset--banner",
+                                        title="Restore the default actor, full date range, and all regions",
+                                        **{"aria-label": "Reset all actor filters"}),
                         ], className="map-stage-controls", role="group",
                            **{"aria-label": "Map view mode"}),
                     ], className="dash-card-head map-stage-head"),
@@ -881,8 +854,7 @@ def layout():
                         dcc.Graph(id="ac-map", figure=init_map,
                                   className="map-graph",
                                   responsive=True,
-                                  config={**_chart_config("actor_geographic_footprint", show_modebar=True),
-                                          "displayModeBar": True}),
+                                  config=_chart_config("actor_geographic_footprint")),
                         type="dot", color="#2563eb",
                     ),
 
@@ -900,30 +872,15 @@ def layout():
             # ── RIGHT: KPIs + alliance table + trend ───────────────────────────
             html.Div([
 
-                html.Div([
-                    html.Div([
-                        html.H2("Associated Actors", className="card-title"),
-                        html.Div("Groups recorded on the same side in the same combat events",
-                                 className="card-subtitle"),
-                    ], className="dash-card-head"),
-                    dcc.Loading(
-                        html.Div(id="ac-alliance-table", className="panel-body"),
-                        type="dot", color="#2563eb",
-                    ),
-                    html.Div(
-                        "Note: \"associated\" means co-appearing on the same side of the same recorded combat event. "
-                        "It does not by itself imply a formal alliance, command structure, or coordination.",
-                        className="actor-coapp-note",
-                    ),
-                ], className="dash-card"),
-
+                # Trend first — the audience reads map → trend; the actor list
+                # is reference material and sits below.
                 html.Div([
                     html.Div([
                         html.H2("Monthly Engagement Trend", className="card-title"),
                         html.Div([
-                            html.Span("Initiated", style={"color": "#b85d57", "fontWeight": "600"}),
+                            html.Span("As attacker", style={"color": "#b85d57", "fontWeight": "600"}),
                             html.Span(" = this actor's side carried out the attack  ·  "),
-                            html.Span("Received", style={"color": "#3f698d", "fontWeight": "600"}),
+                            html.Span("As target", style={"color": "#3f698d", "fontWeight": "600"}),
                             html.Span(" = this actor's side was attacked. Sides come from our coding of ACLED records."),
                         ], className="card-subtitle"),
                     ], className="dash-card-head"),
@@ -931,6 +888,19 @@ def layout():
                         dcc.Graph(id="ac-trend", figure=init_trend,
                                   responsive=True, className="fill-graph",
                                   config=_chart_config("actor_monthly_trend")),
+                        type="dot", color="#2563eb",
+                    ),
+                ], className="dash-card"),
+
+                html.Div([
+                    html.Div([
+                        html.H2("Often Appears Alongside", className="card-title"),
+                        html.Div("Groups recorded on the same side in the same combat events — "
+                                 "co-appearance, not a formal alliance",
+                                 className="card-subtitle"),
+                    ], className="dash-card-head"),
+                    dcc.Loading(
+                        html.Div(id="ac-alliance-table", className="panel-body"),
                         type="dot", color="#2563eb",
                     ),
                 ], className="dash-card"),

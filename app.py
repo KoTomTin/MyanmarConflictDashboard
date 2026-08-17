@@ -356,6 +356,56 @@ def topnav():
     ], className="topnav-shell")
 
 
+# Per-page sidebar filter panels. About has none. Pages keep their filter
+# component IDs — the controls just live in the sidebar slot now.
+SIDEBAR_FILTERS = {
+    "/":       lambda: _ov.filter_panel(),
+    "/actor":  lambda: _ac.filter_panel(),
+    "/alerts": lambda: _al.filter_panel(),
+    "/about":  lambda: None,
+}
+
+
+def _sidebar_filters_for(path: str):
+    fn = SIDEBAR_FILTERS.get(path, SIDEBAR_FILTERS["/"])
+    try:
+        return fn() or ""
+    except Exception as e:
+        print(f"[sidebar] ERROR rendering filters for {path}: {e}")
+        traceback.print_exc()
+        return ""
+
+
+def sidebar(path: str):
+    links = [
+        dcc.Link(item["label"], href=item["path"], id=f"sb-nav-{i}",
+                 className="sb-nav-link")
+        for i, item in enumerate(NAV_ITEMS)
+    ]
+    return html.Aside([
+        html.Div([
+            html.Div("Myanmar Conflict", className="sb-brand-title"),
+            html.Div("Dashboard", className="sb-brand-title"),
+            html.Div("Tracking conflict since Feb 2021", className="sb-brand-tagline"),
+        ], className="sb-brand"),
+        html.Nav(links, className="sb-nav", **{"aria-label": "Pages"}),
+        html.Div([
+            html.Div("Filters", className="sb-section-label"),
+            html.Div(_sidebar_filters_for(path), id="sidebar-filters"),
+        ], className="sb-filters"),
+        html.Div([
+            html.Div([
+                "Source: ",
+                html.A("ACLED", href="https://acleddata.com", target="_blank",
+                       className="sb-footer-link"),
+                " · ",
+                dcc.Link("how to interpret", href="/about", className="sb-footer-link"),
+            ], className="sb-footer-line"),
+            html.Div("Prototype — data under review", className="sb-footer-line sb-footer-muted"),
+        ], className="sb-footer"),
+    ], className="app-sidebar", id="app-sidebar")
+
+
 def serve_layout():
     try:
         path = flask_request.path or "/"
@@ -376,12 +426,15 @@ def serve_layout():
         dcc.Location(id="url", refresh=False),
         html.Div(id="seo-sync", style={"display": "none"}),
         html.A("Skip to main content", href="#main-content", className="skip-link"),
-        topnav(),
-        html.Main(
-            html.Div(page_content, id="page-content"),
-            id="main-content",
-            className="main",
-        ),
+        topnav(),                     # shown < 1101px (CSS)
+        html.Div([
+            sidebar(path),            # shown >= 1101px (CSS)
+            html.Main(
+                html.Div(page_content, id="page-content"),
+                id="main-content",
+                className="main",
+            ),
+        ], className="app-shell"),
     ], fluid=True)
 
 
@@ -408,6 +461,17 @@ def render_page(pathname):
         print(f"[render_page] ERROR for {pathname!r}: {e}")
         traceback.print_exc()
         return html.Div(f"Error: {e}", style={"color": "red", "padding": "20px"})
+
+
+# SPA navigation swaps page-content without a reload — the sidebar's filter
+# section must swap in lockstep or it would keep the previous page's controls.
+@callback(
+    Output("sidebar-filters", "children"),
+    Input("url", "pathname"),
+    prevent_initial_call=True,
+)
+def render_sidebar_filters(pathname):
+    return _sidebar_filters_for(pathname or "/")
 
 
 _SEO_CLIENT_MAP = json.dumps({path: _seo_for_path(path) for path in PAGE_MAP.keys()})
@@ -461,9 +525,10 @@ app.clientside_callback(
 )
 
 
-# ── Highlight active nav link ─────────────────────────────────────────────────
+# ── Highlight active nav link (topnav + sidebar) ──────────────────────────────
 @callback(
-    [Output(f"mob-nav-{i}", "className") for i in range(len(NAV_ITEMS))],
+    [Output(f"mob-nav-{i}", "className") for i in range(len(NAV_ITEMS))]
+    + [Output(f"sb-nav-{i}", "className") for i in range(len(NAV_ITEMS))],
     Input("url", "pathname"),
 )
 def highlight_active_nav(pathname):
@@ -473,7 +538,12 @@ def highlight_active_nav(pathname):
         else "mob-nav-link"
         for item in NAV_ITEMS
     ]
-    return mobile
+    side = [
+        "sb-nav-link sb-nav-link--active" if item["path"] == pathname
+        else "sb-nav-link"
+        for item in NAV_ITEMS
+    ]
+    return mobile + side
 
 
 # ── Warm data caches in the background ────────────────────────────────────────

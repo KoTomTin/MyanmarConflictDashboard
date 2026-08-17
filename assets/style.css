@@ -2952,3 +2952,211 @@ button.view-toggle-btn.view-toggle-btn--active {
   to   { opacity: 1; transform: translateY(0);    }
 }
 
+
+/* ═══════════════════════════════════════════════════════════════════
+   SIDEBAR SHELL + ONE-SCREEN v2 (2026-08-17)
+   Two-agent redesign: nav + filters live in a left sidebar; the main
+   area keeps the map (bigger), trend, and "right now" answers.
+   This section is appended last on purpose — it overrides the earlier
+   one-screen constants (same specificity, later in file wins).
+   ═══════════════════════════════════════════════════════════════════ */
+
+.app-shell { display: flex; align-items: stretch; min-height: 100vh; }
+
+.app-sidebar {
+  width: 264px;
+  flex: 0 0 264px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 14px 12px;
+  background: #F5F0E6;
+  border-right: 1px solid rgba(64, 88, 112, 0.16);
+}
+.sb-brand-title {
+  font-family: var(--font-display);
+  font-size: 1.18rem;
+  font-weight: 800;
+  color: #1b3954;
+  line-height: 1.15;
+}
+.sb-brand-tagline { font-size: 0.8rem; color: #55697d; margin-top: 4px; font-style: italic; }
+
+.sb-nav { display: flex; flex-direction: column; gap: 4px; }
+.sb-nav-link {
+  display: block;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #33475c;
+  text-decoration: none;
+}
+.sb-nav-link:hover { background: rgba(255,255,255,0.75); text-decoration: none; color: #1d3247; }
+.sb-nav-link--active { background: #2f4a63; color: #fdfaf4; }
+.sb-nav-link--active:hover { background: #2f4a63; color: #fdfaf4; }
+
+.sb-section-label {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #5a6e82;
+  margin-bottom: 8px;
+}
+.sb-filters { border-top: 1px solid rgba(64,88,112,0.14); padding-top: 12px; }
+.sb-filter-panel { display: flex; flex-direction: column; gap: 10px; }
+.sb-presets { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.sb-presets .quick-btn { width: 100%; padding: 7px 6px; font-size: 0.82rem; }
+.sb-select .Select-control, .sb-select .Select--single { font-size: 0.88rem; }
+.sb-more { border: 1px dashed rgba(64,88,112,0.25); border-radius: 10px; padding: 6px 10px; }
+.sb-more-summary { font-size: 0.84rem; font-weight: 600; color: #46596d; cursor: pointer; }
+.sb-more-body { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; }
+.sb-more-body .date-card-header { font-size: 0.78rem; font-weight: 700; color: #55697d; }
+
+.sb-footer { margin-top: auto; border-top: 1px solid rgba(64,88,112,0.14); padding-top: 10px; }
+.sb-footer-line { font-size: 0.78rem; color: #55697d; line-height: 1.5; }
+.sb-footer-muted { color: #7b8b99; }
+.sb-footer-link { color: inherit; text-decoration: underline; }
+
+/* main area breathes without the topnav */
+.app-shell .main { flex: 1 1 auto; min-width: 0; }
+
+/* Title rows */
+.page-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 2px 4px 8px;
+}
+.page-title-actor {
+  font-size: 1.12rem;
+  font-weight: 800;
+  color: #2f4a63;
+  margin-left: 2px;
+}
+.title-meta { font-size: 0.84rem; color: #4b5f73; white-space: nowrap; }
+.title-meta-key { font-weight: 700; }
+
+/* Map banner — the filter state lives ON the map */
+.map-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(64,88,112,0.12);
+  border-radius: 14px 14px 0 0;
+  background: rgba(255,255,255,0.55);
+}
+.map-banner .viewing-summary-wrap { flex: 1 1 auto; min-width: 0; }
+.map-banner .inview-strip { padding: 2px 10px; }
+.map-banner:has(.viewing-sentence--active) {
+  background: #fdf3dd;
+  border-bottom-color: #d9a441;
+}
+.vs-active-flag { color: #9a6b12; font-weight: 800; font-size: 0.84rem; }
+.btn-reset--banner {
+  padding: 5px 14px;
+  font-size: 0.84rem;
+  border-radius: 999px;
+  border: 1px solid rgba(64,88,112,0.3);
+  background: rgba(255,255,255,0.9);
+  font-weight: 700;
+  color: #2f4a63;
+  cursor: pointer;
+}
+.map-banner:has(.viewing-sentence--active) .btn-reset--banner {
+  border-color: #c99a3c;
+  color: #7a5410;
+}
+.card-title--sm { font-size: 0.95rem; font-weight: 700; }
+
+/* fatalities cell leads the now-strip */
+.snap-card--lead { border-left: 3px solid #8c3130; }
+.snap-value--lead { font-size: 1.35rem; color: #6f2321; }
+
+/* fatalities-by-type demoted to a collapsible */
+.fbt-details { padding: 10px 14px; }
+.fbt-summary { font-size: 0.92rem; font-weight: 700; color: #33475c; cursor: pointer; }
+
+/* co-appearance ranked list (replaces acronym bars) */
+.coapp-list { display: flex; flex-direction: column; gap: 6px; }
+.coapp-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 10px;
+  border: 1px solid rgba(64,88,112,0.12);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.72);
+  overflow: hidden;
+}
+.coapp-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: rgba(53, 92, 132, 0.10);
+  z-index: 0;
+}
+.coapp-rank {
+  z-index: 1;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: #2f4a63; color: #fdfaf4;
+  font-size: 0.78rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.coapp-main { z-index: 1; min-width: 0; }
+.coapp-name { font-size: 0.9rem; font-weight: 700; color: #1d3247; }
+.coapp-meta { font-size: 0.78rem; color: #4b5f73; }
+.coapp-more { margin-top: 4px; }
+.coapp-more-summary { font-size: 0.86rem; font-weight: 700; color: #2563eb; cursor: pointer; }
+
+/* alerts */
+.inview-strip--alerts { margin: 0 0 10px 2px; }
+.an-inspect-picker { display: flex; align-items: center; gap: 12px; padding: 10px 14px 0; }
+.an-inspect-picker .sb-section-label { margin-bottom: 0; }
+.an-township-select { min-width: 320px; flex: 0 1 420px; }
+.alerts-rank-col .dash-card { height: 100%; }
+
+/* Wider map columns: the map is the point */
+.overview-feature-grid {
+  grid-template-columns: minmax(430px, 0.55fr) minmax(400px, 0.45fr);
+}
+.page-body { display: grid; grid-template-columns: minmax(430px, 0.55fr) minmax(400px, 0.45fr); gap: 12px; }
+.page-body .col-map, .page-body .col-charts { min-width: 0; }
+.alerts-body { grid-template-columns: minmax(380px, 0.46fr) minmax(430px, 0.54fr); }
+
+/* ── Desktop: sidebar on, topnav off, one-screen calcs v2 ── */
+@media (min-width: 1101px) {
+  .topnav-shell { display: none; }
+
+  #ov-map.map-graph { height: calc(100vh - 400px) !important; min-height: 340px !important; }
+  #ov-trend         { height: max(calc(100vh - 342px), 360px) !important; }
+  #ov-type-area     { height: 300px !important; }
+
+  #ac-map           { height: calc(100vh - 258px) !important; min-height: 430px !important; }
+  #ac-trend         { height: max(calc(100vh - 545px), 230px) !important; }
+  #ac-alliance-table { height: auto !important; }
+
+  #an-map           { height: calc(100vh - 238px) !important; min-height: 480px !important; }
+  .an-ranking-scroll { max-height: calc(100vh - 260px); overflow-y: auto; }
+}
+@media (max-width: 1100px) {
+  .app-sidebar { display: none; }
+  .app-shell { display: block; }
+}
+/* short screens: fold in-card explainers (tooltips carry them) */
+@media (min-width: 1101px) and (max-height: 920px) {
+  .overview-feature-grid .card-subtitle,
+  .page-body .card-subtitle { display: none; }
+  .snap-header-sub { display: none; }
+}

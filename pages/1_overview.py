@@ -44,6 +44,12 @@ MILESTONES = [
      "The SAC held phased elections in controlled areas; the process was widely rejected as illegitimate."),
 ]
 
+
+# Only these get always-visible text labels on trend charts; the rest keep
+# their dotted line + hover diamond (audience: "keep the two or three big
+# ones as text, diamonds for the rest").
+MAJOR_MILESTONE_DATES = {"2021-02-01", "2023-10-27", "2025-03-28"}
+
 EVENT_DEFINITIONS = {
     "Armed Clash":                  "Direct ground engagements between armed groups, including armed clashes, and territorial control events (ACLED Battles sub-events: Armed clash, Government regains territory, Non-state actor overtakes territory).",
     "Shelling/Artillery":           "Indirect fire attacks using artillery, mortars, or missiles against a position or populated area (ACLED sub-event: Shelling/artillery/missile attack).",
@@ -270,8 +276,11 @@ def _build_filter_chips(start_month, end_month, region, key_events,
                         mode: str = "time_range",
                         preset_label: str | None = None,
                         start_date: str | None = None,
-                        end_date: str | None = None):
-    """Return a single-sentence viewing summary instead of chips."""
+                        end_date: str | None = None,
+                        active: bool = False):
+    """Single-sentence viewing summary. active=True marks any non-default
+    filter — the map banner turns amber off it so a stale filter can't be
+    misread as the whole country going quiet."""
     if key_events and len(key_events) == 1:
         type_str = key_events[0]
     elif key_events:
@@ -290,8 +299,18 @@ def _build_filter_chips(start_month, end_month, region, key_events,
         html.Span(" · ", className="vs-sep"),
         html.Span(time_str, className="vs-value"),
     ]
+    if active:
+        parts.append(html.Span("  ⚠ filtered", className="vs-active-flag"))
 
-    return html.Div(html.Div(parts, className="viewing-sentence"), className="viewing-summary")
+    cls = "viewing-sentence viewing-sentence--active" if active else "viewing-sentence"
+    return html.Div(html.Div(parts, className=cls), className="viewing-summary")
+
+
+def _filters_active(start_date, end_date, region, key_events) -> bool:
+    d = _get_defaults()
+    return bool(region) or bool(key_events) or \
+        (start_date or d["start_val"]) != d["start_val"] or \
+        (end_date or d["end_val"]) != d["end_val"]
 
 
 def _chart_config(filename: str, *, show_modebar: bool = False) -> dict:
@@ -771,15 +790,16 @@ def _build_trend(df, start_date, end_date, region, key_events,
                     line=dict(color=milestone_color, width=1.4, dash="dot"),
                     opacity=0.5,
                 )
-                fig.add_annotation(
-                    x=mdt, y=1.18 if i % 2 == 0 else 1.02, xref="x", yref="paper",
-                    text=f"<b>{short_name}</b>",
-                    showarrow=False,
-                    font=dict(size=11.5, color=milestone_color, family=PLOTLY_FONT),
-                    xanchor="center", yanchor="bottom",
-                    bgcolor=PLOTLY_HOVER_BG,
-                    bordercolor=milestone_color, borderwidth=1, borderpad=2,
-                )
+                if date_str in MAJOR_MILESTONE_DATES:
+                    fig.add_annotation(
+                        x=mdt, y=1.02, xref="x", yref="paper",
+                        text=f"<b>{short_name}</b>",
+                        showarrow=False,
+                        font=dict(size=11.5, color=milestone_color, family=PLOTLY_FONT),
+                        xanchor="center", yanchor="bottom",
+                        bgcolor=PLOTLY_HOVER_BG,
+                        bordercolor=milestone_color, borderwidth=1, borderpad=2,
+                    )
                 fig.add_trace(go.Scatter(
                     x=[mdt], y=[0.5], yaxis="y2",
                     mode="markers",
@@ -796,7 +816,7 @@ def _build_trend(df, start_date, end_date, region, key_events,
     fig.update_layout(
         autosize=True, height=None,
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=4, r=4, t=86, b=4),
+        margin=dict(l=4, r=4, t=52, b=4),
         yaxis2=dict(overlaying="y", range=[0, 1], visible=False, fixedrange=True),
         showlegend=False,
         font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT),
@@ -869,7 +889,7 @@ def _build_fatality_breakdown(df) -> go.Figure:
     ))
 
     fig.update_layout(
-        autosize=True, height=None,
+        height=300,  # fixed: this chart lives inside a collapsed <details>
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=4, r=68, t=8, b=0),
         font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT),
@@ -950,9 +970,9 @@ def _build_now_strip(df: pd.DataFrame) -> html.Div:
         ], className="snap-card"),
         html.Div([
             html.Div("Reported fatalities", className="snap-label"),
-            html.Div(f"{fat_c:,}", className="snap-value"),
+            html.Div(f"{fat_c:,}", className="snap-value snap-value--lead"),
             _delta_chip(fat_c, fat_p),
-        ], className="snap-card"),
+        ], className="snap-card snap-card--lead"),
         html.Div([
             html.Div("Most affected region", className="snap-label"),
             html.Div(top_region, className="snap-value"),
@@ -972,6 +992,46 @@ def _build_now_strip(df: pd.DataFrame) -> html.Div:
         ], className="snap-header"),
         html.Div(cells, className="snap-cards snap-cards--4"),
     ], className="snapshot-strip")
+
+
+# ── Sidebar filter panel (rendered into the app shell's sidebar slot) ─────────
+
+def filter_panel():
+    d  = _get_defaults()
+    df = load_acled_main()
+    admin1_opts  = sorted(df["admin1"].dropna().unique())
+    key_evt_opts = [k for k in KEY_EVENT_ORDER if k in df["key_event"].unique()]
+
+    return html.Div([
+        html.Div([
+            html.Button("Last 7 days",    id="ov-btn-7d",  n_clicks=0, className="quick-btn"),
+            html.Button("Last 30 days",   id="ov-btn-30d", n_clicks=0, className="quick-btn"),
+            html.Button("Last 1 year",    id="ov-btn-1y",  n_clicks=0, className="quick-btn"),
+            html.Button("Since Feb 2021", id="ov-btn-all", n_clicks=0, className="quick-btn"),
+        ], className="sb-presets"),
+        dcc.Dropdown(id="ov-region",
+                     options=[{"label": r, "value": r} for r in admin1_opts],
+                     multi=False, placeholder="Region · All Myanmar", clearable=True,
+                     className="sb-select"),
+        # Rarely used controls stay mounted (callbacks need the IDs) but folded
+        html.Details([
+            html.Summary("Custom dates & event type", className="sb-more-summary"),
+            html.Div([
+                html.Div("From", className="date-card-header"),
+                dcc.DatePickerSingle(id="ov-from-date", date=d["start_val"],
+                                     display_format="D MMM YYYY", first_day_of_week=1,
+                                     className="date-picker-single"),
+                html.Div("To", className="date-card-header"),
+                dcc.DatePickerSingle(id="ov-to-date", date=d["end_val"],
+                                     display_format="D MMM YYYY", first_day_of_week=1,
+                                     className="date-picker-single"),
+                dcc.Dropdown(id="ov-key-event",
+                             options=[{"label": k, "value": k} for k in key_evt_opts],
+                             multi=True, placeholder="Event Type · All", clearable=True,
+                             className="sb-select"),
+            ], className="sb-more-body"),
+        ], className="sb-more"),
+    ], className="sb-filter-panel")
 
 
 # ── Layout ─────────────────────────────────────────────────────────────────────
@@ -1002,7 +1062,7 @@ def layout():
 
     # Keep first layout light; charts are hydrated by callback after mount.
     init_map        = _empty_fig(height=None)
-    init_area       = _empty_fig("Loading…", height=None)
+    init_area       = _empty_fig("Loading…", height=300)
     init_conflicts  = "—"
     init_fatalities = "—"
     h_region, h_count = "—", "—"
@@ -1022,119 +1082,54 @@ def layout():
         dcc.Store(id="ov-applied-filters", data=default_store),
         dcc.Store(id="ov-mode", data="time_range"),
 
-        # ── hero — single compact row so the whole page fits one screen ────────
+        # ── title row: name + subtitle left, data dates as plain text right ────
         html.Div([
             html.Div([
                 html.H1("Overview", className="page-title"),
                 html.Span(
-                    "Reported conflict across Myanmar's townships — what, where, and how it is changing",
+                    "Reported conflict across Myanmar's townships",
                     className="page-subtitle page-subtitle--inline",
                 ),
             ], className="page-header-left page-header-left--inline"),
-            html.Div([
-                html.Div("Prototype", className="hero-pill hero-pill--prototype",
-                         title="Work in progress — methods and views may change"),
-                html.Div([
-                    html.Span("Events up to", className="hero-status-key"),
-                    html.Span(latest_str, className="hero-status-value-inline"),
-                ], className="hero-status-pill"),
-                html.Div([
-                    html.Span("Last checked", className="hero-status-key"),
-                    html.Span(checked_str, className="hero-status-value-inline",
-                              title=checked_note),
-                ], className="hero-status-pill"),
-            ], className="hero-status-inline"),
-        ], className="page-header overview-hero overview-hero--compact"),
+            html.Div(
+                f"Events up to {latest_str} · Checked {checked_str}",
+                className="title-meta", title=checked_note,
+            ),
+        ], className="page-title-row"),
 
         # ── "right now" strip — the page answers before it asks ────────────────
         _build_now_strip(df),
 
-        # ── filter card ────────────────────────────────────────────────────────
-        html.Div([
-            html.Div([
-                html.Span([
-                    html.Span("⚙", className="filter-cue-icon"),
-                    " Filters",
-                ], className="filter-cue-label"),
-                html.Button("Last 7 days",    id="ov-btn-7d",  n_clicks=0, className="quick-btn"),
-                html.Button("Last 30 days",   id="ov-btn-30d", n_clicks=0, className="quick-btn"),
-                html.Button("Last 1 year",    id="ov-btn-1y",  n_clicks=0, className="quick-btn"),
-                html.Button("Since Feb 2021", id="ov-btn-all", n_clicks=0, className="quick-btn"),
-
-                html.Div([
-                    html.Div([
-                        html.Div("From", className="date-card-header"),
-                        dcc.DatePickerSingle(
-                            id="ov-from-date",
-                            date=start_date,
-                            display_format="D MMM YYYY",
-                            first_day_of_week=1,
-                            className="date-picker-single",
-                        ),
-                    ], className="date-card date-card--compact"),
-                ], className="filter-strip-item filter-strip-item--date"),
-
-                html.Div([
-                    html.Div([
-                        html.Div("To", className="date-card-header"),
-                        dcc.DatePickerSingle(
-                            id="ov-to-date",
-                            date=end_date,
-                            display_format="D MMM YYYY",
-                            first_day_of_week=1,
-                            className="date-picker-single",
-                        ),
-                    ], className="date-card date-card--compact"),
-                ], className="filter-strip-item filter-strip-item--date"),
-
-                html.Div([
-                    dcc.Dropdown(id="ov-region",
-                                 options=[{"label": r, "value": r} for r in admin1_opts],
-                                 multi=False, placeholder="Region · All Myanmar", clearable=True),
-                ], className="filter-strip-item filter-strip-item--select"),
-
-                html.Div([
-                    dcc.Dropdown(id="ov-key-event",
-                                 options=[{"label": k, "value": k} for k in key_evt_opts],
-                                 multi=True, placeholder="Event Type · All", clearable=True),
-                ], className="filter-strip-item filter-strip-item--type"),
-
-                html.Button("Reset", id="ov-reset-btn",
-                            n_clicks=0, className="btn-reset btn-reset--solo",
-                            title="Clear region and event-type filters and restore the full date range",
-                            **{"aria-label": "Reset all overview filters"}),
-            ], className="filter-strip-row"),
-        ], id="ov-filter-card", className="filter-card filter-card--inline"),
-
-        # ── viewing summary + event type definition ────────────────────────────
-        # Viewing sentence + in-view totals on one line (replaces the two big
-        # KPI cards — same live values, a quarter of the vertical space)
-        html.Div([
-            html.Div(init_summary, id="ov-filter-summary", className="viewing-summary-wrap"),
-            html.Div([
-                html.Span("In view:", className="inview-label"),
-                html.Span(init_conflicts, id="ov-kpi-conflicts", className="inview-value"),
-                html.Span("events", className="inview-unit"),
-                html.Span("·", className="inview-sep"),
-                html.Span(init_fatalities, id="ov-kpi-fatalities", className="inview-value inview-value--red"),
-                html.Span("reported fatalities", className="inview-unit"),
-            ], className="inview-strip",
-               title="Totals for the dates and filters you've selected. "
-                     "Fatalities are ACLED-reported estimates."),
-        ], className="viewing-row"),
         html.Div(id="ov-key-event-note", className="event-def-note"),
 
         # ── national picture feature grid ─────────────────────────────────────
         html.Div([
             html.Div([
+                # The map's own header IS the viewing banner: what you're
+                # looking at + live totals + Reset, attached to the thing the
+                # filters change. Turns amber when any non-default filter is
+                # active (CSS :has on the active viewing sentence).
                 html.Div([
+                    html.Div(init_summary, id="ov-filter-summary", className="viewing-summary-wrap"),
                     html.Div([
-                        html.H2("Conflict Geography", className="card-title"),
-                        html.Div(
-                            "Where violence is concentrated — darker townships have more of what you've selected",
-                            className="card-subtitle",
-                        ),
-                    ], className="map-stage-copy"),
+                        html.Span(init_conflicts, id="ov-kpi-conflicts", className="inview-value"),
+                        html.Span("events", className="inview-unit"),
+                        html.Span("·", className="inview-sep"),
+                        html.Span(init_fatalities, id="ov-kpi-fatalities", className="inview-value inview-value--red"),
+                        html.Span("fatalities", className="inview-unit"),
+                    ], className="inview-strip",
+                       title="Totals for the dates and filters you've selected. "
+                             "Fatalities are ACLED-reported estimates."),
+                    html.Button("Reset", id="ov-reset-btn",
+                                n_clicks=0, className="btn-reset btn-reset--banner",
+                                title="Clear all filters and restore the full date range",
+                                **{"aria-label": "Reset all overview filters"}),
+                ], className="map-banner"),
+                html.Div([
+                    html.Div(
+                        "Conflict Geography", className="card-title card-title--sm",
+                        title="Darker townships have more of what you've selected",
+                    ),
                     html.Div([
                         dcc.RadioItems(
                             id="ov-metric",
@@ -1176,8 +1171,7 @@ def layout():
                             figure=init_map,
                             className="map-graph",
                             responsive=True,
-                            config={**_chart_config("myanmar_conflict_map", show_modebar=True),
-                                "displayModeBar": True},
+                            config=_chart_config("myanmar_conflict_map"),
                         ),
                     type="dot", color="#2563eb",
                     parent_className="graph-fill",
@@ -1230,27 +1224,19 @@ def layout():
                     ),
                 ], className="dash-card chart-card-fill"),
 
-                html.Div([
-                    html.Div([
-                        html.H2("Fatalities by Event Type", className="card-title"),
-                        html.Div(
-                            "Which types of violence cause the most reported deaths · "
-                            "hover for event count and average deaths per event",
-                            className="card-subtitle",
-                        ),
-                    ], className="dash-card-head"),
+                html.Details([
+                    html.Summary("Fatalities by event type — which violence kills most",
+                                 className="fbt-summary"),
                     dcc.Loading(
                         dcc.Graph(
                             id="ov-type-area",
                             figure=init_area,
                             responsive=True,
-                            className="fill-graph",
                             config=_chart_config("myanmar_fatalities_by_type"),
                         ),
                         type="dot", color="#2563eb",
-                        parent_className="graph-fill",
                     ),
-                ], className="dash-card chart-card-fill"),
+                ], className="dash-card fbt-details"),
             ], className="overview-feature-side"),
         ], className="overview-feature-grid"),
 
@@ -1475,7 +1461,8 @@ def update_charts(applied, mode, metric, trend_metric):
 
     filter_summary = _build_filter_chips(start_month, end_month, region, key_events,
                                          mode, preset_label,
-                                         start_date=start_date, end_date=end_date)
+                                         start_date=start_date, end_date=end_date,
+                                         active=_filters_active(start_date, end_date, region, key_events))
     store = _build_store(ac, geo, start_date, end_date, region, key_events, mode)
 
     empty_trend     = _empty_fig(height=None)
