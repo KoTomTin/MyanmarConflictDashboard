@@ -76,10 +76,11 @@ def _empty_fig(msg="No data for this selection", height=460):
                        font=dict(size=13, color="#5a6c7e", family=PLOTLY_FONT), xref="paper", yref="paper")
     fig.update_layout(
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        height=height, margin=dict(l=0, r=0, t=0, b=0),
+        margin=dict(l=0, r=0, t=0, b=0),
         xaxis_visible=False, yaxis_visible=False,
         font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT),
     )
+    fig.update_layout(autosize=True, height=None) if height is None else fig.update_layout(height=height)
     return fig
 
 
@@ -335,36 +336,31 @@ def _build_choropleth(
             "Events: <b>%{z:,}</b>"
             "<extra></extra>"
         ),
+        # Vertical colorbar + no in-figure title, mirroring the Overview map:
+        # height is the scarce dimension for Myanmar's tall shape, and the
+        # viewing sentence above the grid already states the selected range.
         colorbar=dict(
             title=dict(
                 text="Events",
-                side="top",
-                font=dict(size=13, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+                side="right",
+                font=dict(size=12, color=PLOTLY_TEXT, family=PLOTLY_FONT),
             ),
-            tickfont=dict(size=13, color=PLOTLY_TEXT, family=PLOTLY_FONT),
-            orientation="h",
-            thickness=10,
-            len=0.36,
-            x=0.5,
-            xanchor="center",
-            y=0.04,
-            yanchor="bottom",
+            tickfont=dict(size=12, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+            orientation="v",
+            thickness=9,
+            len=0.7,
+            x=1.0,
+            xanchor="left",
+            y=0.5,
+            yanchor="middle",
             outlinewidth=0,
         ),
     ))
-    apply_tight_geos(fig, active_geo, height=700)
+    apply_tight_geos(fig, active_geo, height=None)
     if not store.get("region"):
         add_neighbor_labels(fig)
-    title_text = _format_selected_range(
-        start_date,
-        end_date,
-        store.get("start_month"),
-        store.get("end_month"),
-    )
     fig.update_layout(
-        margin=dict(l=0, r=0, t=36, b=28),
-        title=dict(text=f"<b>{title_text}</b>", x=0.5, y=0.97,
-                   font=dict(size=14, color="#32475b", family=PLOTLY_DISPLAY)),
+        margin=dict(l=0, r=44, t=8, b=8),
         font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT),
         hoverlabel=dict(
             bgcolor=PLOTLY_HOVER_BG,
@@ -480,7 +476,7 @@ def _build_animated_choropleth(store: dict, geo: dict) -> go.Figure:
     }]
 
     fig = go.Figure(data=[base_trace], frames=frames)
-    apply_tight_geos(fig, active_geo, height=740)
+    apply_tight_geos(fig, active_geo, height=None)
     if not store.get("region"):
         add_neighbor_labels(fig)
     fig.update_layout(
@@ -505,7 +501,7 @@ def _build_animated_choropleth(store: dict, geo: dict) -> go.Figure:
 
 def _build_trend(al: pd.DataFrame, start_date: str | None, end_date: str | None) -> go.Figure:
     if al.empty:
-        return _empty_fig(height=200)
+        return _empty_fig(height=None)
     al = al.copy()
     al["event_date"] = pd.to_datetime(al["event_date"], errors="coerce")
     use_daily = (_window_days(start_date, end_date) or 999) <= 45
@@ -581,12 +577,16 @@ def _build_trend(al: pd.DataFrame, start_date: str | None, end_date: str | None)
                 ))
 
     fig.update_layout(
-        height=310,
+        autosize=True, height=None,
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=4, r=4, t=86, b=54),
         yaxis2=dict(overlaying="y", range=[0, 1], visible=False, fixedrange=True),
-        legend=dict(orientation="h", yanchor="top", y=-0.28, xanchor="left", x=0,
-                    font=dict(size=13, family=PLOTLY_FONT, color=PLOTLY_TEXT), bgcolor="rgba(0,0,0,0)"),
+        # Legend floats inside the top-left of the plot area (lines rise later
+        # in the series, so this corner stays clear) — below the plot it
+        # collided with the angled date ticks at one-screen heights.
+        legend=dict(orientation="h", yanchor="top", y=0.99, xanchor="left", x=0.01,
+                    font=dict(size=12, family=PLOTLY_FONT, color=PLOTLY_TEXT),
+                    bgcolor="rgba(255,251,246,0.85)", borderwidth=0),
         font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT),
         xaxis=dict(showgrid=False, tickformat="%d %b" if use_daily else "%b %Y", tickangle=-30,
                    tickfont=dict(size=13, family=PLOTLY_FONT, color=PLOTLY_TEXT), linecolor=PLOTLY_GRID),
@@ -622,7 +622,7 @@ def _build_alliance_chart(ally_pairs, actor_name, valid_ids):
         ap.groupby("ally_name")["event_id_cnty"]
         .nunique().reset_index(name="events")
         .sort_values("events", ascending=False)
-        .head(15)
+        .head(10)
     )
 
     fig = go.Figure(go.Bar(
@@ -637,13 +637,14 @@ def _build_alliance_chart(ally_pairs, actor_name, valid_ids):
         hovertemplate="<b>%{y}</b><br>%{x:,} shared events<extra></extra>",
     ))
     fig.update_layout(
-        height=390,
+        autosize=True, height=None,
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=4, r=80, t=12, b=4),
         font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT),
-        yaxis=dict(tickfont=dict(size=13, color=PLOTLY_TEXT, family=PLOTLY_FONT), title=None,
-                   autorange="reversed", automargin=True),
-        xaxis=dict(showgrid=True, gridcolor=PLOTLY_GRID, tickfont=dict(size=13, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+        yaxis=dict(tickfont=dict(size=11.5, color=PLOTLY_TEXT, family=PLOTLY_FONT), title=None,
+                   autorange="reversed", automargin=True,
+                   tickmode="linear", dtick=1),  # never skip actor names, even when short
+        xaxis=dict(showgrid=True, gridcolor=PLOTLY_GRID, tickfont=dict(size=12, color=PLOTLY_TEXT, family=PLOTLY_FONT),
                    title=None, rangemode="tozero"),
         hoverlabel=dict(
             bgcolor=PLOTLY_HOVER_BG,
@@ -651,7 +652,8 @@ def _build_alliance_chart(ally_pairs, actor_name, valid_ids):
             font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT, size=13),
         ),
     )
-    return dcc.Graph(figure=fig, config=_chart_config("actor_associated_actors"))
+    return dcc.Graph(figure=fig, responsive=True, className="fill-graph",
+                     config=_chart_config("actor_associated_actors"))
 
 
 # ── Highest events ─────────────────────────────────────────────────────────────
@@ -724,8 +726,8 @@ def layout():
 
     # Empty figure placeholders — the update_actor callback fills these immediately
     # (prevent_initial_call=False) so the user sees spinners briefly, not blank cards.
-    init_map   = _empty_fig(height=700)
-    init_trend = _empty_fig(height=280)
+    init_map   = _empty_fig(height=None)
+    init_trend = _empty_fig(height=None)
 
     return html.Div([
 
@@ -733,34 +735,35 @@ def layout():
         dcc.Store(id="ac-applied-filters", data=default_store),
         dcc.Store(id="ac-mode", data="time_range"),
 
-        # ── page header ────────────────────────────────────────────────────────
+        # ── page header — single compact row (one-screen layout) ───────────────
         html.Div([
             html.Div([
                 html.H1("Actor Analysis", className="page-title"),
-                html.Div("Pick an armed group to see where it operates, who appears alongside it, and how its activity has changed.",
-                         className="page-subtitle"),
-                html.Div([
-                    html.Div("Prototype · work in progress", className="hero-pill hero-pill--prototype"),
-                    html.Div([
-                        html.Span("Actor", className="hero-status-key"),
-                        html.Span(DEFAULT_ACTOR, id="ac-actor-banner-name",
-                                  className="hero-status-value-inline"),
-                    ], className="hero-status-pill"),
-                    html.Div("Combat-only view", className="hero-pill"),
-                ], className="hero-pill-row hero-pill-row--tight"),
-            ], className="page-header-left"),
+                html.Span(
+                    "Where an armed group operates, who appears alongside it, and how its "
+                    "activity has changed · combat events only",
+                    className="page-subtitle page-subtitle--inline",
+                ),
+            ], className="page-header-left page-header-left--inline"),
             html.Div([
+                html.Div("Prototype", className="hero-pill hero-pill--prototype",
+                         title="Work in progress — methods and views may change"),
+                html.Div([
+                    html.Span("Actor", className="hero-status-key"),
+                    html.Span(DEFAULT_ACTOR, id="ac-actor-banner-name",
+                              className="hero-status-value-inline"),
+                ], className="hero-status-pill"),
                 html.Div([
                     html.Span("Events up to", className="hero-status-key"),
                     html.Span(latest_str, className="hero-status-value-inline"),
                 ], className="hero-status-pill"),
                 html.Div([
                     html.Span("Last checked", className="hero-status-key"),
-                    html.Span(checked_str, className="hero-status-value-inline"),
+                    html.Span(checked_str, className="hero-status-value-inline",
+                              title=checked_note),
                 ], className="hero-status-pill"),
-                html.Div(checked_note, className="hero-status-note hero-status-note--inline"),
             ], className="hero-status-inline"),
-        ], className="page-header overview-hero"),
+        ], className="page-header overview-hero overview-hero--compact"),
 
         # ── filter strip — same compact layout as the Overview so filtering
         #    works the same way on every page ──────────────────────────────────
@@ -819,8 +822,22 @@ def layout():
             ], className="filter-strip-row"),
         ], id="ac-filter-card", className="filter-card filter-card--inline"),
 
-        # ── filter summary ─────────────────────────────────────────────────────
-        html.Div(init_summary, id="ac-filter-summary", className="viewing-summary-wrap"),
+        # ── filter summary + compact actor stats (replaces the 3 KPI cards) ────
+        html.Div([
+            html.Div(init_summary, id="ac-filter-summary", className="viewing-summary-wrap"),
+            html.Div([
+                html.Span(_fmt(n_townships), id="ac-kpi-townships", className="inview-value"),
+                html.Span(f"of {total_townships} townships", className="inview-unit"),
+                html.Span("·", className="inview-sep"),
+                html.Span(_fmt(n_offenses), id="ac-kpi-offenses", className="inview-value"),
+                html.Span("initiated", className="inview-unit"),
+                html.Span("·", className="inview-sep"),
+                html.Span(_fmt(n_defenses), id="ac-kpi-defenses", className="inview-value inview-value--red"),
+                html.Span("received", className="inview-unit"),
+            ], className="inview-strip",
+               title="Initiated = combat events where this actor's side was recorded as carrying "
+                     "out the attack; Received = its side was attacked (our coding of ACLED records)."),
+        ], className="viewing-row"),
 
         # ── two-column body ────────────────────────────────────────────────────
         html.Div([
@@ -863,7 +880,7 @@ def layout():
                     dcc.Loading(
                         dcc.Graph(id="ac-map", figure=init_map,
                                   className="map-graph",
-                                  style={"height": "100%"},
+                                  responsive=True,
                                   config={**_chart_config("actor_geographic_footprint", show_modebar=True),
                                           "displayModeBar": True}),
                         type="dot", color="#2563eb",
@@ -882,26 +899,6 @@ def layout():
 
             # ── RIGHT: KPIs + alliance table + trend ───────────────────────────
             html.Div([
-
-                html.Div([
-                    html.Div([html.Div("Townships",                        className="kpi-label"),
-                              html.Div(_fmt(n_townships),  id="ac-kpi-townships", className="kpi-value"),
-                              html.Div(f"of {total_townships} in Myanmar",         className="kpi-sub")],
-                             className="kpi-card kpi-accent-teal"),
-                    html.Div([html.Div("Events Initiated",     className="kpi-label"),
-                              html.Div(_fmt(n_offenses),   id="ac-kpi-offenses",   className="kpi-value"),
-                              html.Div("recorded on the attacking side", className="kpi-sub")],
-                             className="kpi-card kpi-accent-orange",
-                             title="Combat events where this actor (or its side) was recorded as "
-                                   "carrying out the attack, in our coding of ACLED records. "
-                                   "Descriptive only — not a legal attribution."),
-                    html.Div([html.Div("Events Received",       className="kpi-label"),
-                              html.Div(_fmt(n_defenses),   id="ac-kpi-defenses",   className="kpi-value"),
-                              html.Div("recorded on the side being attacked", className="kpi-sub")],
-                             className="kpi-card kpi-accent-red",
-                             title="Combat events where this actor was recorded on the side being "
-                                   "attacked, in our coding of ACLED records."),
-                ], className="kpis-row kpis-row--3 kpis-compact"),
 
                 html.Div([
                     html.Div([
@@ -932,6 +929,7 @@ def layout():
                     ], className="dash-card-head"),
                     dcc.Loading(
                         dcc.Graph(id="ac-trend", figure=init_trend,
+                                  responsive=True, className="fill-graph",
                                   config=_chart_config("actor_monthly_trend")),
                         type="dot", color="#2563eb",
                     ),
@@ -942,7 +940,7 @@ def layout():
         ], className="page-body"),
 
         # ── data disclaimer ────────────────────────────────────────────────────
-        data_disclaimer(),
+        data_disclaimer(compact=True),
 
     ], className="page-wrap")
 
@@ -1137,7 +1135,7 @@ def update_actor(applied, mode):
     filter_summary = _build_filter_chips(start_month, end_month, region, actor_name,
                                          mode, preset_label,
                                          start_date=start_date, end_date=end_date)
-    empty_map = _empty_fig(f"No data for '{actor_name}' in this period", height=700)
+    empty_map = _empty_fig(f"No data for '{actor_name}' in this period", height=None)
 
     if al.empty:
         no_data_hint = html.Div([
@@ -1151,7 +1149,7 @@ def update_actor(applied, mode):
         return (
             empty_map, "—", "—", "—",
             no_data_hint,
-            _empty_fig(height=280), "—", "—", filter_summary, actor_name,
+            _empty_fig(height=None), "—", "—", filter_summary, actor_name,
         )
 
     valid_ids   = set(al["event_id_cnty"].unique())

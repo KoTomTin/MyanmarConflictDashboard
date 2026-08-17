@@ -1569,6 +1569,13 @@ body::before {
 .overview-map-stage .map-graph { height: 620px; min-height: 420px; }
 #ov-trend { height: 300px; }
 #ov-type-area { height: 280px; }
+#ac-map { height: 620px; }
+#ac-trend { height: 280px; }
+#ac-alliance-table { height: 380px; }
+#ac-alliance-table .js-plotly-plot, #ac-trend .js-plotly-plot, #ac-map .js-plotly-plot {
+  height: 100%; width: 100%;
+}
+#ac-alliance-table.panel-body { padding: 4px 10px; }
 
 /* ── One-screen Overview ──────────────────────────────────────────
    On laptop/desktop the whole page fits the viewport: charts autosize
@@ -1664,6 +1671,20 @@ body::before {
   }
   .overview-feature-grid { margin-bottom: 0; }
   .overview-feature-grid .dash-card { margin-bottom: 0; }
+
+  /* Actor Analysis one-screen */
+  #ac-map {
+    height: calc(100vh - 520px) !important;
+    min-height: 300px !important;
+  }
+  #ac-alliance-table {
+    height: max(calc((100vh - 585px) * 0.5), 195px) !important;
+  }
+  #ac-trend {
+    height: max(calc((100vh - 585px) * 0.5), 185px) !important;
+  }
+  .page-body { margin-bottom: 0; }
+  .page-body .dash-card { margin-bottom: 10px; }
 }
 
 /* Short laptop screens: shed the in-card explainer lines (their content is
@@ -1683,6 +1704,20 @@ body::before {
   }
   #ov-type-area {
     height: max(calc((100vh - 505px) * 0.44), 138px) !important;
+  }
+
+  /* Actor Analysis, short screens: fold explainer lines into tooltips */
+  .page-body .card-subtitle { display: none; }
+  .actor-coapp-note { display: none; }
+  #ac-map {
+    height: calc(100vh - 475px) !important;
+    min-height: 270px !important;
+  }
+  #ac-alliance-table {
+    height: max(calc((100vh - 500px) * 0.5), 178px) !important;
+  }
+  #ac-trend {
+    height: max(calc((100vh - 500px) * 0.5), 170px) !important;
   }
 }
 .alerts-body {
