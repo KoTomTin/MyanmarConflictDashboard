@@ -982,7 +982,16 @@ def main(update_only: bool = False, export_csv: bool = False):
             else:
                 print("  No events returned in the date window.")
 
-            deleted_ids = fetch_deleted_event_ids(token, sync_from_ts)
+            # Deletions are housekeeping with a self-healing cursor (every run
+            # re-queries a 14-day window), so a WAF block on this endpoint must
+            # not discard an otherwise-successful fetch — on 2026-08-15 it
+            # failed the whole sync after 445 rows had already been fetched.
+            try:
+                deleted_ids = fetch_deleted_event_ids(token, sync_from_ts)
+            except Exception as del_err:
+                print(f"  ⚠  Deleted-events check failed — skipping this run, "
+                      f"next run's window covers it: {del_err}")
+                deleted_ids = set()
             if deleted_ids:
                 before = len(df_all)
                 df_all = df_all[~df_all["event_id_cnty"].astype(str).isin(deleted_ids)].copy()

@@ -4,8 +4,14 @@ name: Update ACLED Data
 # runs will find no new events and simply refresh last_checked.json — that is
 # intentional, so the dashboard's "Last checked" timestamp advances every day
 # while "Events up to" only moves forward when ACLED actually publishes.
-# The pipeline is idempotent and records the latest successful check even when
-# the data coverage date itself does not move forward on that run.
+#
+# Two-attempt architecture: ACLED sits behind Imunify360 bot-protection, which
+# intermittently blocks some of GitHub's shared runner IPs (403 "IPs used for
+# automation should be whitelisted"). Retrying on the SAME runner cannot help —
+# the block is per-IP for the whole run. So if the pipeline step fails, a
+# second job runs the identical update on a fresh VM (fresh IP draw). The run
+# only goes red — and only then emails — when BOTH attempts fail, which almost
+# always means a real problem rather than one unlucky IP.
 on:
   schedule:
     - cron: '30 0 * * *'
@@ -21,6 +27,8 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: write
+    outputs:
+      pipeline_outcome: ${{ steps.pipeline.outcome }}
 
     steps:
       - uses: actions/checkout@v4
@@ -35,7 +43,11 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      # continue-on-error so one blocked IP doesn't redden the run; the
+      # retry-update job below fires instead (see header comment).
       - name: Run pipeline update
+        id: pipeline
+        continue-on-error: true
         env:
           ACLED_EMAIL: ${{ secrets.ACLED_EMAIL }}
           ACLED_PASSWORD: ${{ secrets.ACLED_PASSWORD }}
@@ -47,6 +59,7 @@ jobs:
       # so 21 days with no new event dates means something upstream is broken
       # and a human needs to look — fail the run so GitHub sends a notification.
       - name: Verify data freshness
+        if: steps.pipeline.outcome == 'success'
         run: |
           python - <<'EOF'
           import json, sys
@@ -61,6 +74,7 @@ jobs:
           EOF
 
       - name: Commit and push updated data
+        if: steps.pipeline.outcome == 'success'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -74,6 +88,7 @@ jobs:
       # Render deploy hook), explicitly trigger a redeploy after the fresh data
       # has been pushed to main.
       - name: Trigger deployment hook
+        if: steps.pipeline.outcome == 'success'
         env:
           RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
           DEPLOY_HOOK_URL: ${{ secrets.DEPLOY_HOOK_URL }}
@@ -91,6 +106,7 @@ jobs:
       # HETZNER_DEPLOY_COMMAND and invoke it over SSH. This is safer than
       # downloading and running a remote script inline on every deploy.
       - name: Trigger Hetzner redeploy over SSH
+        if: steps.pipeline.outcome == 'success'
         env:
           HETZNER_DEPLOY_HOST: ${{ secrets.HETZNER_DEPLOY_HOST }}
           HETZNER_DEPLOY_USER: ${{ secrets.HETZNER_DEPLOY_USER }}
@@ -114,3 +130,58 @@ jobs:
             "$HETZNER_DEPLOY_COMMAND"
 
           echo "Triggered Hetzner redeploy over SSH."
+
+  # Second attempt on a FRESH runner VM (fresh IP) — only when the first
+  # attempt's pipeline step failed. If this one also fails, the run goes red
+  # and GitHub sends the failure email: two independently blocked IPs in a row
+  # usually means something real. Deploy hooks are omitted here because the
+  # VPS picks up pushed data commits by polling main (scripts/check-and-deploy.sh).
+  retry-update:
+    needs: update
+    if: needs.update.outputs.pipeline_outcome == 'failure'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run pipeline update (second attempt, fresh IP)
+        env:
+          ACLED_EMAIL: ${{ secrets.ACLED_EMAIL }}
+          ACLED_PASSWORD: ${{ secrets.ACLED_PASSWORD }}
+        run: python pipeline/pipeline.py --update-only
+
+      - name: Verify data freshness
+        run: |
+          python - <<'EOF'
+          import json, sys
+          from datetime import date
+          state = json.load(open("data/processed/acled_sync_state.json"))
+          latest = date.fromisoformat(state["latest_event_date"])
+          age = (date.today() - latest).days
+          print(f"Latest event date: {latest} ({age} days old)")
+          if age > 21:
+              sys.exit(f"STALE DATA: latest event is {age} days old (threshold: 21). "
+                       f"The ACLED fetch is returning no new events — investigate.")
+          EOF
+
+      - name: Commit and push updated data
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/processed/
+          git diff --cached --quiet || git commit -m "data: auto-update ACLED data $(date -u +%Y-%m-%d)"
+          git pull --rebase origin main
+          git push
