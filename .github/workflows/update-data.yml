@@ -1,28 +1,66 @@
 name: Update ACLED Data
 
-# Run daily at 00:30 UTC (07:00 Yangon time). ACLED publishes weekly, so most
-# runs will find no new events and simply refresh last_checked.json — that is
-# intentional, so the dashboard's "Last checked" timestamp advances every day
-# while "Events up to" only moves forward when ACLED actually publishes.
+# The daily ACLED fetch runs ON THE VPS (scripts/vps-update-data.sh, root cron
+# at 00:30 UTC / 07:00 Yangon) because ACLED's Imunify360 bot-protection
+# intermittently blocks GitHub's shared runner IPs. The VPS pushes the data
+# commit to main; the schedule below only MONITORS that this actually keeps
+# happening — it runs an hour after the VPS cron and fails (→ email) only when
+# the sync is genuinely broken, never because of one unlucky runner IP.
 #
-# Two-attempt architecture: ACLED sits behind Imunify360 bot-protection, which
-# intermittently blocks some of GitHub's shared runner IPs (403 "IPs used for
-# automation should be whitelisted"). Retrying on the SAME runner cannot help —
-# the block is per-IP for the whole run. So if the pipeline step fails, a
-# second job runs the identical update on a fresh VM (fresh IP draw). The run
-# only goes red — and only then emails — when BOTH attempts fail, which almost
-# always means a real problem rather than one unlucky IP.
+# The GitHub-side fetch is kept as a manual fallback: run the workflow with
+# mode=fetch (the default for manual runs) if the VPS is down. It uses the
+# two-attempt fresh-IP pattern because of the Imunify360 blocks.
 on:
   schedule:
-    - cron: '30 0 * * *'
+    - cron: '30 1 * * *'
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "fetch = run the ACLED fetch from GitHub (fallback) · monitor = just check freshness"
+        type: choice
+        options: [fetch, monitor]
+        default: fetch
 
 concurrency:
   group: update-acled-data
   cancel-in-progress: false
 
 jobs:
+  # ── Scheduled path: verify the VPS-side update is alive and data is fresh ──
+  monitor:
+    if: github.event_name == 'schedule' || inputs.mode == 'monitor'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify VPS sync ran recently and data is fresh
+        run: |
+          python3 - <<'EOF'
+          import json, sys
+          from datetime import date, datetime, timezone
+          state = json.load(open("data/processed/acled_sync_state.json"))
+
+          last_sync = datetime.fromisoformat(state["last_sync_utc"])
+          sync_age_h = (datetime.now(timezone.utc) - last_sync).total_seconds() / 3600
+          print(f"Last successful sync: {state['last_sync_utc']} ({sync_age_h:.1f} h ago)")
+          if sync_age_h > 48:
+              sys.exit(f"SYNC STALLED: no successful sync for {sync_age_h:.0f} h (threshold 48). "
+                       f"Check the VPS cron: /var/log/dashboard-data-update.log on the server, "
+                       f"or run this workflow manually with mode=fetch as a stopgap.")
+
+          latest = date.fromisoformat(state["latest_event_date"])
+          age = (date.today() - latest).days
+          print(f"Latest event date: {latest} ({age} days old)")
+          if age > 21:
+              sys.exit(f"STALE DATA: latest event is {age} days old (threshold 21). "
+                       f"Syncs are running but returning nothing new — investigate ACLED access.")
+          EOF
+
+  # ── Manual fallback: fetch from GitHub runners (two attempts, fresh IPs) ──
   update:
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'fetch'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -44,7 +82,7 @@ jobs:
         run: pip install -r requirements.txt
 
       # continue-on-error so one blocked IP doesn't redden the run; the
-      # retry-update job below fires instead (see header comment).
+      # retry-update job below gets a fresh VM (fresh IP) instead.
       - name: Run pipeline update
         id: pipeline
         continue-on-error: true
@@ -52,26 +90,6 @@ jobs:
           ACLED_EMAIL: ${{ secrets.ACLED_EMAIL }}
           ACLED_PASSWORD: ${{ secrets.ACLED_PASSWORD }}
         run: python pipeline/pipeline.py --update-only
-
-      # Tripwire for silent staleness: a sync can "succeed" while returning no
-      # rows (this happened in Apr 2026 with the timestamp= filter, and again
-      # May–Jul 2026 when the schedule was disabled). ACLED publishes weekly,
-      # so 21 days with no new event dates means something upstream is broken
-      # and a human needs to look — fail the run so GitHub sends a notification.
-      - name: Verify data freshness
-        if: steps.pipeline.outcome == 'success'
-        run: |
-          python - <<'EOF'
-          import json, sys
-          from datetime import date
-          state = json.load(open("data/processed/acled_sync_state.json"))
-          latest = date.fromisoformat(state["latest_event_date"])
-          age = (date.today() - latest).days
-          print(f"Latest event date: {latest} ({age} days old)")
-          if age > 21:
-              sys.exit(f"STALE DATA: latest event is {age} days old (threshold: 21). "
-                       f"The ACLED fetch is returning no new events — investigate.")
-          EOF
 
       - name: Commit and push updated data
         if: steps.pipeline.outcome == 'success'
@@ -83,59 +101,6 @@ jobs:
           git pull --rebase origin main
           git push
 
-      # Some hosts do not reliably redeploy on bot-pushed data commits.
-      # If DEPLOY_HOOK_URL is configured as a repository secret (for example a
-      # Render deploy hook), explicitly trigger a redeploy after the fresh data
-      # has been pushed to main.
-      - name: Trigger deployment hook
-        if: steps.pipeline.outcome == 'success'
-        env:
-          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
-          DEPLOY_HOOK_URL: ${{ secrets.DEPLOY_HOOK_URL }}
-        run: |
-          HOOK_URL="${RENDER_DEPLOY_HOOK_URL:-$DEPLOY_HOOK_URL}"
-          if [ -z "$HOOK_URL" ]; then
-            echo "RENDER_DEPLOY_HOOK_URL / DEPLOY_HOOK_URL not set; skipping explicit redeploy trigger."
-            exit 0
-          fi
-          curl --fail --silent --show-error --max-time 30 "$HOOK_URL"
-          echo "Triggered deployment hook."
-
-      # Hetzner / self-managed deployment path.
-      # Recommended: store a fixed server-side redeploy command in
-      # HETZNER_DEPLOY_COMMAND and invoke it over SSH. This is safer than
-      # downloading and running a remote script inline on every deploy.
-      - name: Trigger Hetzner redeploy over SSH
-        if: steps.pipeline.outcome == 'success'
-        env:
-          HETZNER_DEPLOY_HOST: ${{ secrets.HETZNER_DEPLOY_HOST }}
-          HETZNER_DEPLOY_USER: ${{ secrets.HETZNER_DEPLOY_USER }}
-          HETZNER_DEPLOY_KEY: ${{ secrets.HETZNER_DEPLOY_KEY }}
-          HETZNER_DEPLOY_PORT: ${{ secrets.HETZNER_DEPLOY_PORT }}
-          HETZNER_DEPLOY_COMMAND: ${{ secrets.HETZNER_DEPLOY_COMMAND }}
-        run: |
-          if [ -z "$HETZNER_DEPLOY_HOST" ] || [ -z "$HETZNER_DEPLOY_USER" ] || [ -z "$HETZNER_DEPLOY_KEY" ] || [ -z "$HETZNER_DEPLOY_COMMAND" ]; then
-            echo "Hetzner SSH redeploy secrets not fully configured; skipping SSH redeploy."
-            exit 0
-          fi
-
-          PORT="${HETZNER_DEPLOY_PORT:-22}"
-          install -m 700 -d ~/.ssh
-          printf '%s\n' "$HETZNER_DEPLOY_KEY" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -p "$PORT" "$HETZNER_DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-
-          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -p "$PORT" \
-            "$HETZNER_DEPLOY_USER@$HETZNER_DEPLOY_HOST" \
-            "$HETZNER_DEPLOY_COMMAND"
-
-          echo "Triggered Hetzner redeploy over SSH."
-
-  # Second attempt on a FRESH runner VM (fresh IP) — only when the first
-  # attempt's pipeline step failed. If this one also fails, the run goes red
-  # and GitHub sends the failure email: two independently blocked IPs in a row
-  # usually means something real. Deploy hooks are omitted here because the
-  # VPS picks up pushed data commits by polling main (scripts/check-and-deploy.sh).
   retry-update:
     needs: update
     if: needs.update.outputs.pipeline_outcome == 'failure'
@@ -162,20 +127,6 @@ jobs:
           ACLED_EMAIL: ${{ secrets.ACLED_EMAIL }}
           ACLED_PASSWORD: ${{ secrets.ACLED_PASSWORD }}
         run: python pipeline/pipeline.py --update-only
-
-      - name: Verify data freshness
-        run: |
-          python - <<'EOF'
-          import json, sys
-          from datetime import date
-          state = json.load(open("data/processed/acled_sync_state.json"))
-          latest = date.fromisoformat(state["latest_event_date"])
-          age = (date.today() - latest).days
-          print(f"Latest event date: {latest} ({age} days old)")
-          if age > 21:
-              sys.exit(f"STALE DATA: latest event is {age} days old (threshold: 21). "
-                       f"The ACLED fetch is returning no new events — investigate.")
-          EOF
 
       - name: Commit and push updated data
         run: |
