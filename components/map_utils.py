@@ -65,10 +65,12 @@ def apply_tight_geos(
     fig: go.Figure,
     geojson: dict,
     *,
-    height: int = 720,
+    height: int | None = 720,
     pad_frac: float | None = None,
     show_colorbar: bool = True,
 ) -> go.Figure:
+    """height=None → autosize: the figure fills its container (pair with
+    dcc.Graph(responsive=True) inside a CSS-sized parent)."""
     min_lon, max_lon, min_lat, max_lat = _geo_bounds(geojson)
     dlon, dlat = max_lon - min_lon, max_lat - min_lat
 
@@ -108,13 +110,16 @@ def apply_tight_geos(
     )
     fig.update_traces(marker_line_width=0.4, selector=dict(type="choropleth"))
     fig.update_layout(
-        height=int(height),
         margin=dict(l=0, r=0, t=48, b=0),
         geo=dict(domain=dict(x=[0.0, 1.0], y=[0.015, 0.985])),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         coloraxis_showscale=show_colorbar,
     )
+    if height is None:
+        fig.update_layout(autosize=True, height=None)
+    else:
+        fig.update_layout(height=int(height))
     return fig
 
 

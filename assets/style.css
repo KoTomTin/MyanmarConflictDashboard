@@ -26,8 +26,8 @@
 
   /* Text */
   --text-primary:   #18293b;
-  --text-secondary: #31475b;
-  --text-muted:     #54677a;   /* WCAG AA on cream (~5.1:1) */
+  --text-secondary: #293d51;
+  --text-muted:     #45596d;   /* WCAG AA on cream (~5.1:1) */
 
   /* Accent */
   --accent:        #264f77;
@@ -370,7 +370,7 @@ body::before {
 }
 .page-subtitle {
   font-size: 0.9rem;
-  color: #4c6073;
+  color: #3f556b;
   margin-top: 4px;
   line-height: 1.5;
   font-family: var(--font);
@@ -626,7 +626,7 @@ body::before {
 .hero-status-key {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #566b7d; /* AA on the pill background */
+  color: #48607b;
   white-space: nowrap;
 }
 .hero-status-value-inline {
@@ -1236,7 +1236,7 @@ body::before {
 }
 .panel-subtitle, .card-subtitle {
   font-size: 0.9rem;
-  color: #5d7080; /* ≥4.5:1 on the cream card — #6b7c89 failed AA at this size */
+  color: #4a5e71; /* darkened again 2026-08 — users still read it as faint */
   margin-top: 3px;
   font-family: var(--font);
 }
@@ -1276,7 +1276,7 @@ body::before {
 .kpi-label {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #5d7080; /* darkened from #6a7c8b for AA contrast at small sizes */
+  color: #48607b; /* darkened again 2026-08 — users still read it as faint */
   letter-spacing: 0.01em;
   text-transform: none;
   font-family: var(--font);
@@ -1564,8 +1564,126 @@ body::before {
   max-width: 720px;
   margin: 0 auto;
 }
-.overview-map-stage .map-graph {
-  min-height: 800px;
+/* Base (scrolling layouts / small screens): sensible fixed graph heights.
+   The one-screen media block below overrides them with viewport calcs. */
+.overview-map-stage .map-graph { height: 620px; min-height: 420px; }
+#ov-trend { height: 300px; }
+#ov-type-area { height: 280px; }
+
+/* ── One-screen Overview ──────────────────────────────────────────
+   On laptop/desktop the whole page fits the viewport: charts autosize
+   (figures have height=None + responsive Graphs) inside a grid whose
+   height is the space left under the header/now/filter stack. Small or
+   short screens keep the normal scrolling layout. */
+.viewing-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.inview-strip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.9);
+  border: 1px solid rgba(64, 88, 112, 0.14);
+  white-space: nowrap;
+}
+.inview-label { font-size: 0.84rem; font-weight: 700; color: #46596d; }
+.inview-unit  { font-size: 0.84rem; color: #46596d; }
+.inview-sep   { color: #94a3b8; }
+.inview-value { font-size: 1.02rem; font-weight: 800; color: #16324a; }
+.inview-value--red { color: #8c3130; }
+
+.overview-hero--compact {
+  padding: 6px 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.overview-hero--compact .page-title { font-size: 1.32rem !important; }
+.page-header-left--inline {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.page-subtitle--inline {
+  margin-top: 0;
+  max-width: none;
+}
+
+/* single-line snapshot cells */
+.snapshot-strip { padding: 8px 14px; margin-bottom: 8px; }
+.snap-header { margin-bottom: 6px; }
+.snap-card {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 7px 12px;
+  flex-wrap: wrap;
+}
+.snap-label { margin-bottom: 0; flex-shrink: 0; }
+.snap-value { font-size: 1.06rem; }
+.snap-card .snap-delta { margin-top: 0; margin-left: auto; }
+
+/* Graph containers get explicit viewport-calculated heights (media block
+   below) instead of flex stretching — Plotly measures a definite size no
+   matter when it draws relative to stylesheet/flex resolution. */
+.fill-graph .js-plotly-plot,
+.map-graph .js-plotly-plot,
+.chart-card-fill .js-plotly-plot,
+.overview-map-stage .js-plotly-plot {
+  height: 100%;
+  width: 100%;
+}
+
+.data-disclaimer--compact {
+  padding: 6px 12px;
+  font-size: 0.84rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.disclaimer-link { color: #2563eb; }
+
+@media (min-width: 1101px) and (min-height: 720px) {
+  /* Explicit per-graph heights: the chrome above/around the graphs is a
+     near-constant; the graphs absorb the rest so the whole page fits the
+     viewport with no scrolling. */
+  #ov-map.map-graph {
+    height: calc(100vh - 545px) !important;
+    min-height: 300px !important;
+  }
+  #ov-trend {
+    height: max(calc((100vh - 555px) * 0.56), 185px) !important;
+  }
+  #ov-type-area {
+    height: max(calc((100vh - 555px) * 0.44), 150px) !important;
+  }
+  .overview-feature-grid { margin-bottom: 0; }
+  .overview-feature-grid .dash-card { margin-bottom: 0; }
+}
+
+/* Short laptop screens: shed the in-card explainer lines (their content is
+   in tooltips/About) and reclaim the space for the charts themselves. */
+@media (min-width: 1101px) and (min-height: 720px) and (max-height: 920px) {
+  .overview-feature-grid .card-subtitle { display: none; }
+  .snap-header-sub { display: none; }
+  .snapshot-strip { padding: 6px 12px; }
+  .snap-card { padding: 5px 10px; }
+  .overview-hero--compact { padding: 4px 12px; }
+  #ov-map.map-graph {
+    height: calc(100vh - 535px) !important;
+    min-height: 255px !important;
+  }
+  #ov-trend {
+    height: max(calc((100vh - 505px) * 0.56), 172px) !important;
+  }
+  #ov-type-area {
+    height: max(calc((100vh - 505px) * 0.44), 138px) !important;
+  }
 }
 .alerts-body {
   grid-template-columns: minmax(380px, 0.42fr) minmax(540px, 0.58fr);
@@ -1712,7 +1830,7 @@ body::before {
 .alert-mini-stat-key {
   font-size: 0.86rem;
   font-weight: 700;
-  color: #5d7080; /* darkened from #6a7c8b for AA contrast at small sizes */
+  color: #48607b; /* darkened again 2026-08 — users still read it as faint */
 }
 .alert-mini-stat-value {
   font-size: 0.86rem;

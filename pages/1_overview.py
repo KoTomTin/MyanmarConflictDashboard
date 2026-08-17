@@ -109,10 +109,12 @@ def _empty_fig(msg="No data for this selection", height=500):
                        font=dict(size=13, color="#5a6c7e", family=PLOTLY_FONT), xref="paper", yref="paper")
     fig.update_layout(
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        height=height, margin=dict(l=0, r=0, t=0, b=0),
+        margin=dict(l=0, r=0, t=0, b=0),
         xaxis_visible=False, yaxis_visible=False,
         font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT),
     )
+    # height=None → autosize to the container (one-screen layout)
+    fig.update_layout(autosize=True, height=None) if height is None else fig.update_layout(height=height)
     return fig
 
 
@@ -501,7 +503,7 @@ def _build_animated_choropleth(store: dict, geo: dict,
 
     fig = go.Figure(data=[base_trace], frames=frames)
 
-    apply_tight_geos(fig, active_geo, height=860)
+    apply_tight_geos(fig, active_geo, height=None)
     if not store.get("region"):
         add_neighbor_labels(fig)
 
@@ -553,39 +555,34 @@ def _build_choropleth(
             f"{hover_lbl}: <b>%{{z:,}}</b>"
             f"<extra></extra>"
         ),
+        # Vertical colorbar on the right: Myanmar is tall and thin, so height
+        # is the scarce dimension — a bottom bar was costing the map ~60px.
         colorbar=dict(
             title=dict(
                 text=cb_title,
-                side="top",
-                font=dict(size=13, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+                side="right",
+                font=dict(size=12, color=PLOTLY_TEXT, family=PLOTLY_FONT),
             ),
-            tickfont=dict(size=13, color=PLOTLY_TEXT, family=PLOTLY_FONT),
-            orientation="h",
-            thickness=10,
-            len=0.36,
-            x=0.5,
-            xanchor="center",
-            y=0.04,
-            yanchor="bottom",
+            tickfont=dict(size=12, color=PLOTLY_TEXT, family=PLOTLY_FONT),
+            orientation="v",
+            thickness=9,
+            len=0.7,
+            x=1.0,
+            xanchor="left",
+            y=0.5,
+            yanchor="middle",
             outlinewidth=0,
         ),
     ))
 
-    apply_tight_geos(fig, active_geo, height=820)
+    apply_tight_geos(fig, active_geo, height=None)
     if not store.get("region"):
         add_neighbor_labels(fig)
 
-    title_text = _format_selected_range(
-        start_date,
-        end_date,
-        store.get("start_month"),
-        store.get("end_month"),
-    )
-
+    # No in-figure title: the viewing sentence directly above the grid already
+    # states the selected range — the title cost 36px of map height.
     fig.update_layout(
-        margin=dict(l=0, r=0, t=36, b=28),
-        title=dict(text=f"<b>{title_text}</b>", x=0.5, y=0.97,
-                   font=dict(size=14, color="#32475b", family=PLOTLY_DISPLAY)),
+        margin=dict(l=0, r=44, t=8, b=8),
         font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT),
         hoverlabel=dict(
             bgcolor=PLOTLY_HOVER_BG,
@@ -605,7 +602,7 @@ def _build_multi_trend(df, start_date, end_date, top_n: int = 5) -> go.Figure:
     df should be unfiltered by type (date/region filter only applied).
     """
     if df.empty:
-        return _empty_fig(height=340)
+        return _empty_fig(height=None)
 
     start_ts  = pd.to_datetime(start_date) if start_date else df["event_date"].min()
     end_ts    = pd.to_datetime(end_date)   if end_date   else df["event_date"].max()
@@ -666,7 +663,7 @@ def _build_multi_trend(df, start_date, end_date, top_n: int = 5) -> go.Figure:
             )
 
     fig.update_layout(
-        height=340,
+        autosize=True, height=None,
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=4, r=4, t=86, b=4),
         showlegend=True,
@@ -701,7 +698,7 @@ def _build_trend(df, start_date, end_date, region, key_events,
         return _build_multi_trend(df, start_date, end_date, top_n=5)
 
     if df.empty:
-        return _empty_fig(height=300)
+        return _empty_fig(height=None)
 
     use_fatalities = (metric == "fatalities")
 
@@ -797,7 +794,7 @@ def _build_trend(df, start_date, end_date, region, key_events,
                 ))
 
     fig.update_layout(
-        height=300,
+        autosize=True, height=None,
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=4, r=4, t=86, b=4),
         yaxis2=dict(overlaying="y", range=[0, 1], visible=False, fixedrange=True),
@@ -834,7 +831,7 @@ def _build_fatality_breakdown(df) -> go.Figure:
     lethal-by-volume.
     """
     if df.empty:
-        return _empty_fig("No data", height=300)
+        return _empty_fig("No data", height=None)
 
     by_type = (
         df.groupby("key_event", observed=True)
@@ -844,12 +841,12 @@ def _build_fatality_breakdown(df) -> go.Figure:
     )
     by_type = by_type[by_type["fatalities"] > 0].copy()
     if by_type.empty:
-        return _empty_fig("No fatality data for this selection", height=300)
+        return _empty_fig("No fatality data for this selection", height=None)
 
     by_type["avg_per_event"] = (by_type["fatalities"] / by_type["events"].clip(lower=1)).round(1)
     by_type = by_type.sort_values("fatalities", ascending=True)  # bottom-to-top: most lethal on top
 
-    chart_height = max(260, len(by_type) * 28 + 50)
+
 
     fig = go.Figure(go.Bar(
         x=by_type["fatalities"],
@@ -872,7 +869,7 @@ def _build_fatality_breakdown(df) -> go.Figure:
     ))
 
     fig.update_layout(
-        height=chart_height,
+        autosize=True, height=None,
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=4, r=68, t=8, b=0),
         font=dict(family=PLOTLY_FONT, color=PLOTLY_TEXT),
@@ -1004,8 +1001,8 @@ def layout():
     }
 
     # Keep first layout light; charts are hydrated by callback after mount.
-    init_map        = _empty_fig(height=820)
-    init_area       = _empty_fig("Loading…", height=380)
+    init_map        = _empty_fig(height=None)
+    init_area       = _empty_fig("Loading…", height=None)
     init_conflicts  = "—"
     init_fatalities = "—"
     h_region, h_count = "—", "—"
@@ -1025,30 +1022,29 @@ def layout():
         dcc.Store(id="ov-applied-filters", data=default_store),
         dcc.Store(id="ov-mode", data="time_range"),
 
-        # ── hero ───────────────────────────────────────────────────────────────
+        # ── hero — single compact row so the whole page fits one screen ────────
         html.Div([
             html.Div([
                 html.H1("Overview", className="page-title"),
-                html.Div(
-                    "Track reported conflict events across Myanmar's townships — what is happening, where, and how it is changing.",
-                    className="page-subtitle",
+                html.Span(
+                    "Reported conflict across Myanmar's townships — what, where, and how it is changing",
+                    className="page-subtitle page-subtitle--inline",
                 ),
-                html.Div([
-                    html.Div("Prototype · work in progress", className="hero-pill hero-pill--prototype"),
-                ], className="hero-pill-row hero-pill-row--tight"),
-            ], className="page-header-left"),
+            ], className="page-header-left page-header-left--inline"),
             html.Div([
+                html.Div("Prototype", className="hero-pill hero-pill--prototype",
+                         title="Work in progress — methods and views may change"),
                 html.Div([
                     html.Span("Events up to", className="hero-status-key"),
                     html.Span(latest_str, className="hero-status-value-inline"),
                 ], className="hero-status-pill"),
                 html.Div([
                     html.Span("Last checked", className="hero-status-key"),
-                    html.Span(checked_str, className="hero-status-value-inline"),
+                    html.Span(checked_str, className="hero-status-value-inline",
+                              title=checked_note),
                 ], className="hero-status-pill"),
-                html.Div(checked_note, className="hero-status-note hero-status-note--inline"),
             ], className="hero-status-inline"),
-        ], className="page-header overview-hero"),
+        ], className="page-header overview-hero overview-hero--compact"),
 
         # ── "right now" strip — the page answers before it asks ────────────────
         _build_now_strip(df),
@@ -1111,7 +1107,21 @@ def layout():
         ], id="ov-filter-card", className="filter-card filter-card--inline"),
 
         # ── viewing summary + event type definition ────────────────────────────
-        html.Div(init_summary, id="ov-filter-summary", className="viewing-summary-wrap"),
+        # Viewing sentence + in-view totals on one line (replaces the two big
+        # KPI cards — same live values, a quarter of the vertical space)
+        html.Div([
+            html.Div(init_summary, id="ov-filter-summary", className="viewing-summary-wrap"),
+            html.Div([
+                html.Span("In view:", className="inview-label"),
+                html.Span(init_conflicts, id="ov-kpi-conflicts", className="inview-value"),
+                html.Span("events", className="inview-unit"),
+                html.Span("·", className="inview-sep"),
+                html.Span(init_fatalities, id="ov-kpi-fatalities", className="inview-value inview-value--red"),
+                html.Span("reported fatalities", className="inview-unit"),
+            ], className="inview-strip",
+               title="Totals for the dates and filters you've selected. "
+                     "Fatalities are ACLED-reported estimates."),
+        ], className="viewing-row"),
         html.Div(id="ov-key-event-note", className="event-def-note"),
 
         # ── national picture feature grid ─────────────────────────────────────
@@ -1165,11 +1175,12 @@ def layout():
                             id="ov-map",
                             figure=init_map,
                             className="map-graph",
-                            style={"height": "100%"},
+                            responsive=True,
                             config={**_chart_config("myanmar_conflict_map", show_modebar=True),
                                 "displayModeBar": True},
                         ),
                     type="dot", color="#2563eb",
+                    parent_className="graph-fill",
                 ),
 
                 html.Div([
@@ -1182,19 +1193,6 @@ def layout():
             ], className="dash-card map-stage overview-map-stage"),
 
             html.Div([
-                html.Div([
-                    html.Div([
-                        html.Div("Reported Events", className="kpi-label"),
-                        html.Div(init_conflicts, id="ov-kpi-conflicts", className="kpi-value"),
-                        html.Div("Events recorded in the dates and filters you've selected", className="kpi-sub"),
-                    ], className="kpi-card kpi-card--hero kpi-accent-blue"),
-                    html.Div([
-                        html.Div("Reported Fatality Estimate", className="kpi-label"),
-                        html.Div(init_fatalities, id="ov-kpi-fatalities", className="kpi-value"),
-                        html.Div("Reported deaths from those events, as estimated by ACLED", className="kpi-sub"),
-                    ], className="kpi-card kpi-card--support kpi-accent-red"),
-                ], className="kpis-row kpis-row--2 overview-kpi-strip"),
-
                 html.Div([
                     html.Div([
                         html.Div([
@@ -1222,12 +1220,15 @@ def layout():
                     dcc.Loading(
                         dcc.Graph(
                             id="ov-trend",
-                            figure=_empty_fig(height=300),
+                            figure=_empty_fig(height=None),
+                            responsive=True,
+                            className="fill-graph",
                             config=_chart_config("myanmar_monthly_trend"),
                         ),
                         type="dot", color="#2563eb",
+                        parent_className="graph-fill",
                     ),
-                ], className="dash-card"),
+                ], className="dash-card chart-card-fill"),
 
                 html.Div([
                     html.Div([
@@ -1242,16 +1243,19 @@ def layout():
                         dcc.Graph(
                             id="ov-type-area",
                             figure=init_area,
+                            responsive=True,
+                            className="fill-graph",
                             config=_chart_config("myanmar_fatalities_by_type"),
                         ),
                         type="dot", color="#2563eb",
+                        parent_className="graph-fill",
                     ),
-                ], className="dash-card"),
+                ], className="dash-card chart-card-fill"),
             ], className="overview-feature-side"),
         ], className="overview-feature-grid"),
 
         # ── data disclaimer ────────────────────────────────────────────────────
-        data_disclaimer(),
+        data_disclaimer(compact=True),
 
     ], className="page-wrap")
 
@@ -1474,11 +1478,11 @@ def update_charts(applied, mode, metric, trend_metric):
                                          start_date=start_date, end_date=end_date)
     store = _build_store(ac, geo, start_date, end_date, region, key_events, mode)
 
-    empty_trend     = _empty_fig(height=300)
-    empty_townships = _empty_fig("No data", height=320)
+    empty_trend     = _empty_fig(height=None)
+    empty_townships = _empty_fig("No data", height=None)
 
     if store is None:
-        empty_map = _empty_fig("No data for this selection", height=820)
+        empty_map = _empty_fig("No data for this selection", height=None)
         return (empty_map, n_conflicts, n_fatalities, filter_summary,
                 empty_trend, empty_townships, "—", "—")
 

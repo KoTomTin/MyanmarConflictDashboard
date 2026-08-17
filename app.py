@@ -445,6 +445,14 @@ app.clientside_callback(
         var canonical = document.querySelector('link[rel="canonical"]');
         if (canonical) canonical.setAttribute("href", current.canonical);
 
+        // Plotly's responsive mode only listens to WINDOW resizes, so charts
+        // that autosize inside CSS-sized containers (one-screen Overview)
+        // render at a pre-stylesheet size and never recover. Nudge them after
+        // layout settles — on first load and on every page switch.
+        [250, 900, 2000].forEach(function(ms) {{
+            setTimeout(function() {{ window.dispatchEvent(new Event("resize")); }}, ms);
+        }});
+
         return "";
     }}
     """,

@@ -12,8 +12,8 @@ PLOTLY_FONT = "Avenir Next, Segoe UI, Arial, sans-serif"
 PLOTLY_DISPLAY = "Iowan Old Style, Palatino Linotype, Book Antiqua, Georgia, serif"
 
 # ── Palette ───────────────────────────────────────────────────────────────────
-PLOTLY_TEXT = "#2f4257"          # bumped from #415669 for stronger contrast
-PLOTLY_TEXT_MUTED = "#5a6c7e"
+PLOTLY_TEXT = "#263a4e"          # bumped from #415669 for stronger contrast
+PLOTLY_TEXT_MUTED = "#4b5f73"
 PLOTLY_GRID = "#e6ddd0"
 PLOTLY_HOVER_BG = "rgba(255,251,246,0.98)"
 PLOTLY_HOVER_BORDER = "#d9cfbf"
