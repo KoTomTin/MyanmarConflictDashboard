@@ -58,6 +58,11 @@ git fetch --all
 git reset --hard origin/$BRANCH
 "
 
+# Self-heal execute bits: root cron invokes these by path, and a script that
+# lands without +x fails silently at 00:30 every day (no MTA → cron's error
+# mail vanishes). This exact failure ran unnoticed 2026-08-18 → 08-29.
+chmod +x "$PROJECT_DIR"/scripts/*.sh 2>/dev/null || true
+
 if [ "$RESET_VENV" = true ]; then
   echo "Resetting virtual environment..."
   rm -rf "$PROJECT_DIR/venv"

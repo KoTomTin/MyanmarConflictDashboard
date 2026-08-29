@@ -65,14 +65,16 @@ echo "[3/5] Installing root cron entry (00:30 UTC = 07:00 Yangon)..."
 ssh "$VPS" "crontab -l 2>/dev/null | grep -qF 'vps-update-data.sh' || (crontab -l 2>/dev/null; echo '$CRON_LINE') | crontab -"
 ssh "$VPS" "crontab -l | tail -2"
 
-echo "[4/5] Waiting for the VPS checkout to contain scripts/vps-update-data.sh..."
+echo "[4/5] Waiting for the VPS checkout to contain an EXECUTABLE scripts/vps-update-data.sh..."
 for i in $(seq 1 20); do
-  if ssh "$VPS" "[ -x $PROJECT_DIR/scripts/vps-update-data.sh ] || [ -f $PROJECT_DIR/scripts/vps-update-data.sh ]"; then
+  if ssh "$VPS" "[ -x $PROJECT_DIR/scripts/vps-update-data.sh ]"; then
     break
   fi
   sleep 15
 done
-ssh "$VPS" "[ -f $PROJECT_DIR/scripts/vps-update-data.sh ]" || { echo "ERROR: script not on VPS yet — is it pushed to main?"; exit 1; }
+# Strictly require the execute bit — cron runs the path directly, and a
+# plain -f fallback here once masked a missing +x for 12 days.
+ssh "$VPS" "[ -x $PROJECT_DIR/scripts/vps-update-data.sh ]" || { echo "ERROR: script missing or not executable on VPS — check git file mode (needs 100755)."; exit 1; }
 
 echo "[5/5] Test run on the VPS..."
 BEFORE=$(git ls-remote https://github.com/$REPO.git refs/heads/main | cut -f1)
